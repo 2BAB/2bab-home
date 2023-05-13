@@ -1,0 +1,106 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="插件化笔记 #1 ClassLoader 初探" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2016-09-18-plugadget-note-1-ClassLoader/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>插件化笔记 #1 ClassLoader 初探 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>插件化笔记 #1 ClassLoader 初探</h1>
+    <div class="italic text-gray-500">
+      2016/09/18
+    </div>
+    <div>
+      <blockquote>
+<p>Demo: <a href="https://github.com/2BAB/Android-Plugin-Dev-Notes">https://github.com/2BAB/Android-Plugin-Dev-Notes</a></p>
+</blockquote>
+<h2 id="%E6%9C%89%E5%87%A0%E4%B8%AAclassloader" tabindex="-1">有几个ClassLoader</h2>
+<p>如MainActivity的代码所示，</p>
+<pre class="language-java"><code class="language-java"> <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token function">setContentView</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>layout<span class="token punctuation">.</span>activity_main<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">ClassLoader</span> classLoader <span class="token operator">=</span> <span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>classLoader <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">i</span><span class="token punctuation">(</span><span class="token string">"[onCreate]"</span><span class="token punctuation">,</span> classLoader<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">while</span> <span class="token punctuation">(</span>classLoader<span class="token punctuation">.</span><span class="token function">getParent</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                classLoader <span class="token operator">=</span> classLoader<span class="token punctuation">.</span><span class="token function">getParent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>                <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">i</span><span class="token punctuation">(</span><span class="token string">"[onCreate While]"</span><span class="token punctuation">,</span> classLoader<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span></code></pre>
+<p>打印出来的结果是</p>
+<pre class="language-xml"><code class="language-xml">I/[onCreate]: dalvik.system.PathClassLoader[DexPathList[[zip file "/data/app/example.com.classloaderdemo-1/base.apk"],nativeLibraryDirectories=[/vendor/lib, /system/lib]]]<br>I/[onCreate While]: com.android.tools.fd.runtime.IncrementalClassLoader@1d4251ea<br>I/[onCreate While]: java.lang.BootClassLoader@2f2e5cdb</code></pre>
+<p>卧槽，怎么有三个，这跟文章说的只有两个不一样啊 - -，而且我也只听师兄说过PathClassLoader和BootClassLoader，没见过这个IncrementalClassLoader啊，它是什么鬼？</p>
+<p>&lt;!--more--&gt;</p>
+<p>随手一搜，<a href="http://www.cnblogs.com/coding-way/p/5443718.html">一篇结果链接</a>，发现这是因为我用了 Instant Run 而出现的，再一想，嗯，Instant Run 本身也就是一种热修复的方式，思路就是把改动的地方打到dex里然后再用IncrementalClassLoader设置成app的ClassLoader的parent，即可拦截所有类加载的动作，从而实现动态增量加载。</p>
+<h2 id="%E5%88%9B%E5%BB%BA%E8%87%AA%E5%B7%B1%E7%9A%84classloader%E5%AE%9E%E4%BE%8B" tabindex="-1">创建自己的ClassLoader实例</h2>
+<pre class="language-java"><code class="language-java"><span class="token comment">/**<br>  * Constructs a new instance of this class with the system class loader as<br>  * its parent.<br>  */</span><br><span class="token keyword">protected</span> <span class="token class-name">ClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">this</span><span class="token punctuation">(</span><span class="token function">getSystemClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token comment">/**<br>  * Constructs a new instance of this class with the specified class loader<br>  * as its parent.<br>  *<br>  * @param parentLoader<br>  *            The {@code ClassLoader} to use as the new class loader's<br>  *            parent.<br>  */</span><br><span class="token keyword">protected</span> <span class="token class-name">ClassLoader</span><span class="token punctuation">(</span><span class="token class-name">ClassLoader</span> parentLoader<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">this</span><span class="token punctuation">(</span>parentLoader<span class="token punctuation">,</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token comment">/*<br>  * constructor for the BootClassLoader which needs parent to be null.<br>  */</span><br><span class="token class-name">ClassLoader</span><span class="token punctuation">(</span><span class="token class-name">ClassLoader</span> parentLoader<span class="token punctuation">,</span> <span class="token keyword">boolean</span> nullAllowed<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>parentLoader <span class="token operator">==</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>nullAllowed<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">NullPointerException</span><span class="token punctuation">(</span><span class="token string">"parentLoader == null &amp;&amp; !nullAllowed"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br>    parent <span class="token operator">=</span> parentLoader<span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>文章提到</p>
+<blockquote>
+<p>整个Android系统里所有的ClassLoader实例都会被一棵树关联起来，这也是ClassLoader的 双亲代理模型（Parent-Delegation Model）的特点。</p>
+</blockquote>
+<p>没提到的是，ClassLoader有三个构造器，根节点的BootClassLoader自然就是不需要parent的，如注释所写</p>
+<h2 id="%E4%BD%BF%E7%94%A8classloader%E4%B8%80%E4%BA%9B%E9%9C%80%E8%A6%81%E6%B3%A8%E6%84%8F%E7%9A%84%E9%97%AE%E9%A2%98" tabindex="-1">使用ClassLoader一些需要注意的问题</h2>
+<blockquote>
+<p>在Java中，只有当两个实例的类名、包名以及加载其的ClassLoader都相同，才会被认为是同一种类型。
+故，不可用与「加载旧类的ClassLoader」没有树的继承关系的「另一个ClassLoader」来加载新类，会出现类型不符合的异常。</p>
+</blockquote>
+<h2 id="dexclassloader-%E5%92%8C-pathclassloader" tabindex="-1">DexClassLoader 和 PathClassLoader</h2>
+<blockquote>
+<p>DexClassLoader可以加载jar/apk/dex，可以从SD卡中加载未安装的apk；
+PathClassLoader只能加载系统中已经安装过的apk；</p>
+</blockquote>
+<blockquote>
+<p>optimizedDirectory必须是一个内部存储路径，还记得我们之前说过的，无论哪种动态加载，加载的可执行文件一定要存放在内部存储。DexClassLoader可以指定自己的optimizedDirectory，所以它可以加载外部的dex，因为这个dex会被复制到内部路径的optimizedDirectory；而PathClassLoader没有optimizedDirectory，所以它只能加载内部的dex，这些大都是存在系统中已经安装过的apk里面的。</p>
+</blockquote>
+<h2 id="%E5%8A%A0%E8%BD%BD%E7%B1%BB%E7%9A%84%E8%BF%87%E7%A8%8B" tabindex="-1">加载类的过程</h2>
+<p>ClassLoader.loadClass() -&gt; BaseDexClassLoader.findClass() -&gt; DexPathList-&gt;findClass()</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">Class</span> <span class="token function">findClass</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">Element</span> element <span class="token operator">:</span> dexElements<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token class-name">DexFile</span> dex <span class="token operator">=</span> element<span class="token punctuation">.</span>dexFile<span class="token punctuation">;</span><br>            <span class="token keyword">if</span> <span class="token punctuation">(</span>dex <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                <span class="token class-name">Class</span> clazz <span class="token operator">=</span> dex<span class="token punctuation">.</span><span class="token function">loadClassBinaryName</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> definingContext<span class="token punctuation">)</span><span class="token punctuation">;</span><br>                <span class="token keyword">if</span> <span class="token punctuation">(</span>clazz <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                    <span class="token keyword">return</span> clazz<span class="token punctuation">;</span><br>                <span class="token punctuation">}</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>        <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token keyword">public</span> <span class="token class-name">Class</span> <span class="token function">loadClassBinaryName</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">,</span> <span class="token class-name">ClassLoader</span> loader<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token function">defineClass</span><span class="token punctuation">(</span>name<span class="token punctuation">,</span> loader<span class="token punctuation">,</span> mCookie<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token keyword">private</span> <span class="token keyword">native</span> <span class="token keyword">static</span> <span class="token class-name">Class</span> <span class="token function">defineClass</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">,</span> <span class="token class-name">ClassLoader</span> loader<span class="token punctuation">,</span> <span class="token keyword">int</span> cookie<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h2 id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" tabindex="-1">参考资料</h2>
+<p>本系列为笔记文，文中有大量的源码解析都是引用的其他作者的成果，详见下方参考资料。</p>
+<ul>
+<li><a href="https://zhuanlan.zhihu.com/p/20524252">https://zhuanlan.zhihu.com/p/20524252</a></li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

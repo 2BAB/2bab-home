@@ -1,0 +1,170 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #10 Android 开发工具兼容性" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2021-08-07-android-dev-tool-composition-on-m1/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #10 Android 开发工具兼容性 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #10 Android 开发工具兼容性</h1>
+    <div class="italic text-gray-500">
+      2021/08/07
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。发现问题，解决问题，传递新知，提高效率。</em></p>
+<p>由于几个月前电脑 CPU 烧了，被迫换了 M1 的 Mac Mini，所以整个开发环境重新搭建了一遍。趁这个机会，我想整理几个基础工具的版本搭配策略、兼容性、以及在 M1 芯片上的表现。对于版本搭配和兼容性的一些讨论不局限于当前使用的版本和平台。</p>
+<p>下方提及的版本分别是：</p>
+<ul>
+<li>Zulu JDK: 11.0.11</li>
+<li>Kotlin: 1.5.21</li>
+<li>Gradle: 7.1.1</li>
+<li>Android Gradle Plugin（AGP）: 7.0 &amp; 7.1</li>
+<li>Android Studio: Arctic Fox 2020.3.1 &amp; BumbleBee 2021.1.1 Canary 6</li>
+</ul>
+<h2 id="jdk" tabindex="-1">JDK</h2>
+<p><strong>自 AGP 7.0 起，JDK 11 便是最低要求</strong>。JDK 11 成为 LTS（Long-term Support) 版本已经有将近 3 年历史（Sep 2018），自身经历了 12 个小版本（11.0.12）的迭代目前相对成熟了。作为对比，上一个 LTS 的 JDK 8 2014 年发布，已经陪着我们走过了 7 年时光和 300 个小版本迭代。事实上作为 Android 开发者，即便目前项目是 Java 为主的情况，一般 Language Level 也仅 target to 1.8（一些 9-12 的特性 D8、R8 有支持，Android 11 12 也有融入）。Android 官方虽然说不会放弃 Java，但实际上对 Kotlin 的支持确实更给力。</p>
+<p>从这个角度来看，JDK 11 带来给我们的更多是：</p>
+<ul>
+<li>Kotlin Compiler、Gradle、IDE 层面上性能的升级；</li>
+<li>JDK 8 将停止维护的情况下（3 年后），安全层面的持续保障；</li>
+<li>适应新的发布机制，每半年一个小版本，三年一个 LTS 大版本，减少历史包袱跑得更快；</li>
+</ul>
+<p>而 JDK 的升级策略我认为是：</p>
+<ul>
+<li><strong>保守派：如果不在意新语言特性，可以等每年 AGP 升级的情况来决定 JDK 的版本，因为 IDE 一般 bundle 了一个 JDK，Kotlin 编译器、Gradle 一直追着最新 JDK 并有不错的向下兼容——所以根据木桶原理等 AGP 升级了再升即可，目前看来 AGP 可能也只跟进比较稳定的 LTS 版本；</strong></li>
+<li><strong>激进派：Gradle 支持后即可测试；</strong></li>
+</ul>
+<p>在 M1 Mac 上，由于 Oracle 还未有的 ARM64 版本，所以目前主流的做法是安装 <a href="https://www.azul.com/downloads/?package=jdk">Azul</a> 维护的 <code>Zulu JDK11</code>。</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210805160844.png?imageslim" alt=""></p>
+<p>需要注意的是，常用的 JDK 管理工具 <code>SDKMAN!</code> 在我的测试中依旧跑在 <code>Rosetta 2</code> 的转译环境中。这会造成即便你是安装的 <code>Zulu JDK11</code>，通过 <code>SDKMAN!</code> 的脚本启动依然会显示 Gradle <code>java</code> 的进程跑在 Intel ABI 下。故目前建议从官网下载安装，等后续配套工具支持后再考虑切换。</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210805162529.png?imageslim" alt=""></p>
+<h2 id="kotlin" tabindex="-1">Kotlin</h2>
+<p>Kotlin 的版本搭配限制相对不多，一般我考虑三个点：</p>
+<ul>
+<li>有没有特别吸引人的新功能，比如刚放出稳定版的 Coroutine、Flow，或者新版本 Kotlin Multiplatform Mobile 的更好支持等；</li>
+<li>用不用大迭代的第一个版本，例如观察刚发布时的 <code>1.4.0</code>，<code>1.5.0</code>，这条其实广泛适用于各类 Library；</li>
+<li>Gradle 目前 bundle/test 的 Kotlin 的版本，例如最新的 7.1.1 stable 依旧是用的 <code>1.4.31</code> 的 Kotlin（7.2 RC 则跳到 <code>1.5.21</code> 了）；</li>
+</ul>
+<p>关于最后一点，如果使用的 Kotlin 版本和 Gradle bundle 的不一致，会出现如下 Warning：</p>
+<blockquote>
+<p>w: Runtime JAR files in the classpath should have the same version. &gt;These files were found in the classpath:
+...
+/Users/2bab/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/1.4.31/84ce8e85f6e84270b2b501d44e9f0ba6ff64fa71/kotlin-stdlib-jdk7-1.4.31.jar (version 1.4)
+/Users/2bab/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/1.5.21/2f537cad7e9eeb9da73738c8812e1e4cf9b62e4e/kotlin-stdlib-1.5.21.jar (version 1.5)
+/Users/2bab/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-common/1.5.21/cc8bf3586fd2ebcf234058b9440bb406e62dfacb/kotlin-stdlib-common-1.5.21.jar (version 1.5)
+w: Consider providing an explicit dependency on kotlin-reflect 1.5 to prevent strange errors
+w: Some runtime JAR files in the classpath have an incompatible version. Consider removing them from the</p>
+</blockquote>
+<p>用一个简单的例子看下问题是怎么发生的：</p>
+<pre class="language-kotlin"><code class="language-kotlin">plugins <span class="token punctuation">{</span><br>    <span class="token function">id</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"com.android.application"</span></span><span class="token punctuation">)</span><br>    <span class="token comment">// 没有指定版本，用的就是 Gradle bundle 的版本，</span><br>    <span class="token comment">// Gradle 7.1.1 对应的就是 Kotlin 1.4.31 的各种类库和编译工具</span><br>    <span class="token function">kotlin</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"android"</span></span><span class="token punctuation">)</span> <br><span class="token punctuation">}</span><br><br>dependencies <span class="token punctuation">{</span><br>    <span class="token comment">// 而这里我们却用了 1.5.21 的最新版 Kotlin，就会出现如上问题</span><br>    <span class="token function">implementation</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"org.jetbrains.kotlin:kotlin-stdlib:1.5.21"</span></span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p>解决起来也很简单：</p>
+<pre class="language-kotlin"><code class="language-kotlin">plugins <span class="token punctuation">{</span><br>    <span class="token function">id</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"com.android.application"</span></span><span class="token punctuation">)</span><br>    <span class="token comment">// 手动指定版本</span><br>    <span class="token function">kotlin</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"android"</span></span><span class="token punctuation">)</span> version <span class="token string-literal singleline"><span class="token string">"1.5.21"</span></span><br><span class="token punctuation">}</span></code></pre>
+<p>Kotlin <a href="https://kotlinlang.org/docs/gradle.html">官方的文档</a>直接就演示了加版本号的写法。<strong>但是，这个版本是 Kotlin 基于 Gradle 测试通过，而 Gradle 自身还没有基于它<a href="https://docs.gradle.org/7.1.1/userguide/compatibility.html">测试</a>过并打包进去（见 Gradle 部分的配图），若出现了问题可能难以解决</strong>：</p>
+<p>所以我推荐的升级策略是：</p>
+<ul>
+<li><strong>保守派：等 Gradle 升级的时候再升级，例如 1.5.0 到 1.5.21 中间仅隔了两个月，Gradle 就跟进了；</strong></li>
+<li><strong>激进派：有实用的新功能或者大版本迭代后的第一个补丁版本就升。</strong></li>
+</ul>
+<h2 id="gradle" tabindex="-1">Gradle</h2>
+<p>前面提到 Kotlin 的官方文档解释了各类和 Gradle 配合兼容的情况，反过来 Gradle 这边也有一个标明了 Java、Kotlin、Android 等各语言和平台的<a href="https://docs.gradle.org/7.1.1/userguide/compatibility.html">支持文档</a>。</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210805214442.png?imageslim" alt=""></p>
+<p>像前面提到的 Java 版本支持，Kotlin 版本支持在这里便一目了然。除了 Kotlin 的支持会稍落后一两个月，其他工具的最新版本兼容都不成问题。而 Gradle 自身的向下兼容我觉得还不错，我基本上每个版本都升级。而上层的 AGP DSL，特别是老版本，则挺经常有大改动（好在 7.0 后终于强多了）。</p>
+<p>所以我推荐的升级策略是：</p>
+<ul>
+<li><strong>保守派：根据 AGP 的<a href="https://developer.android.com/studio/releases/gradle-plugin">文档</a>按最低版本进行升级（详见下图），例如 AGP 4.2.0+ 对应 Gradle 6.7.1+；</strong></li>
+<li><strong>激进派：每个补丁版本(x.y.1/2/3)或者每个版本都升（Gradle 没有 -betaX 的版本习惯，一般就是 Nightly 和 RC）。</strong></li>
+</ul>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210806211434.png?imageslim" alt=""></p>
+<p>另外，Gradle 7.0 后的版本原生支持了 M1，我个人的使用体验还不错。</p>
+<h2 id="android-gradle-plugin" tabindex="-1">Android Gradle Plugin</h2>
+<p>AGP 的版本搭配限制我们在前面基本都介绍完了，以 7.0 为例，我们来看官方 Release Note 的兼容说明：</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210806214019.png?imageslim" alt=""></p>
+<p>额外补充一点：从 AGP 7.0 起，其版本会<a href="https://android-developers.googleblog.com/2020/12/announcing-android-gradle-plugin.html">同步 Gradle 的 major 版本</a>，严格遵守 Semantic Versioning 体系（之前同步的是 AS 的版本）。也即 AGP 7.x 会适配 Gradle 7.x 的版本。不过 AGP 的发布时间依旧是随着 AS 一起发布，并且目前来看其 alpha/beta 的数字是跟随 AS 的，所以其实可以当成三者形成了某种默契的同步机制。</p>
+<p>所以我推荐的升级策略是：</p>
+<ul>
+<li><strong>保守派：随 AS 正式版升级（或适当跳过第一个大版本更迭）；</strong></li>
+<li><strong>激进派：每个版本都升，或从 alpha/beta 开始升级，例如要做 Gradle 插件适配。</strong></li>
+</ul>
+<h2 id="android-studio" tabindex="-1">Android Studio</h2>
+<p>AS 基本上没有什么搭配限制，只要你用的之前正式版的 AGP，AS 就可以向下兼容。我推荐的升级策略是：</p>
+<ul>
+<li><strong>保守派：适当跳过第一个大版本更迭；</strong></li>
+<li><strong>激进派：每个版本都升，或从 alpha/beta 开始升级，例如要做 IDE 插件适配或者对 Compose、调试工具新功能等有需求的。</strong></li>
+</ul>
+<p>另外，由于 AS 基于的 IDEA 社区版二次开发，整体稳定性、新特性支持的速度都不如 IDEA Ultimate，例如 Gradle 的 nesting Composite Build 目前就不在 AS 支持范围，见该 <a href="https://issuetracker.google.com/issues/189366120">issue</a>。</p>
+<p>最后，自 Arctic Fox 2020.3.1 起，AS 原生支持了 M1，但如果想有更流畅的体验，我认为 BumbleBee 2021.1.1 Canary 效果更好一些。</p>
+<h2 id="idea" tabindex="-1">IDEA</h2>
+<p>IDEA 的主要搭配限制来自于 Android Plugin（Android IDE 插件）的版本适配。一般来说，在 AS 新的正式版本发布之后，下一个 IDEA 的正式版本就会带上该新版插件，从而对Android 开发包括 AGP 做支持。</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210807154410.png?imageslim" alt=""></p>
+<p>偶尔也有等比较久的时候，比如今年 AS&amp;AGP 4.2 在 4 月发布，而直到 7 月 IDEA 2021.2 <a href="https://www.jetbrains.com/idea/whatsnew/#Other">发布</a>时，才更新了 Android Plugin，官方的说法是 Google 放出 AGP 4.2 的源码时间晚了些，导致没赶上 2021.1 的版本。</p>
+<p>我推荐的升级策略是：</p>
+<ul>
+<li><strong>保守派：仅升级正式版本；</strong></li>
+<li><strong>激进派：从 EAP 或 RC 开始升级，例如会获得比较好的 Kotlin 支持、更早的 AGP 支持，以及 M1 平台的优化等。</strong></li>
+</ul>
+<p>最后，2021.2 也是让我在 M1 感觉终于不再有什么卡顿的版本了。</p>
+<h2 id="%E6%80%BB%E7%BB%93" tabindex="-1">总结</h2>
+<p>我自己由于使用 M1 的平台 + 适配一些 <a href="https://github.com/2BAB">Gradle Plugin</a>，经常会使用 beta 甚至 alpha 的 AGP（作为 Runtime 的 library），配合最新的 IDEA Ultimate 开发起来还是挺顺手。</p>
+<p>而公司项目，现阶段 x86 平台我觉得可以使用如下配置，ARM M1 则根据上文调整对应的工具版本：</p>
+<ul>
+<li>JDK 11（由于 AGP 升了迟早要升级）</li>
+<li>Gradle 7.1.1（7.2 支持 1.5.21 后可以升级）</li>
+<li>Kotlin 1.4.31</li>
+<li>AGP 4.2.2（7.0 稳定了新版的 Variant API，马上 7.1 也稳定新版的 DSL，不需要 Compose 的话可以观望观望）</li>
+<li>AS 4.2.2（不需要 Compose 的话可以观望观望）</li>
+<li>IDEA 2021.2</li>
+</ul>
+<p><em>欢迎关注我的<a href="/about"> Github / 公众号 / 播客 / 微博 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

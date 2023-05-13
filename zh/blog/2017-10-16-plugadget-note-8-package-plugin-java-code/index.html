@@ -1,0 +1,109 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="插件化笔记 #8 - 插件的代码编译" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-10-16-plugadget-note-8-package-plugin-java-code/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>插件化笔记 #8 - 插件的代码编译 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>插件化笔记 #8 - 插件的代码编译</h1>
+    <div class="italic text-gray-500">
+      2017/10/16
+    </div>
+    <div>
+      <blockquote>
+<p>Demo: <a href="https://github.com/2BAB/Android-Plugin-Dev-Notes">https://github.com/2BAB/Android-Plugin-Dev-Notes</a></p>
+</blockquote>
+<h2 id="%E8%83%8C%E6%99%AF" tabindex="-1">背景</h2>
+<p>为什么打包还要讲？因为我发现大家都没说过这回事啊...而且有些开源的插件化框架并没有看到有仔细处理这块，导致自己研究的时候很困惑。具体来说，打包这块也是分两块，插件代码和插件资源的打包，这节先看插件代码的打包。</p>
+<p>一般地，我们的插件，和普通的 Android Library 不同，是直接声明成 Application。因为只有这样，才能简单地借助原有的（Application）打包插件来打出 Dex 和资源编译。而打包 Application，对于插件而言，会打入很多不必要的二方、三方依赖。有人会说，用 provided 声明插件模块的依赖不就好了，但这仅仅只能是解决 .jar 的模块，.aar 的依赖是不支持 provided 的。所以我们要解决的问题，也就很明显了，实现一个通用的打包仲裁：</p>
+<p>&lt;!--more--&gt;</p>
+<ul>
+<li>Atlas、VirtualApk 等方案，都是把大部分的依赖打到主工程，插件本身只打入一些只有本插件才会用到的依赖；但他们的实现有所不同：
+<ul>
+<li>Atlas 添加了 bundleCompile、providedCompile 的 scope，插件方可以更友好地去声明依赖的形式；</li>
+<li>VirtualApk 只是对主工程的依赖作分析，主工程有的就不打进去，主工程没有的就打进去，相对来讲比较粗暴；</li>
+</ul>
+</li>
+<li>不同的方案其实主要是自由度的选择不同，没有说好坏之分；</li>
+<li>实现原理上，这里以 VirtualApk 为例，基于 Transform 来做，下面就看一下最基本的实现。</li>
+</ul>
+<h2 id="transform-api" tabindex="-1">Transform API</h2>
+<blockquote>
+<p>To insert a transform into a build, you simply create a new class implementing one of the Transform interfaces, and register it with android.registerTransform(theTransform) or android.registerTransform(theTransform, dependencies).</p>
+<p>A Transform that processes intermediary build artifacts.
+For each added transform, a new task is created. The action of adding a transform takes care of handling dependencies between the tasks. This is done based on what the transform processes. The output of the transform becomes consumable by other transforms and these tasks get automatically linked together.</p>
+<p>The Transform indicates what it applies to (content, scope) and what it generates (content).</p>
+<p>A transform receives input as a collection TransformInput, which is composed of JarInputs and DirectoryInputs. Both provide information about the QualifiedContent.Scopes and QualifiedContent.ContentTypes associated with their particular content.</p>
+<p>The output is handled by TransformOutputProvider which allows creating new self-contained content, each associated with their own Scopes and Content Types. The content handled by TransformInput/Output is managed by the transform system, and their location is not configurable.</p>
+<p>It is best practice to write into as many outputs as Jar/Folder Inputs have been received by the transform. Combining all the inputs into a single output prevents downstream transform from processing limited scopes.</p>
+<p>While it's possible to differentiate different Content Types by file extension, it's not possible to do so for Scopes. Therefore if a transform request a Scope but the only available Output contains more than the requested Scope, the build will fail.
+If a transform request a single content type but the only available content includes more than the requested type, the input file/folder will contain all the files of all the types, but the transform should only read, process and output the type(s) it requested.</p>
+<p>Additionally, a transform can indicate secondary inputs/outputs. These are not handled by upstream or downstream transforms, and are not restricted by type handled by transform. They can be anything.</p>
+<p>It's up to each transform to manage where these files are, and to make sure that these files are generated before the transform is called. This is done through additional parameters when register the transform.</p>
+<p>These secondary inputs/outputs allow a transform to read but not process any content. This can be achieved by having getScopes() return an empty list and use getReferencedScopes() to indicate what to read instead.</p>
+</blockquote>
+<h2 id="%E6%A0%B9%E6%8D%AE%E6%8F%92%E4%BB%B6%E5%8C%85%E5%90%8D%E7%9A%84%E6%89%93%E5%8C%85%E8%BF%87%E6%BB%A4%E5%99%A8" tabindex="-1">根据插件包名的打包过滤器</h2>
+<p>在插件打包时，引入下面这段脚本 (app/build.gradle)，用来过滤掉除了插件包名以外的其他类库和文件。</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">////////////////////////////////// Class Filter ///////////////////////////////////////</span><br><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>api<span class="token punctuation">.</span>transform<span class="token punctuation">.</span></span><span class="token operator">*</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>pipeline<span class="token punctuation">.</span></span><span class="token class-name">TransformManager</span><br><span class="token keyword">import</span> <span class="token namespace">groovy<span class="token punctuation">.</span>io<span class="token punctuation">.</span></span><span class="token class-name">FileType</span><br><span class="token keyword">import</span> <span class="token namespace">org<span class="token punctuation">.</span>apache<span class="token punctuation">.</span>commons<span class="token punctuation">.</span>io<span class="token punctuation">.</span></span><span class="token class-name">FileUtils</span><br><br><span class="token keyword">class</span> <span class="token class-name">StripClassAndResTransform</span> <span class="token keyword">extends</span> <span class="token class-name">Transform</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">private</span> <span class="token class-name">Project</span> project<br><br>    <span class="token class-name">StripClassAndResTransform</span><span class="token punctuation">(</span><span class="token class-name">Project</span> project<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">this</span><span class="token punctuation">.</span>project <span class="token operator">=</span> project<br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token class-name">String</span> <span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> 'stripClassAndRes'<br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">QualifiedContent<span class="token punctuation">.</span>ContentType</span><span class="token punctuation">></span></span> <span class="token function">getInputTypes</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token class-name">TransformManager</span><span class="token punctuation">.</span><span class="token constant">CONTENT_JARS</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token class-name">Set</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">QualifiedContent<span class="token punctuation">.</span>Scope</span><span class="token punctuation">></span></span> <span class="token function">getScopes</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token class-name">TransformManager</span><span class="token punctuation">.</span><span class="token constant">SCOPE_FULL_PROJECT</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">boolean</span> <span class="token function">isIncremental</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token boolean">false</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">void</span> <span class="token function">transform</span><span class="token punctuation">(</span><span class="token keyword">final</span> <span class="token class-name">TransformInvocation</span> transformInvocation<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">TransformException</span><span class="token punctuation">,</span> <span class="token class-name">InterruptedException</span><span class="token punctuation">,</span> <span class="token class-name">IOException</span> <span class="token punctuation">{</span><br><br>        def applicationId <span class="token operator">=</span> 'com<span class="token operator">/</span>example<span class="token operator">/</span>multiclassloader'<br><br><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token function">isIncremental</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            transformInvocation<span class="token punctuation">.</span>outputProvider<span class="token punctuation">.</span><span class="token function">deleteAll</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br><br>        transformInvocation<span class="token punctuation">.</span>inputs<span class="token punctuation">.</span>each <span class="token punctuation">{</span><br>            it<span class="token punctuation">.</span>directoryInputs<span class="token punctuation">.</span>each <span class="token punctuation">{</span> directoryInput <span class="token operator">-></span><br>                directoryInput<span class="token punctuation">.</span>file<span class="token punctuation">.</span>traverse <span class="token punctuation">(</span>type<span class="token operator">:</span> <span class="token class-name">FileType</span><span class="token punctuation">.</span><span class="token constant">FILES</span><span class="token punctuation">)</span><span class="token punctuation">{</span><br>                    def entryName <span class="token operator">=</span> it<span class="token punctuation">.</span>path<span class="token punctuation">.</span><span class="token function">substring</span><span class="token punctuation">(</span>directoryInput<span class="token punctuation">.</span>file<span class="token punctuation">.</span>path<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><br>                    def destName <span class="token operator">=</span> directoryInput<span class="token punctuation">.</span>name <span class="token operator">+</span> <span class="token char">'/'</span> <span class="token operator">+</span> entryName<br>                    def dest <span class="token operator">=</span> transformInvocation<span class="token punctuation">.</span>outputProvider<span class="token punctuation">.</span><span class="token function">getContentLocation</span><span class="token punctuation">(</span><br>                            destName<span class="token punctuation">,</span> directoryInput<span class="token punctuation">.</span>contentTypes<span class="token punctuation">,</span> directoryInput<span class="token punctuation">.</span>scopes<span class="token punctuation">,</span> <span class="token class-name">Format</span><span class="token punctuation">.</span><span class="token constant">DIRECTORY</span><span class="token punctuation">)</span><br>                    <span class="token comment">// check whether it is a bundle-file</span><br>                    <span class="token keyword">if</span> <span class="token punctuation">(</span>entryName<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span>applicationId<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                        <span class="token class-name">FileUtils</span><span class="token punctuation">.</span><span class="token function">copyFile</span><span class="token punctuation">(</span>it<span class="token punctuation">,</span> dest<span class="token punctuation">)</span><br>                    <span class="token punctuation">}</span><br>                <span class="token punctuation">}</span><br>            <span class="token punctuation">}</span><br><br>            it<span class="token punctuation">.</span>jarInputs<span class="token punctuation">.</span>each <span class="token punctuation">{</span> jarInput <span class="token operator">-></span><br>                <span class="token comment">// we don't need libs currently</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br>project<span class="token punctuation">.</span>android<span class="token punctuation">.</span><span class="token function">registerTransform</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">StripClassAndResTransform</span><span class="token punctuation">(</span>project<span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p>最后要做的就是，正常地打包 <code>./gradlew assembleDebug</code> （工程名是 pluginByApk），然后看看打出来的 Apk 中的 Dex 文件是否包含了其他的依赖（例如 Support 包的文件），再用上一节的 Demo 测试一下即可（即 push 这个插件 apk 到 Downloads 文件夹，修改 bundleClassloader 加载的 apk 文件）。</p>
+<h2 id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" tabindex="-1">参考资料</h2>
+<ul>
+<li><a href="https://afterecho.uk/blog/create-a-standalone-gradle-plugin-for-android-part-4-the-transform-api.html">https://afterecho.uk/blog/create-a-standalone-gradle-plugin-for-android-part-4-the-transform-api.html</a></li>
+<li><a href="https://github.com/didi/VirtualAPK/blob/HEAD/virtualapk-gradle-plugin/src/main/groovy/com.didi.virtualapk/transform/StripClassAndResTransform.groovy">https://github.com/didi/VirtualAPK/blob/HEAD/virtualapk-gradle-plugin/src/main/groovy/com.didi.virtualapk/transform/StripClassAndResTransform.groovy</a></li>
+<li><a href="http://google.github.io/android-gradle-dsl/javadoc/current/">http://google.github.io/android-gradle-dsl/javadoc/current/</a></li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

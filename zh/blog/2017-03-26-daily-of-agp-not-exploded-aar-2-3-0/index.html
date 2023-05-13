@@ -1,0 +1,77 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #2 AGP 2.3.0 再无 exploded-aar" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-03-26-daily-of-agp-not-exploded-aar-2-3-0/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #2 AGP 2.3.0 再无 exploded-aar | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #2 AGP 2.3.0 再无 exploded-aar</h1>
+    <div class="italic text-gray-500">
+      2017/03/26
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<p>升级 Android Gradle  Plugin 至 2.3.0 后，会发现 exploded-aar 这个 build 目录下的文件夹大部分情况下不存在了（但是仍然有时候会出现一两个 aar 的解压包，有些诡异）。这个改动最相关的原因是 2.3.0 默认开启了 Build Cache，具体在<a href="http://tools.android.com/tech-docs/build-cache">这里</a>有说明。</p>
+<p>&lt;!-- more --&gt;</p>
+<p>而我们之前有一个需求就是从 app module 的 exploded-aar 的 assets 中收集其他 module 的一些信息，现在也无法进行了。Google 一下会发现也有人<a href="https://code.google.com/p/android/issues/detail?id=228404">怨声载道</a>，并且有人给的<a href="http://likfe.com/2017/03/15/android-studio-exploded-aar/">解法</a>是关掉 Build Cache。这显然是不满足我们提高生产力的需求滴，于是我研究了一下相关的源码。</p>
+<p>搜索 BuildCache 字样不难发现，Library 相关的 Task 中有这样一段代码：</p>
+<p>[-&gt;PrepareLibraryTask.java]</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">/**<br> * Returns {@code true} if the build cache should be used for the prepare-library task, and<br> * {@code false} otherwise.<br> */</span><br><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">boolean</span> <span class="token function">shouldUseBuildCache</span><span class="token punctuation">(</span><br>            <span class="token keyword">boolean</span> buildCacheEnabled<span class="token punctuation">,</span> <span class="token annotation punctuation">@NonNull</span> <span class="token class-name">MavenCoordinates</span> mavenCoordinates<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// We use the build cache only when it is enabled *and* the Maven artifact is not a snapshot</span><br>    <span class="token comment">// version (to address http://b.android.com/228623)</span><br>    <span class="token keyword">return</span> buildCacheEnabled <span class="token operator">&amp;&amp;</span> <span class="token operator">!</span>mavenCoordinates<span class="token punctuation">.</span><span class="token function">getVersion</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">endsWith</span><span class="token punctuation">(</span><span class="token string">"-SNAPSHOT"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>所以第一个问题就解了，有用户提出 Cache 应该考虑到 Maven 仓库的发版习惯，对于 SNAPSHOT 这种经常会同版本多发版的情况需要忽略，采用降级方案（使用原来的 exploded-aar）。</p>
+<p>那指望从这里去解决问题是没救了，但是既然之前是从 assets 里做的数据收集，那从 raw 做是不是也可以？毕竟这是两个极其相似的文件夹，但是在打包过程中的处理却有些迥异。</p>
+<p>我们可以看到 raw 的 merge 结果其实是在 <code>./build/intermediates/res/merged/release/raw</code>，并不走 exploded-aar，<strong>故这是一个兼容各个版本的一个取巧解决方案</strong>：如果你也需要在每个 library module 写入一些信息，并从 app module 做收集，那么 merged raw 是目前比较好使的一个暂存方案，就不要指望 exploded-aar 啦（除非你全部都发的是 SNAPSHOT）。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

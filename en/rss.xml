@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>El&#39;s Blog</title>
+  <subtitle>El is blogging about tech and life.</subtitle>
+  <link href="https://2bab.me/en/rss.xml" rel="self"/>
+  <link href="https://2bab.me/"/>
+  <updated>2014-12-10T00:00:00Z</updated>
+  <id>https://2bab.me/</id>
+  <author>
+    <name>2BAB</name>
+  </author>
+  
+  <entry>
+    <title>Hello World</title>
+    <link href="https://2bab.me/en/blog/2014-12-10-hello-world/"/>
+    <updated>2014-12-10T00:00:00Z</updated>
+    <id>https://2bab.me/en/blog/2014-12-10-hello-world/</id>
+    <content type="html">&lt;p&gt;Hello World!&lt;/p&gt;
+&lt;p&gt;I&#39;m working on bring some featured blog posts from Mandarin to English.&lt;/p&gt;
+&lt;p&gt;Stay tuned.&lt;/p&gt;
+&lt;p&gt;El&lt;/p&gt;
+</content>
+  </entry>
+</feed>

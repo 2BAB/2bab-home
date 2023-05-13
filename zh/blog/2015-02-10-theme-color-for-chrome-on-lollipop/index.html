@@ -1,0 +1,85 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Android 5.0 以上 Chrome AppBar 颜色定制" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2015-02-10-theme-color-for-chrome-on-lollipop/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Android 5.0 以上 Chrome AppBar 颜色定制 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Android 5.0 以上 Chrome AppBar 颜色定制</h1>
+    <div class="italic text-gray-500">
+      2015/02/10
+    </div>
+    <div>
+      <p>放假在家用回了 Nexus 4，在 Lollipop 作为日常系统使用一段时间后，发现了一个有意思的东西。如下图，正常情况下使用 Chrome 浏览网站时，多任务的预览界面上，Chrome 的 App bar 是灰色一片。而其背后的知乎、Gmail因为设定了 colorPrimary 而极具辨识度。</p>
+<p><img src="https://ww1.sinaimg.cn/large/005YhI8igy1fvhj8eowjjj31kw0vp7az" alt="未开启“合并标签页和应用”的界面，开启后的界面，Overview界面。">
+&lt;div style=&quot;text-align:center;&quot;&gt;&lt;i&gt;未开启“合并标签页和应用”的界面 / 开启后的界面 / Overview&lt;/i&gt;&lt;/div&gt;</p>
+<p>&lt;!--more--&gt;</p>
+<p>但是在浏览 V2EX 时发现，Chrome的 App bar 竟然不是之前的灰色,类似的情况出现在 Android Police 和 但大的博客。</p>
+<p><img src="https://ww1.sinaimg.cn/large/005YhI8igy1fvhj8v269oj31kw0vp7a6" alt="V2EX / @但丁不淡定 的博客 / Overview">
+&lt;div style=&quot;text-align:center;&quot;&gt;&lt;i&gt;V2EX / @但丁不淡定 的博客 / Overview&lt;/i&gt;&lt;/div&gt;</p>
+<p>查了一发 Chrome 的更新历史，发现只要满足以下条件，即可定义 Overview App Bar 颜色，同时也影响了 Chrome 内的 toolbar / statusbar 颜色。</p>
+<blockquote>
+<ol>
+<li>系统要求 Android 5.0 以上</li>
+<li>未开启“合并标签页和应用” 的 Chrome 39 以上</li>
+<li>在网站<code>&lt;head&gt;</code>中添加自定义主题颜色<code>&lt;meta name=&quot;theme-color&quot; content=&quot;#262a30&quot;&gt;</code></li>
+</ol>
+</blockquote>
+<p><img src="http://engineering-blog-2bab.qiniudn.com/theme-color-2bab.jpg" alt="本站的效果">
+&lt;div style=&quot;text-align:center;&quot;&gt;&lt;i&gt;本站使用的颜色及效果&lt;/i&gt;&lt;/div&gt;</p>
+<p>随着 Lollipop 的普及以及默认 Chrome 浏览器的支持，相信这个特性会得到越来越多的网站支持，带来原生应用般辨识度的同时也增添了网站的个性。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

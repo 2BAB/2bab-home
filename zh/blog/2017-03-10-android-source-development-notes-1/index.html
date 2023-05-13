@@ -1,0 +1,124 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Android 源码笔记 #1 编译&amp;烧录" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-03-10-android-source-development-notes-1/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Android 源码笔记 #1 编译&amp;烧录 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Android 源码笔记 #1 编译&amp;烧录</h1>
+    <div class="italic text-gray-500">
+      2017/03/10
+    </div>
+    <div>
+      <p>由于最近工作需要 + 自己也挺感兴趣，折腾起 Android 的下层开发。</p>
+<h2 id="%E7%8E%AF%E5%A2%83%E6%8F%8F%E8%BF%B0%EF%BC%9A" tabindex="-1">环境描述：</h2>
+<ul>
+<li>macOS 10.12 Sierra</li>
+<li>Xcode 8（安装各种环境会用到，然而正式编译时没用这个）</li>
+<li>android-5.1.1_r14，LMY48M，Nexus 7（flo）</li>
+</ul>
+<p>&lt;!--more--&gt;</p>
+<h2 id="%E7%B4%A0%E6%9D%90%E5%87%86%E5%A4%87" tabindex="-1">素材准备</h2>
+<p>上 Google 爸爸的 <a href="http://source.android.com/source/initializing.html">Android Source</a> ，按 <code>Establishing a Build Environment</code> 和 <code>Downloading the Source</code> 做完即可，只有小坑如下：</p>
+<ul>
+<li><code>Creating a case-sensitive disk image</code> 时，不要用 Disk Utility 的 GUI 界面创建，大概因为版本更新了，找不到创建稀疏磁盘的选项，并且大小写那项我选了两回都没生效（？？？），<strong>请按它后续的提示直接用 shell 操作</strong>；</li>
+<li><code>Reverting from make 3.82</code> 这段，看清楚其实只有在 4.0.x 及以下系统才需要做，现在一般不会去编这个版本了<strong>可以忽略</strong>；</li>
+<li><code>Initializing a Repo client</code> 就是下源码啦，可以使用<a href="https://mirrors.tuna.tsinghua.edu.cn/help/AOSP/">清华大学的 AOSP 镜像</a>，比较不会碰到下载的各种问题（不过我是公司网，直连速度喜人 4M/s）。</li>
+</ul>
+<h2 id="%E7%BC%96%E8%AF%91" tabindex="-1">编译</h2>
+<p>按着 Android Source 的步骤，现在终于要 <code>Preparing to Build</code> 啦，注意到其实还有个页面可能没看仔细——<a href="https://source.android.com/source/requirements.html">Requirements</a>，这里有坑的：</p>
+<blockquote>
+<p><strong>Mac OS (Intel/x86)</strong></p>
+<ul>
+<li>
+<p>Android 6.0 (Marshmallow) - AOSP master: Mac OS v10.10 (Yosemite) or later with Xcode 4.5.2 and Command Line Tools</p>
+</li>
+<li>
+<p>Android 5.x (Lollipop): Mac OS v10.8 (Mountain Lion) with Xcode 4.5.2 and Command Line Tools</p>
+</li>
+<li>
+<p>Android 4.1.x-4.3.x (Jelly Bean) - Android 4.4.x (KitKat): Mac OS v10.6 (Snow Leopard) or Mac OS X v10.7 (Lion) and Xcode 4.2 (Apple's Developer Tools)</p>
+</li>
+<li>
+<p>Android 1.5 (Cupcake) - Android 4.0.x (Ice Cream Sandwich): Mac OS v10.5 (Leopard) or Mac OS X v10.6 (Snow Leopard) and the Mac OS X v10.5 SDK</p>
+</li>
+</ul>
+</blockquote>
+<p>按这个表，Google 其实推荐 5.x 6.0 使用 4.5.2 的 Xcode 及其 SDK 来编译，然而现代 macOS 早已不支持这些老东西了：</p>
+<ul>
+<li>StackOverflow 上各种教你拷贝 10.8 的 Xcode SDK、改 <code>build/core/combo/mac_version.mk</code> ，我试了一早上各种版本，没成</li>
+<li>有些民间教程表示自己啥也没改，10.10 10.11 SDK 完美运行没有问题，我也是没成</li>
+<li><strong>重点来了</strong>，<a href="http://stackoverflow.com/questions/31589866/running-aosp-build-on-mac-yosemite-and-later/36709862#36709862">这个答案</a> 有理有据，他直接用旧版本的 Xcode，具体操作是下个旧版的 DMG（链接可能无效，自己上苹果的开发者页面找一下即可） 然后挂载上来，路径是 /Volumes/Xcode/（懒得安装到本地），最后在 shell 中选择这个作为当前 Xcode 的版本 <code>sudo xcode-select -s /Volumes/Xcode/Xcode.app/Contents/Developer</code></li>
+</ul>
+<p>目测一切奇怪的环境问题都可以用这个终极办法修复。</p>
+<p>最后的最后，终于是编译啦：</p>
+<pre class="language-shell"><code class="language-shell">$ <span class="token function">make</span> clobber<br>$ <span class="token builtin class-name">source</span> build/envsetup.sh<br>$ lunch aosp_arm-eng              <br>$ <span class="token function">make</span> <span class="token parameter variable">-j4</span>                               </code></pre>
+<p>需要注意的是：</p>
+<ul>
+<li><code>lunch</code> 要选对应机型和权限类型，比如我要编 Nexus 7（flo）的 debug，就是 <code>lunch aosp_flo-userdebug</code></li>
+<li>如果选的不是 ARM 虚拟机类型的编译版本，则需要加入对应机型的特定驱动一起编译，具体可以参考 <a href="https://developers.google.com/android/drivers">Google’s Nexus driver page</a> 以及这篇文章的<a href="http://www.jianshu.com/p/1c3d47b2031f">驱动部分说明</a></li>
+<li><code>make -j</code> 跟的数字有些讲究，其实根据线程池的最高效算法，CPU 密集型的线程池应该是 n + 1 的 pool 大小，由于现在的 Intel CPU 都是超线程的，例如我用的 15 寸 Mac 是 4 核 8 线程，所以就是 <code>make -j9</code></li>
+</ul>
+<h2 id="%E7%83%A7%E5%BD%95" tabindex="-1">烧录</h2>
+<p><code>Running Build</code> 这章没多少内容，也就一个命令有点坑：<code>fastboot flashall -w</code>。直接运行会抛错：<code>error: neither -p product specified nor ANDROID_PRODUCT_OUT set</code>。需要设置一下 img 的目录，按照提示 <code>export ANDROID_BUILD_OUT=&quot;path/to/your/img/folder&quot;</code> 设置即可 （-p 参数用了没成功...大概姿势有问题）</p>
+<p>OK，终于 Run 起来了。后续可以做进一步的调试了。</p>
+<h2 id="%E5%8F%82%E8%80%83%E9%93%BE%E6%8E%A5" tabindex="-1">参考链接</h2>
+<ol>
+<li><a href="http://source.android.com/source/">Downloading and Building - Android Source</a></li>
+<li><a href="https://stanfy.com/blog/build-and-run-android-from-aosp-source-code-to-a-nexus-7/">Build and Run Android from AOSP Source Code to a Nexus 7</a></li>
+</ol>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

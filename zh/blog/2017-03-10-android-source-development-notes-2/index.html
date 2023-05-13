@@ -1,0 +1,332 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Android 源码笔记 #2 源码及 Framework 结构" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-03-10-android-source-development-notes-2/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Android 源码笔记 #2 源码及 Framework 结构 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Android 源码笔记 #2 源码及 Framework 结构</h1>
+    <div class="italic text-gray-500">
+      2017/03/10
+    </div>
+    <div>
+      <h2 id="%E6%BA%90%E7%A0%81%E7%BB%93%E6%9E%84" tabindex="-1">源码结构</h2>
+<h3 id="%E6%A1%86%E6%9E%B6%E5%9B%BE" tabindex="-1">框架图</h3>
+<p>图片来自 <a href="http://source.android.com/source/">Android Source Overview</a></p>
+<p><img src="http://2bab-images.lastmayday.com/blog/2017-03-10-android-source-development-notes-2-2.jpeg" alt=""></p>
+<p>&lt;!--more--&gt;</p>
+<h3 id="%E5%8C%85%E8%AF%B4%E6%98%8E" tabindex="-1">包说明</h3>
+<p>下述说明引用自 <a href="http://www.cloudchou.com/android/post-136.html">Cloud Chou's Tech Blog</a>：</p>
+<ul>
+<li>abi # 应用二进制接口，不同的操作系统，应用二进制接口不同，因此linux上的二进制可执行文件在windows上无法执行</li>
+<li>android # 存放了一些xml文件，用于描述工程路径及其对应的远程仓库地址，repo工具将使用这些信息同步代码</li>
+<li>bionic # bionic C库,Android没有使用标准的 glibc 库，而是自己重新实现了一套 C/C++库，包括 libc libdl libm libstdc++ libthread_db</li>
+<li>bootable # 包含两个工程，recovery 和 diskinstaller，刷机或者系统升级都是由 Recovery完成的</li>
+<li>build # Android编译系统核心代码都存放在该目录，我们也将对该目录下的文件做详细分析</li>
+<li>cts # Android 兼容性测试套件标准</li>
+<li>dalvik # dalvik Java 虚拟机，Android 用的 Java 虚拟机和 PC 上用的 JVM 不一样</li>
+<li>development # 应用程序开发工具 有 eclipse 开发用的formatter配置</li>
+<li>device # 设备相关配置文件，存放规则 device/$vendor/$product</li>
+<li>docs # 网站文档</li>
+<li>external # 用到的第三方库 象 busybox bash openssl 等工具都存放在该目录</li>
+<li>filelist # 使用 godir 命令生成的索引文件</li>
+<li>frameworks # 核心框架 —— Java 及 C++ 语言，可生成 framework.jar</li>
+<li>gdk # glass 开发 sdk</li>
+<li>hardware # 部分厂家开源的硬件适配层 HAL 代码</li>
+<li>kernel # 内核源码目录 存放规则 kernel/$vendor/$product</li>
+<li>libcore # 一些有用的库 像 xml Jason luni</li>
+<li>libnativehelper # Support functions for Android's class libraries</li>
+<li>Makefile # 在顶层目录编译，利用的默认Makefile，它只是简单包含了 build/core/main.mk</li>
+<li>ndk # ndk开发工具</li>
+<li>packages # Android apk程序所在目录,象 settings，g- allery 等程序</li>
+<li>pdk # Platform Development Kit The goal of the PDK release is to help chipset vendors and OEMs to migrate to a new relelase</li>
+<li>prebuilt # x86和arm架构下预编译的一些资源</li>
+<li>prebuilts # 有clang eclipse gcc misc ndk qemu-kernel sdk tools 等子目录，交叉编译工具链所在目录</li>
+<li>sdk # sdk及模拟器</li>
+<li>system # 核心代码，包含了最小化可启动的环境，还有底层调试及检查工具，adbd 也在 system/core 目录</li>
+<li>tools # 有子目录 build 和 motodev，可能跟摩托罗拉有关</li>
+<li>vendor # 设备制造商专用的配置存放目录，存放规则 vendor/$vendor/$product</li>
+</ul>
+<h3 id="%E7%9D%80%E9%87%8D%E5%85%B3%E5%BF%83%E7%9A%84" tabindex="-1">着重关心的</h3>
+<p>如果不是像小米这样的有自己硬件的厂商，其实一般关心的层面在 <code>Android Framework</code> 和 <code>Applications</code>。映射到具体包就是 <code>frameworks</code> 和 <code>packages</code>。应用程序没啥好看的，每个版本也不尽相同，主要看看 <code>frameworks</code>，下面内容摘自 <a href="http://blog.csdn.net/liyuanjinglyj/article/details/48056579">Git_Android 的 Android核心服务解析篇(二)——Android源码结构分析</a>：</p>
+<p>应用程序框架是Android系统中的核心部分，也就是SDK部分，它会提供接口给应用程序使用，同时应用程序框架又会与系统服务，系统程序库，硬件抽象层的关联，所以其作用十分重大，应用程序框架的实现代码大部分都在/frameworks/base和/frameworks/av目录下。</p>
+<p>frameworks/base的目录结构如下所示：
+<strong>frameworks/base</strong></p>
+<ul>
+<li>api //全是XML文件，定义了API</li>
+<li>cmds //Android中的重要命令（am，app_proce等）</li>
+<li>core //核心库</li>
+<li>data //声音字体等数据文件</li>
+<li>docs //文档</li>
+<li>drm //数字版权管理</li>
+<li>graphics  //图形图像</li>
+<li>icu4j //用于解决国际化问题</li>
+<li>include //头文件</li>
+<li>keystore  //数字签名证书相关</li>
+<li>libs //库</li>
+<li>location  //地理位置</li>
+<li>media //多媒体</li>
+<li>native //本地库</li>
+<li>nfc-extras  //NFC相关</li>
+<li>obex //蓝牙传输</li>
+<li>opengl //OpenGL相关</li>
+<li>packages  //设置，TTS,VPN程序</li>
+<li>policy //锁屏界面相关</li>
+<li>sax //XML解析器</li>
+<li>services  //Android服务</li>
+<li>telephony  //电话相关</li>
+<li>test-runner  //测试相关</li>
+<li>tests //测试相关</li>
+<li>tools //工具</li>
+<li>voip //可视通话</li>
+<li>wifi //无线网络</li>
+</ul>
+<p>Android应用程序框架层的大部分实现代码被保存在/frameworks/base目录下，其实在这个目录中还有一个名为service的目录，里面的代码用于实现Android系统服务，其目录结构如下所示：</p>
+<p><strong>frameworks/base/services</strong></p>
+<ul>
+<li>common_time  //日期时间相关的服务</li>
+<li>input //输入系统服务</li>
+<li>Java //其他重要服务的Java层</li>
+<li>jni //其他重要服务的JNI层</li>
+<li>tests //测试相关</li>
+</ul>
+<p>其中java和jni两个目录分别是一些其他的服务的Java层和JNI层实现，java目录下的目录结构以及其他Android系统服务的相关说明如下所示：</p>
+<p><strong>frameworks/base/services/core/java/com/android/server</strong></p>
+<ul>
+<li>accessibility</li>
+<li>am</li>
+<li>connectivity</li>
+<li>display</li>
+<li>dreams</li>
+<li>drm</li>
+<li>input</li>
+<li>location</li>
+<li>net</li>
+<li>pm</li>
+<li>power</li>
+<li>updates</li>
+<li>usb</li>
+</ul>
+<p>\——wm</p>
+<ul>
+<li>AlarmManagerService.java//闹钟服务</li>
+<li>AppWidgetService.java//应用程序小工具服务</li>
+<li>AppWidgetServiceImpl.java</li>
+<li>AttributeCache.java</li>
+</ul>
+<p>\——BackupManagerService.java//备份服务</p>
+<ul>
+<li>BatteryService.java//电池相关服务</li>
+<li>BluetoothManagerService.java//蓝牙</li>
+<li>BootReceiver.java</li>
+<li>BrickReceiver.java</li>
+<li>CertBlacklister.java</li>
+<li>ClipboardService.java</li>
+<li>CommonTimeManagementService.java//时间管理服务</li>
+<li>ConnectivityService.java</li>
+<li>CountryDetectorService.java</li>
+<li>DevicePolicyManagerService.java</li>
+<li>DeviceStorageMonitorService.java//设备存储器监听服务</li>
+<li>DiskStatsService.java//磁盘状态服务</li>
+<li>DockObserver.java//底座监视服务</li>
+<li>DropBoxManagerService.java</li>
+<li>EntropyMixer.java</li>
+<li>EventLogTags.logtags</li>
+<li>INativeDaemonConnectorCallbacks.java</li>
+<li>InputMethodManagerService.java//输入法管理服务</li>
+<li>IntentResolver.java</li>
+<li>IntentResolverOld.java</li>
+<li>LightsService.java</li>
+<li>LocationManagerService.java//地理位置服务</li>
+<li>MasterClearReceiver.java</li>
+<li>MountService.java//挂载服务</li>
+<li>NativeDaemonConnector.java</li>
+<li>NativeDaemonConnectorException.java</li>
+<li>NativeDaemonEvent.java</li>
+<li>NetworkManagementService.java//网络管理服务</li>
+<li>NetworkTimeUpdateService.java</li>
+<li>NotificationManagerService.java//通知服务</li>
+<li>NsdService.java</li>
+<li>PackageManagerBackupAgent.java</li>
+<li>PreferredComponent.java</li>
+<li>ProcessMap.java</li>
+<li>RandomBlock.java</li>
+<li>RecognitionManagerService.java</li>
+<li>SamplingProfilerService.java</li>
+<li>SerialService.java//NFC相关</li>
+<li>ServiceWatcher.java</li>
+<li>ShutdownActivity.java</li>
+<li>StatusBarManagerService.java//状态栏管理服务</li>
+<li>SystemBackupAgent.java</li>
+<li>SystemService.java</li>
+<li>TelephonyRegistry.java</li>
+<li>TextServicesManagerService.java</li>
+<li>ThrottleService.java</li>
+<li>TwilightCalculator.java</li>
+<li>TwilightService.java</li>
+<li>UiModeManagerService.java</li>
+<li>UpdateLockService.java//锁屏更新服务</li>
+<li>VibratorService.java//震动服务</li>
+<li>WallpaperManagerService.java//壁纸服务</li>
+<li>Watchdog.java//看门狗</li>
+<li>WifiService.java//无线网络服务</li>
+<li>WiredAccessoryManager.java//无线设备管理服务</li>
+</ul>
+<p>从上面的文件夹和文件可以看出，Android中涉及的服务种类有：界面，网络，电话等核心模块，这些专属服务是系统级别的服务，这些系统服务一般都会在Android系统启动的时候加载，在系统关闭的时候结束，受到系统的管理，应用程序并没有权力去打开或者关闭，它们会随着系统的运行一直在后台运行，供应用程序和其他组件来使用。</p>
+<p>另外，在framework/av/目录下面有一个services目录，在此目录中存放的是音频和照相机的服务的实现代码，此目录的具体结构如下所示：</p>
+<p><strong>frameworks/av/services</strong></p>
+<ul>
+<li>audioflinger//音频管理服务</li>
+<li>camera//照相机的管理服务</li>
+</ul>
+<p>av/services目录主要用来支持Android系统中的音频和照相机服务。</p>
+<p>媒体库：Android中的媒体库在2.3版之前是由OpenCore实现的，2.3版之后Stragefright被替换了,OpenCore成为新的多媒体的实现库。同时Android自带了一些音视频的管理库，用于管理多媒体的录制，播放，编码和解码等功能。</p>
+<p>Android的多媒体程序库的实现代码主要在/frameworks/av/media目录中，其目录结构如下：</p>
+<p><strong>frameworks/av/media/</strong></p>
+<ul>
+<li>common_time  //时间相关</li>
+<li>libeffects  //多媒体效果</li>
+<li>libmedia  //多媒体录制，播放</li>
+<li>libmedia_native  //里面只有一个Android。迥，用来编译native文件</li>
+<li>libmediaplayerservice//多媒体播放服务的实现库</li>
+<li>libstagefright  //Stagefright的实现库</li>
+<li>mediaserver  //跨进程多媒体服务</li>
+<li>mtp //MTP协议的实现（媒体传输协议）</li>
+</ul>
+<p>图层显示库：Android中的图层显示库主要负责对显示子系统的管理，负责图层的渲染，叠加，绘制等功能，提供了2D和3D图层的无缝融合，是整个Android系统显示的“大脑中枢”，其代码在/frameworks/native/services/surfaceflinger/目录下，其目录结构如下所示：</p>
+<p><strong>frameworks/native/services/surfaceflinger/</strong></p>
+<ul>
+<li>DisplayHardware//显示底层相关</li>
+<li>tests//测试</li>
+<li><a href="http://Android.mk//MakeFile%E6%96%87%E4%BB%B6">Android.mk//MakeFile文件</a></li>
+<li>Barrier.h</li>
+<li>Client.cpp//显示的客户端实现文件</li>
+<li>Client.h</li>
+<li>clz.cpp</li>
+<li>clz.h</li>
+<li>DdmConnection.cpp</li>
+<li>DdmConnection.h</li>
+<li>DisplayDevice.cpp//显示设备相关</li>
+<li>DisplayDevice.h</li>
+<li>EventThread.cpp//消息线程</li>
+<li>EventThread.h</li>
+<li>GLExtensions.cpp//OpenGL扩展</li>
+<li>GLExtensions.h</li>
+<li>Layer.cpp//图层相关</li>
+<li>Layer.h</li>
+<li>LayerBase.cpp//图层基类</li>
+<li>LayerBase.h</li>
+<li>LayerDim.cpp//图层相关</li>
+<li>LayerDim.h</li>
+<li>LayerScreenshot.cpp//图层相关</li>
+<li>LayerScreenshot.h</li>
+<li>MessageQueue.cpp//消息队列</li>
+<li>MessageQueue.h</li>
+<li>MODULE_LICENSE_APACHE2//证书</li>
+<li>SurfaceFlinger.cpp//图层管理者，图层管理的核心类</li>
+<li>SurfaceFlinger.h</li>
+<li>SurfaceTextureLayer.cpp//文字图层</li>
+<li>SurfaceTextureLayer.h</li>
+<li>Transform.cpp</li>
+<li>Transform.h</li>
+</ul>
+<p>3D图形库：Android中的3D图形渲染是采用OpenGL来实现的，OpenGl是开源的第三方图形渲染库，使用该库可以实现Android中的3D图形硬件加速或者3D图形软件加速功能，是一个非常重要的功能库。从Android 4.3开始，支持最新，最强大的OpenGL ES3.0.其实现代码在/frameworks/native/opengl中，其目录结构如下所示：</p>
+<p><strong>frameworks/native/opengl/</strong></p>
+<ul>
+<li>include //OpenGL中的头文件</li>
+<li>libagl //在Mac OS上的库</li>
+<li>libs //OpenGL的接口和实现库</li>
+<li>specs //OpenGL的文档</li>
+<li>tests //测试相关</li>
+<li>tools //工具库</li>
+</ul>
+<p>SQLite：SQLite是Android系统自带的一个轻量级关系数据库，其实现源代码已经在网上开源。SQLite的优点是操作方便，运行速度较快，占用资源较少等，比较适合在嵌入式设备上面使用。SQLite是Android系统自带的实现数据库功能的核心库，其代码实现分为Java和C两个部分，Java部分的代码位于/frameworks/base/core/java/android/database，主要是实现SQLite的框架和接口的实现，使用户开发应用程序时能很简单地操作数据库，并且捕获数据库异常。目录结构如下所示：</p>
+<p><strong>frameworks/base/core/java/android/database/</strong></p>
+<ul>
+<li>sqlite//SQLite的框架文件</li>
+<li>AbstractCursor.java//游标的抽象类</li>
+<li>AbstractWindowedCursor.java</li>
+<li>BulkCursorDescriptor.java</li>
+<li>BulkCursorNative.java</li>
+<li>BulkCursorToCursorAdaptor.java//游标适配器</li>
+<li>CharArrayBuffer.java</li>
+<li>ContentObservable.java</li>
+<li>ContentObserver.java</li>
+<li>CrossProcessCursor.java</li>
+<li>CrossProcessCursorWrapper.java//CrossProcessCursor的封装类</li>
+<li>Cursor.java//游标实现娄</li>
+<li>CursorIndexOutOfBoundsException.java//游标出界异常</li>
+<li>CursorJoiner.java</li>
+<li>CursorToBulkCursorAdaptor.java//适配器</li>
+<li>CursorWindow.java//游标窗口</li>
+<li>CursorWindowAllocationException.java//游标窗口异常</li>
+<li>CursorWrapper.java//游标封装类</li>
+<li>DatabaseErrorHandler.java//数据库错误句柄</li>
+<li>DatabaseUtils.java//数据库工具类</li>
+<li>DataSetObservable.java</li>
+<li>DataSetObserver.java</li>
+<li>DefaultDatabaseErrorHandle.java//默认数据库错误句柄</li>
+<li>IBulkCursor.java</li>
+<li>IContentObserver.aidl//aidl用于跨进程通信</li>
+<li>MatrixCursor.java</li>
+<li>MergeCursor.java</li>
+<li>Observable.java</li>
+<li>package.html</li>
+<li>SQLException.java//数据库异常</li>
+<li>StaleDataException.java</li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

@@ -1,0 +1,80 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #1 Library Module BuildTypes" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-03-24-daily-of-agp-library-module-buildtypes/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #1 Library Module BuildTypes | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #1 Library Module BuildTypes</h1>
+    <div class="italic text-gray-500">
+      2017/03/24
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<p>最近工作中换了一个工程，重新配了一遍 Gradle 的环境，然后发现所有的 Library Module 都无法 Debug 或者只能取到某些全局变量（局部变量找不到）。百思不得其解时，突然发现我明明打的是 Debug 包 <code>assembleDebug</code>，我的 Library Module 执行的却都是 <code>transformClassesAndResourcesWithProguardForRelease </code>。明明在这些 module 都配置了 <code>debug</code> 的 <code>buildTypes</code>，但却不生效，反而打了混淆的 release 包。</p>
+<p>&lt;!-- more --&gt;</p>
+<pre class="language-gradle"><code class="language-gradle">debug <span class="token punctuation">{</span><br>    debuggable <span class="token boolean">true</span><br>    jniDebuggable <span class="token boolean">true</span><br>    minifyEnabled <span class="token boolean">false</span><br>    zipAlignEnabled <span class="token boolean">false</span><br>    signingConfig signingConfigs<span class="token punctuation">.</span>debug<br>    <span class="token punctuation">...</span><br><span class="token punctuation">}</span><br>release <span class="token punctuation">{</span> <br>    debuggable <span class="token boolean">false</span><br>    jniDebuggable <span class="token boolean">false</span><br>    minifyEnabled <span class="token boolean">true</span><br>    zipAlignEnabled <span class="token boolean">true</span><br>    proguardFiles <span class="token function">getDefaultProguardFile</span><span class="token punctuation">(</span><span class="token string">'proguard-android.txt'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">'proguard.cfg'</span><br>    signingConfig signingConfigs<span class="token punctuation">.</span>release<br><span class="token punctuation">}</span></code></pre>
+<p>这个时候，<a href="https://github.com/lomanyong">@阿咏</a> 给了我提示：<a href="http://stackoverflow.com/questions/28081846/use-different-build-types-of-library-module-in-android-app-module-in-android-stu">http://stackoverflow.com/questions/28081846/use-different-build-types-of-library-module-in-android-app-module-in-android-stu</a>。</p>
+<blockquote>
+<p>Well, Gradle Android plugin simply can't build the debug version of dependent library modules. This is a well-known, old issue and this is not resolved yet.</p>
+</blockquote>
+<p>原来这是有历史原因的，这东西就是这么设计滴（By Design），只能想办法绕一下。例如在这个问题下方的讨论里就提供了一种思路：</p>
+<pre class="language-gradle"><code class="language-gradle">android <span class="token punctuation">{</span><br>    publishNonDefault <span class="token boolean">true</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">dependencies</span> <span class="token punctuation">{</span><br>    releaseCompile <span class="token keyword">project</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token string">':yourLibrary'</span><span class="token punctuation">,</span> configuration<span class="token punctuation">:</span> <span class="token string">'release'</span><span class="token punctuation">)</span><br>    debugCompile <span class="token keyword">project</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token string">':yourLibrary'</span><span class="token punctuation">,</span> configuration<span class="token punctuation">:</span> <span class="token string">'debug'</span><span class="token punctuation">)</span><br><br>    <span class="token comment">// This is also possible</span><br>    customCompile <span class="token keyword">project</span><span class="token punctuation">(</span>path<span class="token punctuation">:</span> <span class="token string">':yourLibrary'</span><span class="token punctuation">,</span> configuration<span class="token punctuation">:</span> <span class="token string">'custom'</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>不过，这样在有多个 Library Module 依赖的时候，显得不够优雅。这边我提供了一个自己的思路：</strong></p>
+<pre class="language-gradle"><code class="language-gradle">android <span class="token punctuation">{</span><br><br>    <span class="token punctuation">...</span><br>    <br>    buildTypes <span class="token punctuation">{</span><br>        release <span class="token punctuation">{</span><br>            debuggable <span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            minifyEnabled <span class="token operator">!</span><span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            zipAlignEnabled <span class="token operator">!</span><span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            proguardFiles <span class="token function">getDefaultProguardFile</span><span class="token punctuation">(</span><span class="token string">'proguard-android.txt'</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">'../tools/proguard.cfg'</span><br>            signingConfig signingConfigs<span class="token punctuation">.</span>release<br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br>    <br>    <span class="token punctuation">...</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">def</span> <span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span><span class="token punctuation">(</span>gradle<span class="token punctuation">.</span>startParameter<span class="token punctuation">.</span><span class="token function">getTaskNames</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">size</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// for clean etc..</span><br>        return <span class="token boolean">true</span><br>    <span class="token punctuation">}</span><br>    return gradle<span class="token punctuation">.</span>startParameter<span class="token punctuation">.</span><span class="token function">getTaskNames</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">"Debug"</span></span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>我们就只提供一种 buildType，也就是默认的 release，然后把type 内的配置动态化即可。这种方案适合只有两三种 type 的情况，可以用少量的代码在 Library 内部就解决问题。</strong></p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

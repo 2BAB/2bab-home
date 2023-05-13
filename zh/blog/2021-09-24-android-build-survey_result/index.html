@@ -1,0 +1,117 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="编译构建知识的调查结果&amp;新企划！&quot;" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2021-09-24-android-build-survey_result/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>编译构建知识的调查结果&amp;新企划！&quot; | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>编译构建知识的调查结果&amp;新企划！&quot;</h1>
+    <div class="italic text-gray-500">
+      2021/09/24
+    </div>
+    <div>
+      <p>上周的<a href="https://2bab.me/2021/09/14/android-build-survey">《Android App 编译构建知识的小调查》</a>，收到了预期的问卷数量 101 份（剔除我自己正好100份，也太巧了？）。仅基于个人的理解，我编写了下方五个选项（下文的 1/2/3/4 指代这五个层级）：</p>
+<ol>
+<li>”仅基础使用“（初级）：我能读懂、修改 <code>build.gradle(.kts)</code>，对 Gradle、AGP 有基础的认知，例如了解 Gradle 的任务机制，但碰到非 App 源码的编译错误有点不知所措；</li>
+<li>”实现高效自动化、工程化“（中级）：我对工程化、自动化有一定的认知、追求，可以通过构建脚本拆分、自定义 Task 来实现日常事务的优化，例如使用 <code>buildSrc</code> 模块抽取并统一管理依赖、使用自定义 Task 组合 CICD 的流程，运用一些最佳实践来提高编译构建效率；</li>
+<li>”编译构建增强“（高级）：我可以通过查阅 Gradle 文档、Debug AGP、编译期的 Profiler 日志，来自定义 Annotation Processor、Gradle Plugin 等解决一个项目碰到实际问题，抽象成一套可复用的工具；</li>
+<li>”对编译构建有较为全面的理解“（资深）：我了解编译构建的主要环节实现，常见架构应用的原理，实践过多个编译构建增强工具，对项目的基础架构梳理得井井有条；</li>
+<li>”深度参与“：我了解 Android App 编译构建的前沿发展，积极参与社区 Discussion、Proposal、PR、Review，灵活运用、修改各类工具，对于不同类型的问题、需求能给出优解、多解。</li>
+</ol>
+<h2 id="%E8%B0%83%E6%9F%A5%E7%BB%93%E6%9E%9C" tabindex="-1">调查结果</h2>
+<p>虽说有一百份，但是：</p>
+<ol>
+<li>第一天我就收到了“为什么没有0基础的选项”反馈；</li>
+<li>大部分投票的同学都是我公众号的读者 + 社区比较活跃且对 Gradle/Android 构建有兴趣的朋友；</li>
+<li>所以从整个社区的角度来看，结果应比下图更往“初级”靠拢。</li>
+</ol>
+<p><img src="https://2bab-images.lastmayday.com/blog/2021-09-24-android-survey-result-1.jpg?imageslim" alt="">
+<img src="https://2bab-images.lastmayday.com/blog/2021-09-24-android-survey-result-2.jpg?imageslim" alt=""></p>
+<p>简单分析了几个点：</p>
+<ul>
+<li>现在处于的位置：
+<ul>
+<li>是典型的倒金字塔结构，并不意外，不管哪门技术调研都会是这个结果；</li>
+<li>但前面提到，实际“初级”的占比应比上述数据更多，原本预计可能就 50% 的“初级”现在看来其实有 70%，所以收到“希望多写点基础内容”的反馈非常真实；</li>
+<li>我很想知道“深度参与”的那一票是谁投的（不是我），很想和业界大佬交流交流ヾ(◍°∇°◍)ﾉﾞ。</li>
+</ul>
+</li>
+<li>努力达到的位置：
+<ul>
+<li>是比较正态分布的结果，即便考虑到误差，也是令我感到欣慰的；</li>
+<li>这和现在的市场需求还比较贴切，初级工程师的供给较为均衡，高级工程师仍然供不应求，掌握构建相关的知识可能是一块不错的向上跃迁的敲门砖；</li>
+<li>如果有更优质的内容在社区传播，我相信填“深度参与”的人一定能做到，并且可以更多。</li>
+</ul>
+</li>
+</ul>
+<h2 id="%E6%89%80%E4%BB%A5...%E6%88%91%E6%83%B3%E8%BE%93%E5%87%BA%E7%9A%84%E6%98%AF...%3F" tabindex="-1">所以...我想输出的是...?</h2>
+<p>不少读者（特别是“Android&amp;英语群”里的朋友）知道我已经做了很长一段时间的 Android 构建高级进阶的内容，为了系统性地解决<strong>从位置 1 或 2 进阶到 3+ 的多个难题</strong>，还需要一段时间的整理和编写，预计在明年会放出。</p>
+<p>而从这段时间的社区讨论、问卷反馈中，我也不断在思考<strong>从 0 到 1 或 2 的内容该怎么做</strong>？社区上这块的内容虽然不及 UI 方面的多，但鉴于每个 Android 开发者都必须使用 Gradle，业务上也有多渠道打包、加固等绕不过去的技术需要集成，Android 构建基础的内容还是零星有人分享的，中文社区中例如掘金的 Android 类目下还专门有 Gradle 的小类。那，大家缺的是什么？</p>
+<p><strong>我认为是一个方向，一份大纲。</strong></p>
+<ol>
+<li>从 Gradle 的角度切入的系统性教程出现了多年断层，你能找到的图书很多还在使用 “&lt;&lt;” 等过时的 API（“doLast(...)” 的符号重载）；</li>
+<li>而 Gradle 官方的文档按 <a href="https://docs.gradle.org/current/userguide/userguide.pdf">PDF</a> 版来算有 1200+ 页，面之广，直接覆盖了 1-4 的各层级内容，英文不错的朋友快速读一遍都得花上几天；</li>
+<li>从 Android 构建的角度切入的系统性教程几乎没有，一旦碰到复杂点的需求，要求自定义一个简单的 Task 和 AGP 进行交互，就发现缺漏的知识太多，更不知从何入手学起。</li>
+</ol>
+<p><strong>理顺出一条学习路径，加上诸多实例，可能几个篇章就能做出不错的效果，再加上 Kotlin First 的原则，以 KTS 和 Kotlin 编写的插件为例，减少一些 Groovy 的学习成本，我想应该妙极了！</strong> 不出意外的话，十月份我会放出一些有意思的东西。</p>
+<h2 id="%E4%BB%8E-kmm-%E6%96%87%E6%A1%A3%E7%BF%BB%E8%AF%91%E6%B4%BB%E5%8A%A8%E5%88%B0-koge" tabindex="-1">从 KMM 文档翻译活动到 KOGE</h2>
+<p>几个月前，由于我工作中使用了 KMM（Kotlin Multi-platform Mobile)，所以决定做点什么—— “kotlin-mobile-docs” 的<a href="https://github.com/2BAB/kotlin-mobile-docs">中文文档翻译计划</a>。以我为初始翻译者，到后来的另外五个小伙伴加入，我们做了大概 60% 的文档翻译。很可惜我们最后没有完成所有的内容，具体原因如项目 README：</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210924174118.png?imageslim" alt=""></p>
+<p><strong>而上述 Android 构建 0 到 1 的内容，在确定了路线并做好一部分内容后，我依旧想开源到社区，和大家共同打造这个有价值的项目。我起了个项目名字叫 KOGE，意味 <em>Kotlin-oriented Gradle Essential</em>。这次，我们不做翻译，我们做更有意思的自学大纲，做一手的内容，做反向输出到英文社区的内容。</strong></p>
+<p>最后，还没有加过“Android&amp;英语群”的朋友，欢迎来群里玩~ 这里日常吹水的东西很少，但是一手的新知识、新资料很多呀~</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210924174641.png?imageslim" alt=""></p>
+<p><em>欢迎关注我的 <a href="/about"> Github / 公众号 / 播客 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

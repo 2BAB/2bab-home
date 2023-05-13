@@ -1,0 +1,136 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="AB 的工程效率小集 #1 七月刊" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2021-07-11-dev-exp-monthly-update-01/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>AB 的工程效率小集 #1 七月刊 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>AB 的工程效率小集 #1 七月刊</h1>
+    <div class="italic text-gray-500">
+      2021/07/11
+    </div>
+    <div>
+      <p>约是年初开始，我持续不断地在一些较有讨论氛围的社区、社群，参与我感兴趣的技术话题互动。经过半年的体验，这类持续输入输出对我个人有不少的收获。一方面我能从这些社区社群看到不少新东西，例如第一时间看到世界各地的技术访谈、博客、新闻、活动；另外一方面我的知识体系在反哺社区和讨论的过程中逐步完善。</p>
+<p>可惜，不少的社区社群并不能被搜索引擎记录，例如 Slack、星球、以及各种普通 IM 工具内的群组。在第八期<a href="https://binary.2bab.me/episodes/008-enlightenment-n-self-innovation">“二分电台”</a>讨论”持续学习“话题时，Randy 和我聊到了<a href="https://www.swyx.io/learn-in-public/">《Learn in Public》</a>这篇文章——是的，<strong>固然加入了某个 Slack 社区后可以在里面搜索历史记录，但是它依然不是搜索引擎可见的</strong>。特别像 Gradle 这类大家“熟悉的陌生人”，我们每天都在用，但真碰到一个什么奇怪的问题想赶紧知道（不一定是 bug，可能只是一个用法、一个 API 的理解等），目前最好的办法还是去他们的 Slack 社区互动，纵然他们有论坛和 StackOverflow 的 tag。<strong>这些“封闭”的内容无法有效地被更广泛的人群接受，新手很难从外部获取到最新的资讯、讨论；以至于我有时候甚至觉得技术分享的视频如果不把 timeline 和关键字标注出来，也会流失大量本来可以点击进入的观众。</strong></p>
+<p>所以，我一直有这个想法：做一个月度或者半月的小集合，把我参与过、具有通用价值的一些东西记录下来、公开出去。</p>
+<ul>
+<li>这类问答式的内容，如果单独写成一篇，可能有些 overkill 了，所以定位在一个月度的小集的形式；</li>
+<li>目前以我参与过的内容为主，在所有的内容确保是无版权、或者我拥有版本的情况下，再整理、记录、沉淀，后面也会考虑加入一些 Slack 或其他群组上我看到的精彩内容；</li>
+<li>至于分发形式，我斟酌的结论是：先在我的博客记录，公众号/掘金等二次分发，如果有其他朋友参与一起做且方向比较统一在工程效率和开发体验这块的话，可以尝试 Substack 这种邮件订阅的形式做订阅。但目标是不变的，需要在公开的互联网领域留下这些有参考价值的内容。</li>
+</ul>
+<p>OK，那我们进入第一期的正文。<strong>2021 年 7 月工程效率小集：</strong></p>
+<h2 id="%E6%9E%84%E5%BB%BA%EF%BC%9Agradle%2Fagp%2Fci%2F..." tabindex="-1">构建：Gradle/AGP/CI/...</h2>
+<p><strong><a href="https://gradle-community.slack.com/archives/CA7UM03V3/p1624871227328200">Q1</a>: To pass a bunch of File which come from different dirs, should I use <code>SetProperty&lt;File&gt;</code> or <code>SetProperty&lt;RegularFile&gt;</code> ?</strong></p>
+<p>A1:</p>
+<ul>
+<li>@vierbergenlars: I think a FileCollection is better suited for that.
+It also gives you some nice additional methods to add files and to manage them.</li>
+<li>@wolfs: I agree, ConfigurableFileCollection is the analog to RegularFile/DirectoryProperty for multiple files.</li>
+</ul>
+<p>这则问答来自于 Gradle Slack 社区，起因是我在写一个 demo 时发现有一个场景是需要收集一些来自不同文件夹的文件，并传入到某个 Task。对于这类场景，不管是多个文件、文件夹，或者混合的场景，使用 <code>FileCollection</code> 都是比较好的选项，因为它的 API 在面对这类场景时比较友好，比如 <code>from(varags Object)</code>。如果想保持一致性都使用 <code>Provider</code>，可以使用 <code>FileCollection.getElements()</code> API 转换。对这些类不了解的朋友可以参考 <a href="https://docs.gradle.org/current/userguide/working_with_files.html#working_with_files">Working with Files</a> 和 <a href="https://docs.gradle.org/current/userguide/lazy_configuration.html">Lazy Configurations</a>。</p>
+<p><strong><a href="https://gradle-community.slack.com/archives/CA7UM03V3/p1624759837322700">Q2</a>: Gradle 7.1 + zulu arm64 JDK11 do not run natively on my M1 Mac mini.</strong></p>
+<p>A2: 这则问题我后来自己发现了问题（小黄鸭调试法），因为我使用 SDKMAN! 安装的 zulu 的sdk，但是 SDKMAN! 本身是通过 Rosetta2 转译运行的，加上它在命令行 <code>bash_profile</code> / <code>zshrc</code> 添加了一些东西（没细看了...大概是为了支持 Java 版本的切换等），导致 Gradle 起 java 进程时也都通过 Rosetta2 去跑。删掉重装后即可。</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210712213206.png?imageslim" alt=""></p>
+<p><strong><a href="https://gradle-community.slack.com/archives/CA83B1VLL/p1622211648007000">Q3</a>：From the performance perspective, is buildSrc still a bit worse than composite build?</strong></p>
+<p>A3:</p>
+<ul>
+<li>
+<p>@Vampire: This should still be true, but depending on your test project you might or might not be hit by a performance hit compared to composite builds. If your test project is too simple you will for example not see any difference. The point is, that <code>buildSrc</code> is automatically added to the class path of all build scripts in the main build and due to that the runtime class path of all tasks changed and thus all tasks in all projects are out of date if anything in <code>buildSrc</code> changes. If you use composite builds instead, only the dependencies you actually use by applying a plugin or adding it to the <code>buildscript</code> dependencies block are added to the class path of that specific build script, so all other build scripts / projects stay unaffected. If you apply all plugins you have to all projects you have, then there sill probabaly be no performance difference, as then still all tasks are going to be out of date when something is changed.I personally only use composite builds nowadays, also because I can then easily use composite build within (though there is a &quot;work-around&quot; now) and I can also move and rename it, for example to <code>&lt;root project&gt;/gradle/build-logic</code> instead of <code>&lt;root project&gt;/buildSrc</code>.</p>
+</li>
+<li>
+<p>@CristianGM: And...I should add another small difference, buildSrc runs its tests when it compiles, while composite build doesn't</p>
+</li>
+</ul>
+<p>这则问题讨论了在哪些情况下 composite-build 优于 buildSrc，主要的性能问题集中在是否把这个额外的编译脚本模块 apply 到所有的主代码模块中。</p>
+<p><strong><a href="https://t.me/AndroidDevCn/195956">Q4</a>: 我执行 gradlew bundle 命令的时候，为什么每个 product flavor 里面的配置都会被执行一次？如何给渠道设置版本名称？</strong></p>
+<pre class="language-kotlin"><code class="language-kotlin">producatFlavors <span class="token punctuation">{</span> <br>    india <span class="token punctuation">{</span> <br>        <span class="token function">setProperty</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"archivesBaseName"</span></span><span class="token punctuation">,</span> <span class="token string-literal singleline"><span class="token string">"urbanic-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">versioNameIndia</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">currentVersionCode</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">"</span></span> <br>    <span class="token punctuation">}</span><br>    <br>    india <span class="token punctuation">{</span> <br>        <span class="token function">setProperty</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"archivesBaseName"</span></span><span class="token punctuation">,</span> <span class="token string-literal singleline"><span class="token string">"urbanic-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">versioNameOther</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">-</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">currentVersionCode</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">"</span></span> <br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>A4:</p>
+<ul>
+<li>Gradle 配置阶段的脚本是全部都会执行的，不然没法得到配置好的 Extension，也没办法得到 Task Graph；</li>
+<li>就这段脚本而言它是执行 Flavor 的配置，像 <code>dimension</code> <code>applicationIdSuffix</code> <code>buildConfigField</code> 都是作用于 flavor 的（隐藏的 this 是 ProdcutFlavor)，<code>setProperty</code> 是作用于 project 的，所以会被覆盖；</li>
+<li><code>archivesBaseName</code> 的配置看了下是从 Gradle API 来的，并不是 AGP 的（AGP 有挺多地方用了不过，但是没法搞 variant aware 的策略），如果你真想 hack 一下，那就根据你输入的命令 hardcode 对应的 property：<code>if(gradle.startParameter.getTaskNames().get(0).contains(&quot;India&quot;)) { setProperty(...) }</code></li>
+<li>现在应该用这个了 Artifacts API：<a href="https://github.com/android/gradle-recipes/blob/agp-4.2/Kotlin/getApksTest/app/build.gradle.kts">https://github.com/android/gradle-recipes/blob/agp-4.2/Kotlin/getApksTest/app/build.gradle.kts</a> （可以切分支查看不同版本 AGP 的 API，7.0 后稳定了），添加一个 Task 获取对应渠道 APK 后再修改名称。</li>
+</ul>
+<p><strong>Q5: 对于想在 assembleDebug 后对 APK 执行一些操作的情况，可以用 <code>finalizeBy()</code>。</strong></p>
+<p>A5:</p>
+<p>我也经常忍不住用😂，但是这个 API 有几个问题：</p>
+<ol>
+<li>如果一个 task 有多个 finalizer，它们是按 finalizer 的名字排序（相当于乱序；</li>
+<li>Finalizer 可不管前一个任务执行成功没(见附图)，只要前一个任务执行了，它就总是会接着执行；</li>
+</ol>
+<p>上面两点其实是 by design 的，所以官方文档的用例是用来做 task 的资源清理工作。我一直觉得自己有点滥用，不过有需要没办法的时候也只能用。</p>
+<p>就这个 case 可能的几个别的解法是：</p>
+<ol>
+<li>用 <code>doLast()</code>，但是只接受 <code>Action</code> 而不是 <code>Task</code>；</li>
+<li>反向 <code>dependsOn()</code>, 让 <code>apkRenameDebug.dependsOn(resguardDebug)</code>，然后执行终端执行 <code>apkRenameDebug</code>；</li>
+<li>加一个类似 lifecycle task 的锚点 task 作为最后运行的 task，然后把前面那些 task 往他上面 <code>dependsOn()</code>，算是 2 的优化版（比较好看干净）；</li>
+<li>用 <code>buildFinish()</code> 生命周期监听器，所有任务跑完后取 apk 做处理可以不需要依赖 AGP；</li>
+<li>用新的 Artifacts API （见 A4 的链接）。</li>
+</ol>
+<p><img src="https://2bab-images.lastmayday.com/blog/lu2nXbi7yEZ1p0eoD3eKMSCjsKYy.jpeg?imageslim" alt=""></p>
+<h2 id="kotlin-%E5%91%A8%E8%BE%B9%EF%BC%9Akoin%2Fktor%2Fcoil%2F..." tabindex="-1">Kotlin 周边：Koin/Ktor/Coil/...</h2>
+<p><strong><a href="https://kotlinlang.slack.com/archives/C0A974TJ9/p1623070601174400">Q1</a>: Is it possible a feature/plugin depends on another?I need to transform the type with my feature before JsonFeature get it. The problem is JsonFeature should be able to parse SomeError or User, so I have to unwrap it from my Either before, if not, JsonFeature will try it with the Either class and it will fail.</strong></p>
+<p>A1: For ktor client's plugin I used/created, I don't think there's a direct approach to implement this. But if u look into their implementations, can see the interceptor pipelines - base on the lifecycle of those pipeline, u can define the running sequence and thus make dependent relationship indirectly. In this case, probably u can use HttpResponsePipeline.Receive in your custom plugin to unwrap before JsonFeature works.</p>
+<pre class="language-kotlin"><code class="language-kotlin">scope<span class="token punctuation">.</span>responsePipeline<span class="token punctuation">.</span><span class="token function">intercept</span><span class="token punctuation">(</span>HttpResponsePipeline<span class="token punctuation">.</span>Receive<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token punctuation">(</span>info<span class="token punctuation">,</span> body<span class="token punctuation">)</span> <span class="token operator">-></span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>body <span class="token operator">!</span><span class="token keyword">is</span> ByteReadChannel<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token keyword">return</span> <span class="token label symbol">@intercept</span><span class="token punctuation">}</span><br>    <span class="token comment">// Do something you want and get the final result in String (others types I did not try)</span><br>    <span class="token keyword">val</span> result<span class="token operator">:</span> String <span class="token operator">=</span> <span class="token function">decrypt</span><span class="token punctuation">(</span>body<span class="token punctuation">.</span><span class="token function">readRemaining</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">readText</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>    <span class="token function">proceedWith</span><span class="token punctuation">(</span><span class="token function">HttpResponseContainer</span><span class="token punctuation">(</span>info<span class="token punctuation">,</span> <span class="token function">ByteReadChannel</span><span class="token punctuation">(</span>result<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>Q2: Coil 加载时报错 <code>Software rendering doesn't support hardware bitmaps</code></strong></p>
+<p>A2：</p>
+<ol>
+<li><a href="https://coil-kt.github.io/coil/recipes/#shared-element-transitions">Recipes - Coil</a>，你大概率是碰到了：Shared element transitions are incompatible with hardware bitmaps；</li>
+<li>除了上面那个，还有一些机型原生不支持，以及 OS 版本原生不支持的，库本身应该是处理好了：<a href="https://github.com/coil-kt/coil/blob/main/coil-base/src/main/java/coil/memory/HardwareBitmapService.kt">https://github.com/coil-kt/coil/blob/main/coil-base/src/main/java/coil/memory/HardwareBitmapService.kt</a></li>
+<li>查看所有相关 issue，比如<a href="https://wx.zsxq.com/dweb2/index/group/51285415155554">这个</a>，没有看到超出上述范围的讨论，所以我觉得应该就是这样啦。</li>
+</ol>
+<p><em>欢迎关注我的<a href="/about"> Github / 公众号 / 播客 / 微博 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

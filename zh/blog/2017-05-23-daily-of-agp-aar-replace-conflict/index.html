@@ -1,0 +1,104 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #4 aar 和 tools:replace 冲突" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-05-23-daily-of-agp-aar-replace-conflict/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #4 aar 和 tools:replace 冲突 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #4 aar 和 tools:replace 冲突</h1>
+    <div class="italic text-gray-500">
+      2017/05/23
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<p>最近做一些 SDK 升级时，有些包引入后会有诸如此类的报错：</p>
+<blockquote>
+<p>AndroidManifest.xml:22:9-40 Error:
+Attribute application@theme value=(@style/AppTheme) from AndroidManifest.xml:22:9-40
+is also present at [some:libraries:version] AndroidManifest.xml:9:18-62 value=(@style/AnotherTheme).
+Suggestion: add 'tools:replace=&quot;android:theme&quot;' to &lt;application&gt; element at AndroidManifest.xml:18:5-65:19 to override.</p>
+</blockquote>
+<p>这是一个很常见的错误了，照着提示做 <code>replace</code> 就 OK 了。<strong>但是当我加上</strong> <code>replace</code> <strong>的代码后，发现依旧报错：</strong></p>
+<blockquote>
+<p>Multiple entries with same key: @android:theme=REPLACE and android:theme=REPLACE.</p>
+</blockquote>
+<p><strong>百思不得其解，查看了一下依赖库的</strong> <code>AndroidManifest.xml</code> <strong>源码，发现它也设置了</strong><code>tools:replace=&quot;android:theme&quot;</code><strong>，而 Manifest Merger 把这个视为冲突抛了出来。</strong></p>
+<p>&lt;!--more--&gt;</p>
+<h2 id="%E6%80%9D%E8%80%83" tabindex="-1">思考</h2>
+<p>如果只是跟着 <a href="https://developer.android.com/studio/build/manifest-merge.html">官方的 Manifest Merge</a>，这个问题恐怕无解。<a href="http://stackoverflow.com/questions/35131182/manifest-merge-in-android-studio">StackOverflow</a> 上也有人问过这个问题，但是没有更多的解法回复。</p>
+<p>为什么依赖库会想不开去设置 <code>replace</code> 属性呢？很大的一个可能是：他也碰到了他的依赖库和他的 Manifest 有冲突的情况。那么我们能做什么？我们始终还是想要把他的某些属性给替换掉的（theme/allowBackup/...），不管他是出于什么样的目的，都不能阻止我想打出包的心！</p>
+<h2 id="%E8%A7%A3%E6%B3%95" tabindex="-1">解法</h2>
+<p>通过简单的观察和源码查看，我们发现 merge 是发生在 <code>process${variant}Manifest</code> 这个 Task。那么就得想办法在执行这个任务之前 Precheck 一下所有依赖的 <code>AndroidManifest.xml</code>。</p>
+<p><a href="https://github.com/2BAB/Seal">Seal - A gradle plugin to do precheck of Android Manifest.</a></p>
+<p>我写了一个简易的插件来做这件事，目前支持两个功能：</p>
+<ol>
+<li>删除 Application 节点的某些属性，如 <code>debuggable</code>、<code>theme</code>、<code>allowBackup</code>；</li>
+<li>删除 Application 节点中 <code>tools:replace</code> 属性的某些值，如 <code>android:icon</code>、<code>android:theme</code>、<code>android:allowBackup</code>；</li>
+</ol>
+<p>这个插件不仅能解决上述提到的问题，还能顺带修复诸如下面这种 Warning：</p>
+<blockquote>
+<p>Warning: AndroidManifest.xml already defines debuggable (in <a href="http://schemas.android.com/apk/res/android">http://schemas.android.com/apk/res/android</a>); using existing value in manifest.</p>
+</blockquote>
+<p>而我们所需要做的，仅仅是指定我们不需要 libraries 的那些属性：</p>
+<pre class="language-gradle"><code class="language-gradle"><span class="token keyword">def</span> projectRoot <span class="token operator">=</span> <span class="token keyword">project</span><span class="token punctuation">.</span><span class="token function">getRootProject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>rootDir<span class="token punctuation">.</span>absolutePath<br><br><span class="token comment">// 依赖库的 Manifest 文件搜索路径</span><br><span class="token comment">// 1. Gradle plugin 2.3.0 或者更高版本，会默认开启 build-cache 功能，Release 版本的库会解压到这里</span><br><span class="token comment">// 2. 但是我们同样需要对 SNAPSHOT 的库做预检查，所以还需要加入 exploded-aar 的目录</span><br><span class="token comment">// 3. 有更多自定义的目录或者 module，请自行添加</span><br><span class="token keyword">def</span> manifestPath <span class="token operator">=</span> <span class="token punctuation">[</span><br>        <span class="token comment">// for AAR of Release</span><br>        <span class="token comment">// see note below</span><br>        projectRoot <span class="token operator">+</span> <span class="token string">'/build-cache'</span><span class="token punctuation">,</span> <br>        <span class="token comment">// for AAR of SNAPSHOT</span><br>        projectRoot <span class="token operator">+</span> <span class="token string">'/app/build/intermediates/exploded-aar'</span><br><span class="token punctuation">]</span><br><br><span class="token keyword">def</span> removeAttrs <span class="token operator">=</span> <span class="token punctuation">[</span><br>        <span class="token string">'android:debuggable'</span><br><span class="token punctuation">]</span><br><br><span class="token keyword">def</span> replaceValues <span class="token operator">=</span> <span class="token punctuation">[</span><br>        <span class="token string">'android:allowBackup'</span><br><span class="token punctuation">]</span><br><br>seal <span class="token punctuation">{</span><br>    enabled <span class="token operator">=</span> <span class="token boolean">true</span><br>    manifests <span class="token operator">=</span> manifestPath<br><br>    appAttrs <span class="token punctuation">{</span><br>        enabled <span class="token operator">=</span> <span class="token boolean">true</span><br>        attrsShouldRemove <span class="token operator">=</span> removeAttrs<br>    <span class="token punctuation">}</span><br><br>    appReplaceValues <span class="token punctuation">{</span><br>        enabled <span class="token operator">=</span> <span class="token boolean">true</span><br>        valuesShouldRemove <span class="token operator">=</span> replaceValues<br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>需要注意的是，如果开启了 <code>build-cache</code>, Seal 建议你把 build-cache  的文件夹放在工程目录内（就是上面配置里的 build-cache 位置）。</p>
+<pre><code>//gradle.properties
+android.buildCacheDir=./build-cache
+...
+</code></pre>
+<p>更多信息，请参考 Github 仓库内的说明，欢迎大家提 PR 和 ISSUE。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

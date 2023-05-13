@@ -1,0 +1,87 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #6 JDK 内的某个包失踪了" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-08-16-daily-of-agp-class-not-found-of-jdk/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #6 JDK 内的某个包失踪了 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #6 JDK 内的某个包失踪了</h1>
+    <div class="italic text-gray-500">
+      2017/08/16
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<p>最近在改一个之前的 Annotation Processor，想要实现一个这样的需求：对一个 Class 所 implement 的 interface 做判断——这些 interface 是否 extends 自一个统一的父 Interface。于是 Debug + Evaluate Expression 挖一下 <code>TypeElement</code> 的实例里都有些啥，看看有没好使的 API。</p>
+<p>&lt;!--more--&gt;</p>
+<ol>
+<li><code>typeElement.getInterfaces()</code> 可以拿到当前元素的 List&lt;TypeMirror&gt;，这个一目了然；</li>
+<li>List 里的 typeMirror，其实质是 <code>com.sun.tools.javac.code.Type$ClassType</code> 类型；</li>
+<li>进一步，在 Evaluate Expression 里瞎蒙会发现 <code>((Type.ClassType)mirror).interfaces_field</code> 我们可以拿到上层具体的 Interface 信息，嗯，基本达到我们的目的了；</li>
+</ol>
+<p>有了刚刚的实验，就快速写出一个测试代码。接着编译打包——竟然报错（请无视它是个中文错误 =。=）：</p>
+<blockquote>
+<p>错误：程序包 com.sun.tools.javac.code 不存在
+错误：找不到符号
+符号：类 Type</p>
+</blockquote>
+<p>明明 IDE （Android Studio）识别了，这个类也是个 JDK 自带的工具类，为何不存在？唯一能想到的原因就是编译时 JDK 的所有包并不是都已加入到 classpath 里。在 Google 的过程中，也发现过<a href="https://stackoverflow.com/questions/10314904/no-com-sun-tools-javac-in-jdk7">类似的问题</a>，但是仔细检查了 IDE 的 Boot JDK 配置，Gradle 的 JAVA_HOME 配置，都没有错。好吧，可能这是个不为人知的某种默认操作...</p>
+<p>Google 没有明确的答案，问了很多师兄也只说碰到过类似的问题，最后还是靠自己引包解决（如果有了解内情的同学欢迎给我发邮件讨论！）。这边先给出一个我的解法：</p>
+<pre class="language-gradle"><code class="language-gradle"><span class="token comment">// 手动加入 tools.jar 到 compile</span><br><span class="token comment">// 使用 Gradle 提供的环境变量，避免自己写大量兼容性代码</span><br>compile <span class="token function">files</span><span class="token punctuation">(</span>org<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>jvm<span class="token punctuation">.</span>Jvm<span class="token punctuation">.</span><span class="token function">current</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>toolsJar<span class="token punctuation">)</span><br><br><span class="token comment">// 类似的环境变量 Gradle 还提供了一些</span><br><span class="token comment">// import org.gradle.internal.jvm.Jvm</span><br><span class="token comment">// println Jvm.current().javaHome</span><br><span class="token comment">// println Jvm.current().javacExecutable</span><br><span class="token comment">// println Jvm.current().javadocExecutable</span><br><span class="token punctuation">...</span></code></pre>
+<p>咳咳，话说回来，即便解决了包的问题，上面那个找上层 Interface的办法也是有问题的，因为<code>((Type.ClassType)mirror).interfaces_field</code>  找出来的 interface type 是无法再向上查找 interfaces_field 的，找到的会是空值（没兴趣去看为什么了...）解决办法也是有的：</p>
+<pre class="language-java"><code class="language-java"><span class="token class-name">TypeElement</span> typeElement <span class="token operator">=</span> elementUtils<span class="token punctuation">.</span><span class="token function">getTypeElement</span><span class="token punctuation">(</span>interfaceCanonicalName<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span> <span class="token keyword">extends</span> <span class="token class-name">TypeMirror</span><span class="token punctuation">></span></span> interfaces <span class="token operator">=</span> typeElement<span class="token punctuation">.</span><span class="token function">getInterfaces</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">.</span><span class="token punctuation">.</span><span class="token punctuation">.</span></code></pre>
+<p>循环用 <code>elementUtils.getTypeElement(interfaceCanonicalName)</code> 一路往上取 Interface 即可（还是靠自己之前的积累才蒙到..orz）。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

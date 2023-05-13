@@ -1,0 +1,77 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Android 源码笔记 #3 - Aapt 编译" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-09-19-android-source-development-notes-3/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Android 源码笔记 #3 - Aapt 编译 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Android 源码笔记 #3 - Aapt 编译</h1>
+    <div class="italic text-gray-500">
+      2017/09/19
+    </div>
+    <div>
+      <p>碰到个问题，需要 debug aapt 里的一些东西，本来以为按照 <a href="http://2bab.me/2017/03/10/android-source-development-notes-1">Android源码笔记-1-编译&amp;烧录的一些坑</a> 的办法去设置环境再把 <code>make</code> 命令目标改一下即可，但是发现还是有些小问题，写下记录一哈。</p>
+<p>先来结论，源码准备的步骤不叙，正确的步骤是：</p>
+<pre class="language-shell"><code class="language-shell">$ <span class="token function">make</span> clobber<br>$ <span class="token builtin class-name">source</span> build/envsetup.sh<br>$ lunch sdk-eng <br>$ <span class="token function">make</span> <span class="token parameter variable">-j9</span> aapt            </code></pre>
+<p>&lt;!--more--&gt;</p>
+<ol>
+<li>Google 爸爸的完整教程<a href="https://android.googlesource.com/platform/sdk/+/master/docs/howto_build_SDK.txt">在此</a>，一开始确实没发现；</li>
+<li>注意，lunch、make 的目标和编译 ROM 不同；</li>
+<li>由于是要编译一个自己用的 aapt，所以最好是备份一个 aapt，但是直接在源码目录 copy 一份会有报错，正确的姿势<a href="http://blog.csdn.net/sbsujjbcy/article/details/51418336">参考这个</a>，当然，我偷懒直接拷了一份到非源码目录下的位置；</li>
+<li>以 Mac 为例，生成产物的路径是 <code>/pathToYourAndroidSource/out/host/darwin-x86/bin/aapt</code>（一开始用的 <code>/pathToYourAndroidSource/out/target</code> 里的产物发现会出现 <code>cannot execute binary file</code>，正常在 Mac 上使用的 aapt 的格式是 Mach-O 的可执行文件，但是这个 aapt 是 elf-32 的，也就是 32位 的 linux 下执行的，暂时没去了解是编译出其他平台的版本还是中间产物）</li>
+</ol>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

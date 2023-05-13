@@ -1,0 +1,84 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="合并两个 Git Repo" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2019-05-14-git-repos-merge/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>合并两个 Git Repo | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>合并两个 Git Repo</h1>
+    <div class="italic text-gray-500">
+      2019/05/14
+    </div>
+    <div>
+      <p>手头的项目之前是拆分成两个 repo 进行维护的，这里称之为 A 和 B 好了。B 是一个公共的基础代码库，设计之初被多个项目进行引用。随着几个项目的共同迭代，可共享的代码块越来越少，B 的维护从一个分支变成了每个项目一个分支。接手这个项目后觉得这个维护模式太复杂了，于是连同其他项目把 B 上自己的分支迁移走，彻底废弃 B repo。</p>
+<p>&lt;!--more--&gt;</p>
+<p>如果不考虑 commit history，把代码从 B 的项目分支直接拷贝过来 A 即可，这边我们考虑的是迁移带历史记录的整个分支。我尝试了两种办法：</p>
+<ul>
+<li>添加新的 remote，拉取对应分支，<code>merge</code> 两个分支</li>
+<li>添加新的 remote，拉取对应分支，<code>rebase</code> 两个分支</li>
+</ul>
+<p>对于 <code>merge</code>，由于两个分支没有任何的 commit tree 关联，会出现 <code>unrelated-histories</code> 的错误，所以一开始放弃了这个办法。</p>
+<p>对于 <code>rebase</code>，由于记录较多，且两个项目有部分代码分别在两边出现过（包名类名都相同），所以 <code>rebase</code> 的过程中不断有冲突要解决，时间成本巨大，且不知道大量的冲突调整后会不会有问题，所以也只能作罢。</p>
+<p>最后回头来看 <code>merge</code> 的错误，发现其实有一个 <code>--allow-unrelated-histories</code> 的参数可以绕过检查，然后问题就迎刃而解了。</p>
+<pre class="language-bash"><code class="language-bash">// Add Core repo as a remote <span class="token builtin class-name">source</span> of this repo<br>$ <span class="token function">git</span> remote <span class="token function">add</span> core YOUR_GIT_REPO<br><br>// Fetch the branch we need to local: <br>$ <span class="token function">git</span> fetch core development-a:a-core<br><br>// Clean up the folder, only remains Core module that we need <br>// Merge with the flag --allow-unrelated-histories <span class="token punctuation">(</span>or it will throw unrelated-histories error<span class="token punctuation">)</span><br>$ <span class="token function">git</span> merge a-core --allow-unrelated-histories <br><br>// Modify build script to match the new structure<br><span class="token punctuation">..</span>.</code></pre>
+<p>事实上，这个问题的根本在我们拥有了一个超级大的 <code>common</code> 模块。这也是很多 App 在迭代发展变大的过程中必经的一个问题，解决的办法也不难，就是在一个公共的功能成熟的时候（比如从 0.1 到 1.0 了）就把它独立出来，其他项目独立引用这个单独的小模块，或者如果在一开始就确定了它可以作为一个独立的模块（比如独立存储），那就不要把代码和其他公共模块混在一起。具体操作上通常有两种：</p>
+<ul>
+<li>要么把这个 <code>common</code> repo 变成一个 <code>monorepo</code> 的结构，上层的业务项目虽然需要 pull 这个 repo，但是引用时是完全按照细分的每个模块进行引用</li>
+<li>要么把 <code>common</code> repo 完全拆分开成独立模块，独立进行维护，上层不同的业务项目只引用具体需要的二进制版本</li>
+</ul>
+<p>国内例如淘系的 App 比较倾向于第二种，而国外的公司比如 Google 更多会采用第一种，各有优劣吧。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

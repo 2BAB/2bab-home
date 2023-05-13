@@ -1,0 +1,83 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="AB 的工程效率小集 #2 九月刊" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2021-09-30-dev-exp-monthly-update-02/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>AB 的工程效率小集 #2 九月刊 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>AB 的工程效率小集 #2 九月刊</h1>
+    <div class="italic text-gray-500">
+      2021/09/30
+    </div>
+    <div>
+      <p>关于为什么要做一份 Android 的工程效率小集，详见<a href="">小集第一期</a>。如果你想加入或者投稿一些有意思的内容，欢迎通过<a href="/about">这些方式</a>联系我。</p>
+<p>本期开始我们加入了 &quot;News(N)&quot; 新知的内容。OK，那我们进入第二期的正文。<strong>2021 年 8 月工程效率小集：</strong></p>
+<h2 id="%E6%9E%84%E5%BB%BA%EF%BC%9Agradle%2Fagp%2Fci%2F..." tabindex="-1">构建：Gradle/AGP/CI/...</h2>
+<h3 id="n1%EF%BC%9A%E4%B8%80%E4%B8%AA%E8%BD%AC%E6%8D%A2-gradle-%E5%88%B0-bazel-%E7%9A%84%E5%B7%A5%E5%85%B7%EF%BC%8C%E5%B9%B6%E6%94%AF%E6%8C%81%E8%9E%8D%E5%90%88%E7%BC%96%E8%AF%91%EF%BC%8C%E5%8F%AF%E6%B8%90%E8%BF%9B%E5%BC%8F%E8%BF%81%E7%A7%BB%E3%80%82" tabindex="-1">N1：一个转换 Gradle 到 Bazel 的工具，并支持融合编译，可渐进式迁移。</h3>
+<p><a href="https://github.com/grab/Grazel">https://github.com/grab/Grazel</a></p>
+<h3 id="n2%EF%BC%9A" tabindex="-1">N2：</h3>
+<h2 id="q1%3A" tabindex="-1">Q1:</h2>
+<p>is it possible to use Kotlin DSL functions, in a plugin, without applying the kotlin-dsl plugin? The functions make writing plugins in Kotlin much nicer in many ways, but I don't see why they should be coupled to the Kotlin DSL per se.
+In other words, are those functions in a separate jar I could declare as a normal dependency?</p>
+<p>The gradleKotlinDsl() dependency notation (available only in Kotlin scripts) should give you the required libraries.</p>
+<h2 id="q2%3A" tabindex="-1">Q2:</h2>
+<p>how can I kill all gradle daemon’s, regardless of version?</p>
+<p>You need to use the task manager, search for java processes that are daemons and kill them
+Or loop through Gradle versions and use --stop for all of them</p>
+<pre class="language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/sh</span><br>jps <span class="token operator">|</span> <span class="token function">awk</span> <span class="token string">'$2=="GradleWorkerMain"|| $2=="GradleDaemon"{print $1}'</span> <span class="token operator">|</span> <span class="token function">xargs</span> <span class="token function">kill</span></code></pre>
+<h2 id="kotlin-%E5%91%A8%E8%BE%B9%EF%BC%9Akoin%2Fktor%2Fcoil%2F..." tabindex="-1">Kotlin 周边：Koin/Ktor/Coil/...</h2>
+<p><em>欢迎关注我的<a href="/about"> Github / 公众号 / 播客 / 微博 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

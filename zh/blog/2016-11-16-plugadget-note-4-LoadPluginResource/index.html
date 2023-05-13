@@ -1,0 +1,117 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="插件化笔记 #4 加载插件资源文件" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2016-11-16-plugadget-note-4-LoadPluginResource/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>插件化笔记 #4 加载插件资源文件 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>插件化笔记 #4 加载插件资源文件</h1>
+    <div class="italic text-gray-500">
+      2016/11/16
+    </div>
+    <div>
+      <blockquote>
+<p>Demo: <a href="https://github.com/2BAB/Android-Plugin-Dev-Notes">https://github.com/2BAB/Android-Plugin-Dev-Notes</a></p>
+</blockquote>
+<p>插件化的资源加载大体上也分两种：</p>
+<ul>
+<li>每个插件构造单一的 <code>Resource</code> 对象，各个插件的资源互不影响</li>
+<li>所有插件的资源都加载到一个 <code>AssetManager</code>，全局可用，但是会出现资源 ID 冲突的现象，必须在打包流程中做修改</li>
+</ul>
+<p>本节以构造单一对象为基础讲解，资源冲突的问题和方案下节讲。</p>
+<h2 id="%E8%B5%84%E6%BA%90%E7%9A%84%E5%AF%BB%E6%89%BE%E8%BF%87%E7%A8%8B" tabindex="-1">资源的寻找过程</h2>
+<blockquote>
+<p>在Activity中的getResources()方法会走到ContextWrapper的实现上，而ContextWrapper顾名思义它只是一个包装类，最终的调用是ContextWrapper的实际类ContextImpl中的方法。</p>
+<p>ContextImpl中getResources()方法返回了它的成员变量mResource,我们看一下ContextImpl的构造函数，其中mResources被第一次赋值是通过下面的函数调用:</p>
+</blockquote>
+<pre><code>Resources resources = packageInfo.getResources(mainThread);
+</code></pre>
+<p>&lt;!--more--&gt;</p>
+<blockquote>
+<p>packageInfo是一个LoadedApk类型的参数，mainThread是ActivityThread类型的参数，mainThread就是当前Apk运行的主进程类，我们继续看LoadedApk中的方法：</p>
+</blockquote>
+<pre><code> public Resources getResources(ActivityThread mainThread) {
+    if (mResources == null) {
+        mResources = mainThread.getTopLevelResources(mResDir, mSplitResDirs, mOverlayDirs,
+                    mApplicationInfo.sharedLibraryFiles, Display.DEFAULT_DISPLAY, null, this);
+    }
+    return mResources;
+ }
+</code></pre>
+<pre><code>Resources getTopLevelResources(String resDir, String[] splitResDirs, String[] overlayDirs,
+            String[] libDirs, int displayId, Configuration overrideConfiguration,
+            LoadedApk pkgInfo) {
+    return mResourcesManager.getTopLevelResources(resDir, splitResDirs, overlayDirs, libDirs,
+                displayId, overrideConfiguration, pkgInfo.getCompatibilityInfo(), null);
+}
+</code></pre>
+<blockquote>
+<p>mResourceManager是一个ResourceManager类型的成员变量，当我们戳开ResourceManager的代码时，惊喜的发现这个类是一个单例，然后定位到getTopLevelResources方法</p>
+</blockquote>
+<pre class="language-java"><code class="language-java"><span class="token class-name">ResourcesKey</span> key <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">ResourcesKey</span><span class="token punctuation">(</span>resDir<span class="token punctuation">,</span> displayId<span class="token punctuation">,</span> overrideConfiguration<span class="token punctuation">,</span> scale<span class="token punctuation">,</span> token<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">Resources</span> r<span class="token punctuation">;</span><br><span class="token class-name">WeakReference</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Resources</span><span class="token punctuation">></span></span> wr <span class="token operator">=</span> mActiveResources<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span><br>r <span class="token operator">=</span> wr <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">?</span> wr<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br><span class="token keyword">if</span> <span class="token punctuation">(</span>r <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> r<span class="token punctuation">.</span><span class="token function">getAssets</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isUpToDate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">return</span> r<span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><span class="token class-name">AssetManager</span> assets <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AssetManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token keyword">if</span> <span class="token punctuation">(</span>resDir <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>assets<span class="token punctuation">.</span><span class="token function">addAssetPath</span><span class="token punctuation">(</span>resDir<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br>r <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Resources</span><span class="token punctuation">(</span>assets<span class="token punctuation">,</span> dm<span class="token punctuation">,</span> config<span class="token punctuation">,</span> compatInfo<span class="token punctuation">,</span> token<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">WeakReference</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Resources</span><span class="token punctuation">></span></span> wr <span class="token operator">=</span> mActiveResources<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>key<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">Resources</span> existing <span class="token operator">=</span> wr <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">?</span> wr<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br><span class="token keyword">if</span> <span class="token punctuation">(</span>existing <span class="token operator">!=</span> <span class="token keyword">null</span> <span class="token operator">&amp;&amp;</span> existing<span class="token punctuation">.</span><span class="token function">getAssets</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">isUpToDate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    r<span class="token punctuation">.</span><span class="token function">getAssets</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">close</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">return</span> existing<span class="token punctuation">;</span><br><span class="token punctuation">}</span><br>mActiveResources<span class="token punctuation">.</span><span class="token function">put</span><span class="token punctuation">(</span>key<span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">WeakReference</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Resources</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>r<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token keyword">return</span> r<span class="token punctuation">;</span></code></pre>
+<p>至此，我们知道了资源的真正载入和管理是由 AssetManager 来实现的，那么 Hook 点也知道了——修改 ContextImpl 的 Resource 对象所持有的 AssetManager。</p>
+<h2 id="hook" tabindex="-1">Hook</h2>
+<p>在 Plugin 的 Activity 里实现资源加载：</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token keyword">extends</span> <span class="token class-name">AppCompatActivity</span> <span class="token punctuation">{</span><br>    <span class="token keyword">private</span> <span class="token class-name">Resources</span> pluginR<span class="token punctuation">;</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token comment">// 如果不 Hook mResource，也可以直接 getPluginR 来获取 values 的资源，但是无法装载 Layout</span><br>        <span class="token comment">// getPluginR().getString(R.string.plugin_string_res); //</span><br><br>        <span class="token comment">// Fragment 或者 自定义 View 等需要自己 Inflate 的也支持</span><br>        <span class="token comment">/*int bundleLayoutId = R.layout.activity_main;<br>        View bundleView = LayoutInflater.from(this).inflate(bundleLayoutId, null);<br>        setContentView(bundleView);*/</span><br><br>        <span class="token function">setContentView</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>layout<span class="token punctuation">.</span>activity_main<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">attachBaseContext</span><span class="token punctuation">(</span><span class="token class-name">Context</span> newBase<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">try</span> <span class="token punctuation">{</span><br>            <span class="token class-name">Field</span> field <span class="token operator">=</span> newBase<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDeclaredField</span><span class="token punctuation">(</span><span class="token string">"mResources"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            field<span class="token punctuation">.</span><span class="token function">setAccessible</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            field<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>newBase<span class="token punctuation">,</span> <span class="token function">getPluginR</span><span class="token punctuation">(</span>newBase<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">attachBaseContext</span><span class="token punctuation">(</span>newBase<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">public</span> <span class="token class-name">Resources</span> <span class="token function">getPluginR</span><span class="token punctuation">(</span><span class="token class-name">Context</span> context<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>pluginR <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token keyword">return</span> pluginR<span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>        <span class="token keyword">try</span> <span class="token punctuation">{</span><br>            <span class="token class-name">String</span> dexPath <span class="token operator">=</span> <span class="token string">"/system/dex/"</span> <span class="token operator">+</span> <span class="token string">"4-Plugin.apk"</span><span class="token punctuation">;</span><br>            <span class="token class-name">AssetManager</span> assetManager <span class="token operator">=</span> <span class="token class-name">AssetManager</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">newInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token class-name">Method</span> addAssetPath <span class="token operator">=</span> assetManager<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getMethod</span><span class="token punctuation">(</span><span class="token string">"addAssetPath"</span><span class="token punctuation">,</span> <span class="token class-name">String</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            addAssetPath<span class="token punctuation">.</span><span class="token function">invoke</span><span class="token punctuation">(</span>assetManager<span class="token punctuation">,</span> dexPath<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            pluginR <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Resources</span><span class="token punctuation">(</span>assetManager<span class="token punctuation">,</span> context<span class="token punctuation">.</span><span class="token function">getResources</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getDisplayMetrics</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> context<span class="token punctuation">.</span><span class="token function">getResources</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getConfiguration</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>            <span class="token comment">//独立使用Resource时（不hook mResource）</span><br>            <span class="token comment">//Resources origin = super.getResources();</span><br>            <span class="token comment">//pluginR = new Resources(assetManager, origin.getDisplayMetrics(), origin.getConfiguration());</span><br>            <span class="token keyword">return</span> pluginR<span class="token punctuation">;</span><br>        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">return</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h2 id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" tabindex="-1">参考资料</h2>
+<p>本系列为笔记文，文中有大量的源码解析都是引用的其他作者的成果，详见下方参考资料。</p>
+<ul>
+<li><a href="http://www.liuguangli.win/archives/370">ANDROID应用程序插件化研究之ASSETMANAGER</a></li>
+<li><a href="http://www.jianshu.com/p/96d5b83ca26c">插件化-资源处理</a></li>
+<li><a href="http://blog.csdn.net/nupt123456789/article/details/50414175">Android插件化（三）加载插件apk中的Resource资源</a></li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

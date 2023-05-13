@@ -1,0 +1,104 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #5 含 buildscript 的脚本执行顺序" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-06-21-daily-of-agp-buildscript-block-execute-order/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #5 含 buildscript 的脚本执行顺序 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #5 含 buildscript 的脚本执行顺序</h1>
+    <div class="italic text-gray-500">
+      2017/06/21
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<p>最近在改一个裹脚布项目，对打包脚本升级的要求是「循序渐进」（工期紧，稳定为主）——Debug 下用新版的 Gradle Plugin，Release 用旧版的。嗯，很自然会想到改动 root project 下的 <code>build.gradle</code>，加一段判断：</p>
+<pre class="language-gradle"><code class="language-gradle"><span class="token comment">// apply isDebug() method from utils.gradle</span><br><span class="token keyword">apply</span> from<span class="token punctuation">:</span> <span class="token keyword">project</span><span class="token punctuation">.</span><span class="token function">getRootProject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>rootDir<span class="token punctuation">.</span>absolutePath <span class="token operator">+</span> <span class="token string">'/scripts/utils.gradle'</span><br><span class="token keyword">def</span> gradlePluginVersion <span class="token operator">=</span> <span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token string">'2.3.3'</span> <span class="token punctuation">:</span> <span class="token string">'2.0.0'</span><br><br>buildscript <span class="token punctuation">{</span><br><br>    <span class="token keyword">repositories</span> <span class="token punctuation">{</span><br>        <span class="token function">jcenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token function">mavenLocal</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token function">mavenCentral</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">dependencies</span> <span class="token punctuation">{</span><br>        <span class="token comment">// use outer variable</span><br>        classpath <span class="token interpolation-string"><span class="token string">"com.android.tools.build:gradle:</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$</span><span class="token expression">gradlePluginVersion</span></span><span class="token string">"</span></span><br>        classpath <span class="token punctuation">...</span><br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span><br><br><span class="token punctuation">...</span></code></pre>
+<p>&lt;!--more--&gt;</p>
+<p>但是运行报错：</p>
+<blockquote>
+<p>Could not get unknown property 'gradlePluginVersion' for object of type  org.gradle.api.internal.artifacts.dsl.dependencies.DefaultDependencyHandler.</p>
+</blockquote>
+<p>竟然找不到这个变量，不太合理呃，之前在各种脚本里定义依赖的时候也这样干过，没问题呀？</p>
+<h2 id="%E7%A5%9E%E7%A7%98%E7%9A%84-buildscript-block" tabindex="-1">神秘的 buildscript block</h2>
+<p>Google 翻一下，发现还是有一些<a href="https://discuss.gradle.org/t/inherit-inject-buildscript-dependencies-into-custom-script-within-subproject/7175/9">类似的问题</a>，但多数是在研究怎么让 buildscript 引入的 deps 可以被一些自定义的脚本找到的<a href="https://stackoverflow.com/questions/37058780/access-classpath-dependencies-defined-in-buildscript-block-in-applied-external-s">问题</a>。</p>
+<p>读读<a href="https://docs.gradle.org/3.3/userguide/organizing_build_logic.html#sec:build_script_external_dependencies">官方文档</a>，我们知道 buildscript() 是创建了 ScriptHandler 实例：</p>
+<blockquote>
+<p>The closure passed to the buildscript() method configures a ScriptHandler instance. You declare the build script classpath by adding dependencies to the classpath configuration. This is the same way you declare, for example, the Java compilation classpath. You can use any of the dependency types described in Section 25.4, “How to declare your dependencies”, except project dependencies.</p>
+</blockquote>
+<blockquote>
+<p>Having declared the build script classpath, you can use the classes in your build script as you would any other classes on the classpath.</p>
+</blockquote>
+<p>而 ScriptHandler 的源码注释写的是：</p>
+<blockquote>
+<p>To declare the script classpath, you use the DependencyHandler provided by getDependencies() to attach dependencies to the &quot;classpath&quot; configuration. <strong>These dependencies are resolved just prior to script compilation, and assembled into the classpath for the script.</strong></p>
+</blockquote>
+<p>也就是说，buildscript block 的执行是优于其他脚本的（但我猜应该有一个例外是 init script，后面有空再写一篇）。其实很好理解，因为这货定义的是 <strong>classpath</strong> 依赖，我们编译用到的的 <code>Android Gradle Plugin</code> 等等都是从这里引入的，如果 buildscript 不是优于其他脚本执行，那才会有问题嘞！</p>
+<h2 id="%E6%92%B8%E4%B8%AA%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81" tabindex="-1">撸个测试代码</h2>
+<pre class="language-gradle"><code class="language-gradle">println <span class="token string">'Hello First Line'</span><br><br>buildscript <span class="token punctuation">{</span><br><br>    println <span class="token string">'Hello Second Line'</span><br><br>    <span class="token keyword">repositories</span> <span class="token punctuation">{</span><br>        <span class="token punctuation">...</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">dependencies</span> <span class="token punctuation">{</span><br>        <span class="token punctuation">...</span><br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span><br><br>afterEvaluate <span class="token punctuation">{</span> <span class="token keyword">project</span> <span class="token operator">-></span><br>    println <span class="token string">'Hello Third Line'</span><br><span class="token punctuation">}</span></code></pre>
+<p>加 <code>--info</code> 执行这个脚本构建，可以看到如下输出：</p>
+<pre class="language-shell"><code class="language-shell">Starting Build<br>Settings evaluated using settings <span class="token function">file</span> <span class="token string">'/Path/To/Your/Project/settings.gradle'</span><span class="token builtin class-name">.</span><br>Projects loaded. Root project using build <span class="token function">file</span> <span class="token string">'/Path/To/Your/Project/build.gradle'</span><span class="token builtin class-name">.</span><br>Included projects: <span class="token punctuation">[</span>root project <span class="token string">'Your-Project'</span>, project <span class="token string">':app'</span><span class="token punctuation">]</span><br>Evaluating root project <span class="token string">'Your-Project'</span> using build <span class="token function">file</span> <span class="token string">'/Path/To/Your/Project/build.gradle'</span><span class="token builtin class-name">.</span><br>Hello Second Line<br>/Path/To/Your/Project<br>Creating new cache <span class="token keyword">for</span> metadata-2.23/module-metadata, path /Users/2bab/.gradle/caches/modules-2/metadata-2.23/module-metadata.bin, access org.gradle.cache.internal.DefaultCacheAccess@24473bd5<br>Creating new cache <span class="token keyword">for</span> metadata-2.23/artifact-at-repository, path /Users/2bab/.gradle/caches/modules-2/metadata-2.23/artifact-at-repository.bin, access org.gradle.cache.internal.DefaultCacheAccess@24473bd5<br>Hello First Line<br>Hello Third Line<br>Evaluating project <span class="token string">':app'</span> using build <span class="token function">file</span> <span class="token string">'/Path/To/Your/Project/app/build.gradle'</span><span class="token builtin class-name">.</span></code></pre>
+<p><strong>可以看到执行顺序是 2-&gt;1-&gt;3，即先执行 Evaluate build.gradle，然后发生 2 的执行（也就是先执行 buildscript block），然后再顺序执行该脚本的其他代码 1（以及后续的代码如果有的话），Evaluate 结束执行 3。</strong></p>
+<p>断点 Gradle 源码：</p>
+<p>1.DefaultScriptRunnerFactory.ScriptRunnerImpl.run() -&gt;</p>
+<pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Override</span><br><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token class-name">Object</span> target<span class="token punctuation">,</span> <span class="token class-name">ServiceRegistry</span> scriptServices<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">GradleScriptException</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>compiledScript<span class="token punctuation">.</span><span class="token function">getRunDoesSomething</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br>    <br>    <span class="token class-name">ClassLoader</span> originalLoader <span class="token operator">=</span> <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getContextClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token class-name">T</span> script <span class="token operator">=</span> <span class="token function">getScript</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    script<span class="token punctuation">.</span><span class="token function">init</span><span class="token punctuation">(</span>target<span class="token punctuation">,</span> scriptServices<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setContextClassLoader</span><span class="token punctuation">(</span>script<span class="token punctuation">.</span><span class="token function">getContextClassloader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    script<span class="token punctuation">.</span><span class="token function">getStandardOutputCapture</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">start</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">try</span> <span class="token punctuation">{</span><br>        script<span class="token punctuation">.</span><span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Throwable</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">throw</span> <span class="token keyword">new</span> <span class="token class-name">GradleScriptException</span><span class="token punctuation">(</span><span class="token class-name">String</span><span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"A problem occurred evaluating %s."</span><span class="token punctuation">,</span> script<span class="token punctuation">)</span><span class="token punctuation">,</span> e<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span> <span class="token keyword">finally</span> <span class="token punctuation">{</span><br>        script<span class="token punctuation">.</span><span class="token function">getStandardOutputCapture</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stop</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">Thread</span><span class="token punctuation">.</span><span class="token function">currentThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setContextClassLoader</span><span class="token punctuation">(</span>originalLoader<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>2.ProjectScript.buildscript() -&gt;</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">buildscript</span><span class="token punctuation">(</span><span class="token class-name">Closure</span> configureClosure<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token function">getScriptTarget</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">buildscript</span><span class="token punctuation">(</span>configureClosure<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>遗憾的是 <code>script.run()</code> 的过程暂时还没找到对应的实现，猜测和 Java 找 main 方法思路类似吧。但是通过比对 <strong>调用 <code>ProjectScript.buildscript()</code> 该方法的时机</strong> 和 <strong>测试代码打印的 log</strong>，会发现：<strong>断到该方法调用时，还没有任何的 log 输出（也就是 buildscript 确实是优先执行的），如果在 buildscript 闭包开始做任何操作，比如 apply 一个脚本，那么会立马走到对应的 apply 方法中。</strong></p>
+<h2 id="%E8%A7%A3%E6%B3%95" tabindex="-1">解法</h2>
+<p>有了上面的测试，知道了 buildscript block 的优先执行，所以问题也就简单解决了——把 buildscript 相关逻辑的脚本放到 block 内；此外，如果 block 内的东西还需要暴露给其他脚本，依旧是可以用 <code>ext</code> 来做 export 的：</p>
+<pre class="language-gradle"><code class="language-gradle">buildscript <span class="token punctuation">{</span><br><br>    <span class="token keyword">apply</span> from<span class="token punctuation">:</span> <span class="token keyword">project</span><span class="token punctuation">.</span><span class="token function">getRootProject</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>rootDir<span class="token punctuation">.</span>absolutePath <span class="token operator">+</span> <span class="token string">'/scripts/utils.gradle'</span><br>    <span class="token keyword">def</span> gradlePluginVersion <span class="token operator">=</span> <span class="token function">isDebug</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">?</span> <span class="token string">'2.3.3'</span> <span class="token punctuation">:</span> <span class="token string">'2.0.0'</span><br>    ext<span class="token punctuation">.</span>gradlePluginVersion <span class="token operator">=</span> gradlePluginVersion<br>    <br>    <span class="token keyword">repositories</span> <span class="token punctuation">{</span><br>        <span class="token function">jcenter</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token function">mavenLocal</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token function">mavenCentral</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">dependencies</span> <span class="token punctuation">{</span><br>        classpath <span class="token interpolation-string"><span class="token string">"com.android.tools.build:gradle:</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">$</span><span class="token expression">gradlePluginVersion</span></span><span class="token string">"</span></span><br>        <span class="token punctuation">...</span><br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span></code></pre>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

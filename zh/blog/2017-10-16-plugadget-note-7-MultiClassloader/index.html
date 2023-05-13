@@ -1,0 +1,112 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="插件化笔记 #7 - MultiClassloader" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2017-10-16-plugadget-note-7-MultiClassloader/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>插件化笔记 #7 - MultiClassloader | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>插件化笔记 #7 - MultiClassloader</h1>
+    <div class="italic text-gray-500">
+      2017/10/16
+    </div>
+    <div>
+      <blockquote>
+<p>Demo: <a href="https://github.com/2BAB/Android-Plugin-Dev-Notes">https://github.com/2BAB/Android-Plugin-Dev-Notes</a></p>
+</blockquote>
+<h2 id="%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E6%9C%89-multi-classloader" tabindex="-1">为什么要有 Multi Classloader</h2>
+<p>如上篇所说，我们不管要起 Activity、Service，其实都是需要注入自定义的 Classloader。而 Service 没有一个很好的简单注入点，所以才有了 Hook 上层 Classloader 的方案。这种方案有两种，都是解决多 Dex 加载的情况（不管插件化与否其实只要方法数超 65535 都是需要做多 Dex 加载）：</p>
+<ol>
+<li>单一 Classloader：就是上篇说到的 MultiDex 使用的反射注入 DexPathList 的前部，这种是利用了 BaseDexClassloader 的 findClass 特性，由前往后查找 Dex 文件并加载 Class；</li>
+<li>多 Classloader：利用双亲委派的 Classloader 机制，使得我们的 Classloader 可以优先于系统 Classloader 查找到 Class 并返回，通常会伴随着每个模块一个 Classloader，再由一个 HookClassloader 统一 Dispatch；</li>
+</ol>
+<p>&lt;!--more--&gt;</p>
+<p>目前淘宝、微店等都是使用多 Classloader 形式来实现 Dex 文件的动态加载，隔离性强、鲁棒性好，但实现上有所不同：</p>
+<ol>
+<li>淘宝的 Atlas 做的是替换应用直接使用的 PathClassloader；</li>
+<li>微店、Instant-Run 使用的是替换 PathClassloader 的 parent；</li>
+</ol>
+<p>本系列的尿性就是要简单，稳定，尽量不 Hook 任何系统服务，所以下面以替换 PathClassloader 的 parent 思路来讲：</p>
+<h2 id="%E6%9B%BF%E6%8D%A2-pathclassloader-%E7%9A%84-parent" tabindex="-1">替换 PathClassloader 的 parent</h2>
+<p>很明显我们应该在应用还没启动的时候就把这事干了，所以参考 Instant-Run，Hook 时机在 Application 的 <code>attachBaseContext</code> 里：</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MultiClassloaderApplication</span> <span class="token keyword">extends</span> <span class="token class-name">Application</span> <span class="token punctuation">{</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">attachBaseContext</span><span class="token punctuation">(</span><span class="token class-name">Context</span> base<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">attachBaseContext</span><span class="token punctuation">(</span>base<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token function">replacePathClassloaderParent</span><span class="token punctuation">(</span>base<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">replacePathClassloaderParent</span><span class="token punctuation">(</span><span class="token class-name">Context</span> context<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token class-name">ClassLoader</span> pathClassloader <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">DispatchClassloader</span> dispatchClassloader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DispatchClassloader</span><span class="token punctuation">(</span>pathClassloader<span class="token punctuation">,</span> context<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">final</span> <span class="token class-name">Class</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> clz <span class="token operator">=</span> <span class="token class-name">ClassLoader</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">;</span><br>        <span class="token keyword">try</span> <span class="token punctuation">{</span><br>            <span class="token keyword">final</span> <span class="token class-name">Field</span> parentField <span class="token operator">=</span> clz<span class="token punctuation">.</span><span class="token function">getDeclaredField</span><span class="token punctuation">(</span><span class="token string">"parent"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            parentField<span class="token punctuation">.</span><span class="token function">setAccessible</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            parentField<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>pathClassloader<span class="token punctuation">,</span> dispatchClassloader<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span></code></pre>
+<h2 id="%E5%AE%9E%E7%8E%B0-multi-classloader" tabindex="-1">实现 Multi Classloader</h2>
+<p>[DispatchClassloader.java]</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">DispatchClassloader</span> <span class="token keyword">extends</span> <span class="token class-name">ClassLoader</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">private</span> <span class="token class-name">BundleClassloader</span> dexClassLoader<span class="token punctuation">;</span><br>    <span class="token keyword">private</span> <span class="token class-name">Context</span> context<span class="token punctuation">;</span><br>    <span class="token keyword">private</span> <span class="token class-name">ClassLoader</span> origin<span class="token punctuation">;</span><br><br>    <span class="token keyword">public</span> <span class="token class-name">DispatchClassloader</span><span class="token punctuation">(</span><span class="token class-name">ClassLoader</span> origin<span class="token punctuation">,</span> <span class="token class-name">Context</span> context<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">(</span>origin<span class="token punctuation">.</span><span class="token function">getParent</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">this</span><span class="token punctuation">.</span>origin <span class="token operator">=</span> origin<span class="token punctuation">;</span><br>        <span class="token keyword">this</span><span class="token punctuation">.</span>context <span class="token operator">=</span> context<span class="token punctuation">;</span><br>        <span class="token function">installDex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">installDex</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 这里目前只装载了一个测试 Dex，正常情况下需要装载某个目录下的所有 dex 文件（通常每个 Bundle 有一个 Dex）</span><br>        <span class="token class-name">File</span> optimizedDexOutputPath <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">File</span><span class="token punctuation">(</span><br>                <span class="token class-name">Environment</span><span class="token punctuation">.</span><span class="token function">getExternalStoragePublicDirectory</span><span class="token punctuation">(</span><span class="token class-name">Environment</span><span class="token punctuation">.</span><span class="token constant">DIRECTORY_DOWNLOADS</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"/7-MultiClassloader.dex"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">File</span> dexOutputDir <span class="token operator">=</span> context<span class="token punctuation">.</span><span class="token function">getDir</span><span class="token punctuation">(</span><span class="token string">"dex"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        dexClassLoader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">BundleClassloader</span><span class="token punctuation">(</span><br>                optimizedDexOutputPath<span class="token punctuation">.</span><span class="token function">getAbsolutePath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>                dexOutputDir<span class="token punctuation">.</span><span class="token function">getAbsolutePath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>                <span class="token keyword">null</span><span class="token punctuation">,</span><br>                origin<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">protected</span> <span class="token class-name">Class</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> <span class="token function">findClass</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">ClassNotFoundException</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 需要在这里遍历所有 Bundle 的 Classloader，或者用包名等来做查找分发</span><br>        <span class="token class-name">Class</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> clz <span class="token operator">=</span> dexClassLoader<span class="token punctuation">.</span><span class="token function">findClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">return</span> clz<span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>[BundleClassloader.java]</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">BundleClassloader</span> <span class="token keyword">extends</span> <span class="token class-name">DexClassLoader</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">public</span> <span class="token class-name">BundleClassloader</span><span class="token punctuation">(</span><span class="token class-name">String</span> dexPath<span class="token punctuation">,</span> <span class="token class-name">String</span> optimizedDirectory<span class="token punctuation">,</span> <span class="token class-name">String</span> librarySearchPath<span class="token punctuation">,</span> <span class="token class-name">ClassLoader</span> parent<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">(</span>dexPath<span class="token punctuation">,</span> optimizedDirectory<span class="token punctuation">,</span> librarySearchPath<span class="token punctuation">,</span> parent<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br>    <br>    <span class="token comment">// 仅仅是用来改写 protected 签名</span><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token class-name">Class</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> <span class="token function">findClass</span><span class="token punctuation">(</span><span class="token class-name">String</span> name<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">ClassNotFoundException</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">findClass</span><span class="token punctuation">(</span>name<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>几个注意点</strong>：</p>
+<ol>
+<li>根据参考资料里 Google 的一段注释，如果不用 BundleClassloader 做查找转发的话，还有些隐藏 Bug。反正我们的目的本来就是需要多个 Classloader 的，就顺水推舟了；</li>
+<li>请复写 findClass 而不是 loadClass，减少不必要的改动；</li>
+<li>findClass 默认 protected 的，所以需要继承 DexClassloader 改写 findClass 的签名；</li>
+</ol>
+<p><strong>Demo 工程打包过程</strong>：</p>
+<ul>
+<li>先切到 /host 工程中，<code>./gradlew installDebug</code> 安装宿主工程；</li>
+<li>再切到 /plugin 工程中，按 <a href="http://2bab.me/2016/09/18/Android%E6%8F%92%E4%BB%B6%E5%8C%96%E7%AC%94%E8%AE%B0-2-LoadPluginClass/">之前文章（Android插件化笔记-2-LoadPluginClass）</a>打包 Dex 的办法打出插件 Dex 文件并重命名为「7-MultiClassloader.dex」；</li>
+<li>adb push 该文件到手机的 /sdcard/Downloads/目录下</li>
+<li>启动宿主工程，toast 出 3.14 即为成功；</li>
+</ul>
+<h2 id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" tabindex="-1">参考资料</h2>
+<p>本系列为笔记文，文中有大量的源码解析都是引用的其他作者的成果，详见下方参考资料。</p>
+<ul>
+<li><a href="http://blog.csdn.net/xiangzhihong8/article/details/64906131">http://blog.csdn.net/xiangzhihong8/article/details/64906131</a></li>
+<li><a href="https://android.googlesource.com/platform/tools/base/+/gradle_2.0.0/instant-run/instant-run-server/src/main/java/com/android/tools/fd/runtime/IncrementalClassLoader.java">https://android.googlesource.com/platform/tools/base/+/gradle_2.0.0/instant-run/instant-run-server/src/main/java/com/android/tools/fd/runtime/IncrementalClassLoader.java</a></li>
+<li><a href="https://juejin.im/entry/59ca1d2d6fb9a00a616f496c">https://juejin.im/entry/59ca1d2d6fb9a00a616f496c</a></li>
+<li><a href="https://mp.weixin.qq.com/s/p8-ABKDpMLm6T4lJdK8Y3Q">https://mp.weixin.qq.com/s/p8-ABKDpMLm6T4lJdK8Y3Q</a></li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

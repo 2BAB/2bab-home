@@ -1,0 +1,119 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #8 AppPlugin 加了代理？" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2020-03-20-daily-of-agp-appplugin-delegate/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #8 AppPlugin 加了代理？ | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #8 AppPlugin 加了代理？</h1>
+    <div class="italic text-gray-500">
+      2020/03/20
+    </div>
+    <div>
+      <p><em>『构建指北』是探索 Android 构建相关的一系列文章，涵盖了 Gradle、Android Gradle Plugin、Kotlin Script 等工具，以及相关架构上的应用。以发现问题解决问题为出发点，传递新知提高生产效率为落脚点。</em></p>
+<h3 id="%E9%97%AE%E9%A2%98%E5%9B%9E%E9%A1%BE" tabindex="-1">问题回顾</h3>
+<p>这两天在维护 <a href="https://github.com/2BAB/ScratchPaper">ScratchPaper</a> ，更新依赖的 AGP（Android Gradle Plugin）版本到 <code>3.6.1</code>。升级的过程中发现，原本项目使用到的对 <code>AppPlugin</code> 的 Hook 点失效：</p>
+<blockquote>
+<p>回顾下，大约是在 3.3.x-3.5.x 的版本迭代里，启用了对 <code>BuildToolInfo</code> 类的反射获取，其目的是为了获取到 Aapt2 可执行文件的所在路径，从而支持自定义重新生成 App Icon 对应的二进制文件图标。</p>
+</blockquote>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">package</span> me<span class="token punctuation">.</span>xx2bab<span class="token punctuation">.</span>scratchpaper<span class="token punctuation">.</span>utils<br><br><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>AppPlugin<br><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>BasePlugin<br><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>scope<span class="token punctuation">.</span>GlobalScope<br><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>sdklib<span class="token punctuation">.</span>BuildToolInfo<br><span class="token keyword">import</span> org<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>api<span class="token punctuation">.</span>Project<br><br><span class="token keyword">class</span> <span class="token function">AndroidPluginUtils</span><span class="token punctuation">(</span><span class="token keyword">val</span> project<span class="token operator">:</span> Project<span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token annotation builtin">@Throws</span><span class="token punctuation">(</span>Exception<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br>    <span class="token keyword">fun</span> <span class="token function">buildToolInfo</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> BuildToolInfo <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> basePlugin <span class="token operator">=</span> project<span class="token punctuation">.</span>plugins<span class="token punctuation">.</span><span class="token function">findPlugin</span><span class="token punctuation">(</span>AppPlugin<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">.</span>java<span class="token punctuation">)</span> <span class="token keyword">as</span> BasePlugin<span class="token operator">&lt;</span><span class="token operator">*</span><span class="token operator">></span><br>        <span class="token keyword">val</span> scope <span class="token operator">=</span> <span class="token function">getField</span><span class="token punctuation">(</span>BasePlugin<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">.</span>java<span class="token punctuation">,</span> basePlugin<span class="token punctuation">,</span><br>                <span class="token string-literal singleline"><span class="token string">"globalScope"</span></span><span class="token punctuation">)</span> <span class="token keyword">as</span> GlobalScope<br>        <span class="token keyword">return</span> scope<span class="token punctuation">.</span>sdkComponents<span class="token punctuation">.</span>buildToolInfoProvider<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">fun</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token function">getField</span><span class="token punctuation">(</span>clazz<span class="token operator">:</span> Class<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token punctuation">,</span> instance<span class="token operator">:</span> T<span class="token punctuation">,</span> fieldName<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> Any <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> field <span class="token operator">=</span> clazz<span class="token punctuation">.</span>declaredFields<span class="token punctuation">.</span><span class="token function">filter</span> <span class="token punctuation">{</span> it<span class="token punctuation">.</span>name <span class="token operator">==</span> fieldName <span class="token punctuation">}</span><span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><br>        field<span class="token punctuation">.</span>isAccessible <span class="token operator">=</span> <span class="token boolean">true</span><br>        <span class="token keyword">return</span> field<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>instance<span class="token punctuation">)</span> <span class="token keyword">as</span> Any<br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span></code></pre>
+<p>让我们把项目依赖的 AGP 版本升级到 <code>3.6.1</code>，解决掉升级带来的常见编译错误后，跑个 Demo 试试：</p>
+<blockquote>
+<p>FAILURE: Build failed with an exception.</p>
+<p>* What went wrong:</p>
+<p>Execution failed for task ':app:processDemoDebugResources'.</p>
+<p>Index: 0, Size: 0</p>
+<p>...</p>
+<p>Caused by: java.lang.IndexOutOfBoundsException: Index: 0, Size: 0</p>
+<p>at me.xx2bab.scratchpaper.utils.AndroidPluginUtils.getField(AndroidPluginUtils.kt:21)</p>
+<p>at me.xx2bab.scratchpaper.utils.AndroidPluginUtils.buildToolInfo(AndroidPluginUtils.kt:15)</p>
+<p>at me.xx2bab.scratchpaper.utils.Aapt2Utils.compileResDir(Aapt2Utils.kt:13)</p>
+</blockquote>
+<p><strong>奇了怪了，为什么 <code>globalScope</code> 字段反射失败了？</strong></p>
+<h3 id="%E9%97%AE%E9%A2%98%E5%88%86%E6%9E%90-%26-%E6%BA%90%E7%A0%81%E9%87%8D%E7%8E%B0" tabindex="-1">问题分析 &amp; 源码重现</h3>
+<p>第一时间，当然是查看 <code>AppPlugin</code> 和 <code>BasePlugin</code> 的源码，看看该字段是否已被移除或改名了。然而惊讶的发现，<code>BasePlugin</code> 和 <code>AppPlugin</code> 下竟然空空荡荡：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">package</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<br><br><span class="token keyword">import</span> org<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>api<span class="token punctuation">.</span>Project<br><br><span class="token comment">/**<br> * The plugin applied with `com.android.application'<br> */</span><br><span class="token keyword">class</span> AppPlugin<span class="token operator">:</span> <span class="token function">BasePlugin</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">apply</span><span class="token punctuation">(</span>project<span class="token operator">:</span> Project<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>project<span class="token punctuation">)</span><br><br>        project<span class="token punctuation">.</span><span class="token function">apply</span><span class="token punctuation">(</span>INTERNAL_PLUGIN_ID<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">private</span> <span class="token keyword">val</span> INTERNAL_PLUGIN_ID <span class="token operator">=</span> <span class="token function">mapOf</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"plugin"</span></span> <span class="token keyword">to</span> <span class="token string-literal singleline"><span class="token string">"com.android.internal.application"</span></span><span class="token punctuation">)</span></code></pre>
+<p>真正有作用的代码只是一行内部插件的引入，插件名是 <code>com.android.internal.application</code>。顺藤摸瓜，去 <code>META-INF</code> 的插件注册目录看看，</p>
+<pre class="language-xml"><code class="language-xml">// com.android.internal.application.properties<br>implementation-class=com.android.build.gradle.internal.plugins.AppPlugin</code></pre>
+<p>竟然出现了另外一个 <code>AppPlugin</code>，查看对应的源码，发现之前版本的 <code>AppPlugin</code> <code>BasePlugin</code> 等等类多数被移动到 <code>com.android.build.gradle.internal.plugins</code> 包下，而现在 <code>com.android.build.gradle</code> 包下的各类 Plugin 很多只是代理了内部的各类插件。</p>
+<p>之后，我想去找找有没有对这块改变的说明，毕竟目前的注释过于简单，没有对代理的意义做过多的说明。上 <a href="https://android.googlesource.com/platform/tools/base/+/ecdfaee5fbdfa69e82bb9266b6742d9c3db27880">GoogleSource</a> 翻到了这块相关的 commit 信息：</p>
+<blockquote>
+<p>New public plugin and move existing to internal.</p>
+<p>All current plugin classes are considered public API
+because of how Gradle allows finding plugins. Therefore
+we need these classes to not change.</p>
+<p>However, we also want to have plugin authors target gradle-api
+instead of the 'gradle' artifact. This change forks the current
+plugin classes into a new set of public class (name unchanged)
+and the actual implementations as private, internal classes.</p>
+<p>The new public plugins delegate to the internal plugins
+by applying them as separate &quot;internal&quot; plugins. For now
+the public plugins stay in gradle-core but we'll move them
+to gradle-api at some point. This is currently limited by
+the presence of getExtension on BasePlugin, both of which are
+now deprecated.</p>
+<p>Because our classes have no other public API this should not
+break anything.</p>
+</blockquote>
+<p>简单来说，他们想把 <code>gradle-core</code> 和 <code>gradle-api</code> 进行区分，并让插件作者们依赖于 <code>com.android.tools.build:gradle-api</code> 而不是 <code>com.android.tools.build:gradle</code>。这个代理目前只是为了维持原有的逻辑不变，同时占个桩表示我们要开始干活了。有趣的是，原本的插件代码多使用 Java 编写，现在的这些代理类均使用 Kotlin，这也同样印证了 AGP 一轮改革的开始。</p>
+<h3 id="%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88" tabindex="-1">解决方案</h3>
+<p>由于原有的逻辑都还存在于 internal 的 plugin 中，我们只要简单地替换 import 的路径即可：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>plugins<span class="token punctuation">.</span>AppPlugin<br><span class="token keyword">import</span> com<span class="token punctuation">.</span>android<span class="token punctuation">.</span>build<span class="token punctuation">.</span>gradle<span class="token punctuation">.</span>internal<span class="token punctuation">.</span>plugins<span class="token punctuation">.</span>BasePlugin</code></pre>
+<p>通过 <code>findPlugin</code> 即可找到老版本的 AppPlugin 等插件。具体的修改信息可以参考这次迭代的 <a href="https://github.com/2BAB/ScratchPaper/commit/17f3e83615ca95104b735f6c541ac65df8e4962c">commit message</a>。</p>
+<h3 id="%E7%BB%93%E8%AE%BA" tabindex="-1">结论</h3>
+<p>不确定之后基于 AGP 的 Hook 是否还像之前一样可操作，目前看来版本迭代的类变化更加的频繁，我自己维护的基于 AGP 的 Plugins 可能也会增加维护成本。之前考虑过的开发一个第三方的 AGP 的 Polyfill 也必须得操作起来了，分离关注点，减少插件开发和维护成本，在插件上集中注意力实现一个点的目标。</p>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

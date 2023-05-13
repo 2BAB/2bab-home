@@ -1,0 +1,120 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="插件化笔记 #3 启动插件 Activity" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2016-11-16-plugadget-note-3-StartPluginActivity/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>插件化笔记 #3 启动插件 Activity | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>插件化笔记 #3 启动插件 Activity</h1>
+    <div class="italic text-gray-500">
+      2016/11/16
+    </div>
+    <div>
+      <blockquote>
+<p>Demo: <a href="https://github.com/2BAB/Android-Plugin-Dev-Notes">https://github.com/2BAB/Android-Plugin-Dev-Notes</a></p>
+</blockquote>
+<p>其实从这一节开始，就需要区分两种插件化的方案：</p>
+<ul>
+<li>需要提前在 Manifest 里注册 Activity 、Service 的</li>
+<li>不需要的</li>
+</ul>
+<p>网路上大多是研究不需要注册的方案，需要 hook 各种 Activity、Service 的启动流程和生命周期。一般来说 hook 的原则是越少越好，越少越不会和系统的变动有冲突，自然也就不会出问题。</p>
+<p>当然，也有不做深度 hook 的方案，比如被反编译出来的 Atlas （现在改名叫 ACDD，<a href="https://github.com/zjf1023/ACDDExtension">https://github.com/zjf1023/ACDDExtension</a>)。下面都是按预先注册的方案来解释，这样的方案较为简单，hook的量极少，稳定可靠，当然也就牺牲了一定的动态性。</p>
+<p>&lt;!--more--&gt;</p>
+<h2 id="activity-%E5%90%AF%E5%8A%A8%E9%9C%80%E8%A6%81%E4%BB%80%E4%B9%88" tabindex="-1">Activity 启动需要什么</h2>
+<p>启动流程的分析网路上很多很多，这边摘了一个比较精简的版本：</p>
+<blockquote>
+<ul>
+<li>每个Activity的启动过程都是通过startActivityForResult() 最终都会调用Instrument.execStartActivity()</li>
+</ul>
+</blockquote>
+<ul>
+<li>再由ActivityManagerNative.startActivity() 通过 IPC AMS所在进程，ActivityManagerService.startActivity()</li>
+<li>最后 ActivityStackSupervisor.startActivityLocked(),权限以及安全检查mService.checkPermission。我们的Activity如果不注册就会在这个检查时返回一个没有注册的错误，最后回到应用进程的时候抛出这个没注册的异常。</li>
+<li>安全校验完成以后，会调用ApplicationThread.scheduleLaunchActivity()</li>
+<li>这一步让ApplicationThread做好跳转 activity 的准备（一些数据的封装），紧接着通过handle发送消息通知app.thread要进行Activity启动调度了，然后 app.thread接收到消息的时候才开始进行调度。</li>
+<li>这个message的接收是在ActivityThread中的handleMessage(Message msg)处理的。</li>
+</ul>
+<pre class="language-java"><code class="language-java"><span class="token class-name">Trace</span><span class="token punctuation">.</span><span class="token function">traceBegin</span><span class="token punctuation">(</span><span class="token class-name">Trace</span><span class="token punctuation">.</span><span class="token constant">TRACE_TAG_ACTIVITY_MANAGER</span><span class="token punctuation">,</span> <span class="token string">"activityStart"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token keyword">final</span> <span class="token class-name">ActivityClientRecord</span> r <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">ActivityClientRecord</span><span class="token punctuation">)</span> msg<span class="token punctuation">.</span>obj<span class="token punctuation">;</span><br><br>r<span class="token punctuation">.</span>packageInfo <span class="token operator">=</span> <span class="token function">getPackageInfoNoCheck</span><span class="token punctuation">(</span><br>	        r<span class="token punctuation">.</span>activityInfo<span class="token punctuation">.</span>applicationInfo<span class="token punctuation">,</span> r<span class="token punctuation">.</span>compatInfo<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token function">handleLaunchActivity</span><span class="token punctuation">(</span>r<span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">Trace</span><span class="token punctuation">.</span><span class="token function">traceEnd</span><span class="token punctuation">(</span><span class="token class-name">Trace</span><span class="token punctuation">.</span><span class="token constant">TRACE_TAG_ACTIVITY_MANAGER</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<ul>
+<li>这句中handleLaunchActivity()又调用了performLaunchActivity(r, customIntent); 而最终又调用了这句：</li>
+</ul>
+</blockquote>
+<pre class="language-java"><code class="language-java"><span class="token class-name"><span class="token namespace">java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span></span>ClassLoader</span> cl <span class="token operator">=</span> r<span class="token punctuation">.</span>packageInfo<span class="token punctuation">.</span><span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>activity <span class="token operator">=</span> mInstrumentation<span class="token punctuation">.</span><span class="token function">newActivity</span><span class="token punctuation">(</span><br>        cl<span class="token punctuation">,</span> component<span class="token punctuation">.</span><span class="token function">getClassName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> r<span class="token punctuation">.</span>intent<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">StrictMode</span><span class="token punctuation">.</span><span class="token function">incrementExpectedActivityCount</span><span class="token punctuation">(</span>activity<span class="token punctuation">.</span><span class="token function">getClass</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>r<span class="token punctuation">.</span>intent<span class="token punctuation">.</span><span class="token function">setExtrasClassLoader</span><span class="token punctuation">(</span>cl<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<ul>
+<li>兜了一圈又回到Instrumentation了。结果终于找到了可以hook的点了，就是这个mInstrumentation.newActivity()</li>
+</ul>
+</blockquote>
+<h2 id="hook" tabindex="-1">Hook</h2>
+<p>因为我们提前注册了 Activity，所以其实不会碰到校验的问题。剩下的问题就只有，我们的插件 Activity 代码不在当前 Classloader 里。</p>
+<pre class="language-java"><code class="language-java"><span class="token class-name"><span class="token namespace">java<span class="token punctuation">.</span>lang<span class="token punctuation">.</span></span>ClassLoader</span> cl <span class="token operator">=</span> r<span class="token punctuation">.</span>packageInfo<span class="token punctuation">.</span><span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>activity <span class="token operator">=</span> mInstrumentation<span class="token punctuation">.</span><span class="token function">newActivity</span><span class="token punctuation">(</span><br>        cl<span class="token punctuation">,</span> component<span class="token punctuation">.</span><span class="token function">getClassName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> r<span class="token punctuation">.</span>intent<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Hook 的点也是显而易见的，在 Instrumentation 里把 ClassLoader 换掉。</p>
+<p>Application里：</p>
+<pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Override</span><br><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">attachBaseContext</span><span class="token punctuation">(</span><span class="token class-name">Context</span> base<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">attachBaseContext</span><span class="token punctuation">(</span>base<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token function">installDex</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token function">hookInstrumentation</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">installDex</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// 外部路径</span><br>    <span class="token class-name">File</span> optimizedDexOutputPath <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">File</span><span class="token punctuation">(</span><span class="token string">"/system/dex/"</span> <span class="token operator">+</span> <span class="token string">"3-Plugin.apk"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token comment">// 无法直接从外部路径加载.dex文件，需要指定APP内部路径作为缓存目录（.dex文件会被解压到此目录）</span><br>    <span class="token class-name">File</span> dexOutputDir <span class="token operator">=</span> <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">getDir</span><span class="token punctuation">(</span><span class="token string">"dex"</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    dexClassLoader <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">DexClassLoader</span><span class="token punctuation">(</span><br>            optimizedDexOutputPath<span class="token punctuation">.</span><span class="token function">getAbsolutePath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>            dexOutputDir<span class="token punctuation">.</span><span class="token function">getAbsolutePath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>            <span class="token keyword">null</span><span class="token punctuation">,</span><br>            <span class="token function">getClassLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">hookInstrumentation</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">try</span> <span class="token punctuation">{</span><br>        <span class="token class-name">Class</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token operator">?</span><span class="token punctuation">></span></span> activityThreadClass <span class="token operator">=</span> <span class="token class-name">Class</span><span class="token punctuation">.</span><span class="token function">forName</span><span class="token punctuation">(</span><span class="token string">"android.app.ActivityThread"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">Method</span> currentActivityThreadMethod <span class="token operator">=</span> activityThreadClass<span class="token punctuation">.</span><span class="token function">getDeclaredMethod</span><span class="token punctuation">(</span><span class="token string">"currentActivityThread"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        currentActivityThreadMethod<span class="token punctuation">.</span><span class="token function">setAccessible</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">Object</span> currentActivityThread <span class="token operator">=</span> currentActivityThreadMethod<span class="token punctuation">.</span><span class="token function">invoke</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token comment">// 拿到原始的 mInstrumentation字段</span><br>        <span class="token class-name">Field</span> mInstrumentationField <span class="token operator">=</span> activityThreadClass<span class="token punctuation">.</span><span class="token function">getDeclaredField</span><span class="token punctuation">(</span><span class="token string">"mInstrumentation"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        mInstrumentationField<span class="token punctuation">.</span><span class="token function">setAccessible</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">Instrumentation</span> mInstrumentation <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">Instrumentation</span><span class="token punctuation">)</span> mInstrumentationField<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>currentActivityThread<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token comment">//如果没有注入过，就执行替换</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>mInstrumentation <span class="token keyword">instanceof</span> <span class="token class-name">CustomInstrumentation</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token class-name">CustomInstrumentation</span> pluginInstrumentation <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">CustomInstrumentation</span><span class="token punctuation">(</span>mInstrumentation<span class="token punctuation">,</span> dexClassLoader<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            mInstrumentationField<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>currentActivityThread<span class="token punctuation">,</span> pluginInstrumentation<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span> <span class="token keyword">catch</span> <span class="token punctuation">(</span><span class="token class-name">Exception</span> e<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        e<span class="token punctuation">.</span><span class="token function">printStackTrace</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>CustomInstrumentation：</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">CustomInstrumentation</span> <span class="token keyword">extends</span> <span class="token class-name">Instrumentation</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">private</span> <span class="token class-name">ClassLoader</span> customClassloader<span class="token punctuation">;</span><br>    <span class="token keyword">private</span> <span class="token class-name">Instrumentation</span> base<span class="token punctuation">;</span><br><br>    <span class="token keyword">public</span> <span class="token class-name">CustomInstrumentation</span><span class="token punctuation">(</span><span class="token class-name">Instrumentation</span> base<span class="token punctuation">,</span> <span class="token class-name">ClassLoader</span> classLoader<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">this</span><span class="token punctuation">.</span>base <span class="token operator">=</span> base<span class="token punctuation">;</span>  <span class="token comment">// 如果要不注册 Activity 就能启动的方式，那么还需要 hook execStartActivity 等方法，此时会用到这个 base 的 Instrumentation</span><br>        customClassloader <span class="token operator">=</span> classLoader<span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token class-name">Activity</span> <span class="token function">newActivity</span><span class="token punctuation">(</span><span class="token class-name">ClassLoader</span> cl<span class="token punctuation">,</span> <span class="token class-name">String</span> className<span class="token punctuation">,</span> <span class="token class-name">Intent</span> intent<span class="token punctuation">)</span> <span class="token keyword">throws</span> <span class="token class-name">InstantiationException</span><span class="token punctuation">,</span> <span class="token class-name">IllegalAccessException</span><span class="token punctuation">,</span> <span class="token class-name">ClassNotFoundException</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 替换了 ClassLoader</span><br>        <span class="token keyword">return</span> <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">newActivity</span><span class="token punctuation">(</span>customClassloader<span class="token punctuation">,</span> className<span class="token punctuation">,</span> intent<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br><span class="token punctuation">}</span></code></pre>
+<p>至此，我们就能启动插件的 Activity 了。</p>
+<h2 id="%E5%8F%82%E8%80%83%E8%B5%84%E6%96%99" tabindex="-1">参考资料</h2>
+<p>本系列为笔记文，文中有大量的源码解析都是引用的其他作者的成果，详见下方参考资料。</p>
+<ul>
+<li><a href="http://kymjs.com/code/2016/05/15/01">8个类搞定插件化——Activity实现方案</a></li>
+<li><a href="http://weishu.me/2016/04/05/understand-plugin-framework-classloader/">Android 插件化原理解析——插件加载机制</a></li>
+<li><a href="https://github.com/nuptboyzhb/AndroidPluginFramework/blob/master/%E7%AC%AC%E4%B8%80%E8%AF%BE-%E6%94%B9%E8%BF%9B%E7%9A%84MultiDex%E5%8A%A8%E6%80%81%E5%8A%A0%E8%BD%BD%E6%99%AE%E9%80%9Aapk/README.md">Android插件化（一）：使用改进的MultiDex动态加载assets中的apk</a></li>
+</ul>
+<p><em>欢迎关注我的<a href="/about">公众号和微博</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

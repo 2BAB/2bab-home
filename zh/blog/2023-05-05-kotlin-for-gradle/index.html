@@ -1,0 +1,109 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Kotlin 成为 Gradle 默认语言！如何快速上手？KOGE 小册来帮忙！" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2023-05-05-kotlin-for-gradle/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Kotlin 成为 Gradle 默认语言！如何快速上手？KOGE 小册来帮忙！ | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Kotlin 成为 Gradle 默认语言！如何快速上手？KOGE 小册来帮忙！</h1>
+    <div class="italic text-gray-500">
+      2023/05/05
+    </div>
+    <div>
+      <p>自 4 月中 Kotlin Conf 上宣布了这条消息：“Kotlin DSL 现在成为新 Gradle 构建的默认设置”，不少 Android 技术群就热烈地在转发/讨论相关消息。</p>
+<ul>
+<li>“Compose 只用 Kotlin，现在连 Gradle 也默认用 Kotlin 了！”</li>
+<li>“Kotlin DSL 是什么？我 Groovy 已经学不过来了，原来写个构建脚本还可以用 Kotlin 吗？”</li>
+<li>...</li>
+</ul>
+<p><img src="https://2bab-images.lastmayday.com/kotlin-is-the%20-default-lang-of-gradle-banner.png?imageslim" alt=""></p>
+<p><strong>（能让三家公司一起发新闻稿，说明这事...真的稳！！！）</strong></p>
+<p>没错，Kotlin 其实在 2016 就被引入了 Gradle 的构建工具中。并且，历经多年的集成和调优，终于在今年成为所有开发者的默认选项。只要你打开最新版的 Android Studio/IntelliJ IDEA，选择新建项目即可看到如下的提示：</p>
+<p><img src="https://2bab-images.lastmayday.com/20230505191241.png?imageslim" alt=""></p>
+<p>IDE 将为开发者默认创建 <code>Kotlin DSL (buidl.gradle.kts)</code> 的相关脚本。</p>
+<p>Gradle Kotlin DSL 带来的好处有：</p>
+<ol>
+<li>编译时检查。</li>
+<li>更好的 IDE 体验，包括自动补全，源代码导航，重构等。</li>
+<li>简化的声明式插件语法。</li>
+<li>丰富的 Kotlin 社区支持。</li>
+</ol>
+<p>尤其第二点，“自动补全”是过去使用 Groovy DSL 编写 Gradle 脚本的一大痛点，现在 Kotlin 为我们解决了这个问题。而作为 Android 开发者的我，也十分享受一门语言带来的统一体验（App 主体开发和构建工具开发）。</p>
+<p>不过，虽然 Kotlin 和 Gradle 大家都不陌生，但是二者的结合却对很多 Android 开发者有些新奇。<strong>如何能快速上手 Gradle Kotlin DSL？甚至借这次千载难逢的机会，补足以前难以上手 Gradle 的遗憾？有请 <a href="https://koge.2bab.me/#/zh-cn/">KOGE</a> 小册！（点击链接即可阅读，开源项目）</strong></p>
+<p><img src="https://2bab-images.lastmayday.com/koge-book-cover.png?imageslim" alt=""></p>
+<p><strong>KOGE 是 Kotlin-oriented Gradle Essentials 的缩写，顾名思义是面向 Kotlin 的 Gradle 基础手册</strong>。我们按照合理的先后顺序，列出新手最困惑的概念，再从一些互联网上已有的问题、源码、示例项目中去学习。它不是 “Awesome Gradle” 的项目收藏夹，<strong>而是一份大纲，一本简练的自学手册。</strong> 手册选择了 <strong>Kotlin</strong> 作为介绍 DSL 脚本和插件开发的语言，链接和用例以 <strong>Android</strong> 构建场景为主。</p>
+<p>另外，“基础”的定义范围十分明确，它覆盖了下方第 1 点和部分第 2 点中的内容（源自我之前的一个<a href="https://mp.weixin.qq.com/s/TmHYKMU1KYOTdN_ytZNWZA">问卷调查</a>）。重点解决<strong>理解脚本、编写脚本，和常见 Gradle 工程化实践。</strong></p>
+<blockquote>
+<ol>
+<li>“仅基础使用”（初级）：我能读懂、修改 build.gradle(.kts)，对 Gradle、AGP 有基础的认知，例如了解 Gradle 的任务机制，但碰到非 App 源码的编译错误有点不知所措；</li>
+<li>“实现高效自动化、工程化”（中级）：我对工程化、自动化有一定的认知、追求，可以通过构建脚本拆分、自定义 Task 来实现日常事务的优化，例如使用 buildSrc 模块抽取并统一管理依赖、使用自定义 Task 组合 CICD 的流程，运用一些最佳实践来提高编译构建效率；</li>
+<li>“编译构建增强”（高级）：我可以通过查阅 Gradle 文档、Debug AGP、编译期的 Profiler 日志，来自定义 Annotation Processor、Gradle Plugin 等解决一个项目碰到实际问题，抽象成一套可复用的工具；</li>
+</ol>
+<p>...</p>
+</blockquote>
+<p>每个基础内容点都大致按如下四个步骤组织：</p>
+<ol>
+<li>它是什么？</li>
+<li>它能用来做什么？</li>
+<li>它的自学要点？</li>
+<li>主体内容，重点文档/文章链接、摘要、代码、运行结果等。</li>
+</ol>
+<p><img src="https://2bab-images.lastmayday.com/20230505193725.png?imageslim" alt=""></p>
+<p>手册目前涵盖了 2 大部分，共 10 个章节，涉及了新手上路的方方面面。虽然有不少链接内容是英文，但详细的知识点阐述、代码实战其实都在这些链接的文章、文档中，有困难的朋友也可借助一些翻译工具进行学习。</p>
+<p>！！！再放一次在线阅读地址：<a href="https://koge.2bab.me/#/zh-cn/">KOGE</a> ！！！</p>
+<p>想参与手册编辑，请访问 KOGE 的 <a href="https://github.com/2BAB/KOGE">Github 仓库</a>。觉得这个项目好的朋友也欢迎点个 Github Star，并分享给你的同事朋友。</p>
+<p><em>欢迎关注我的<a href="/about"> Github / 公众号 / 播客 / 微博 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

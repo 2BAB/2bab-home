@@ -1,0 +1,124 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="构建指北 #11 BundleTool Gradle Plugin" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2021-12-19-bundle-tool-plugin/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>构建指北 #11 BundleTool Gradle Plugin | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>构建指北 #11 BundleTool Gradle Plugin</h1>
+    <div class="italic text-gray-500">
+      2021/12/19
+    </div>
+    <div>
+      <p>App Bundle（.aab) 作为 Android 官方力推的新交付格式已经存在了一段时间，而今年 PlayStore 的政策强制“所有新应用必须使用 .aab”进行提交也成为了大家转换过去的一大动力。兼容和打包 .aab 文件格式其实并不复杂，简单添加对应的 DSL 配置并替换掉执行的打包命令为 <code>bundle${VariantName}</code> 即可。但是，打包后得到的 .aab 并不能直接在本地直接使用 adb 安装到调试设备，需要借助 <a href="https://github.com/google/bundletool">bundletool</a> 转换到 .apks 后再调用其安装命令进行安装。</p>
+<h2 id="%E5%B8%B8%E8%A7%81%E5%9C%BA%E6%99%AF" tabindex="-1">常见场景</h2>
+<p><a href="https://developer.android.com/studio/command-line/bundletool#build_app_bundle">BundleTool 官方文档</a> 列举了 CLI 命令的各类用途；放到更复杂的环境中，你可能碰到过 BundleTool 的这些场景：</p>
+<ol>
+<li>本地测试时，需要使用 BundleTool 的 CLI 手动运行转换和安装命令；</li>
+<li>CI 环境下，需要配置 BundleTool CLI 工具，再编写一些 Shell 脚本进行打包后的转换流程控制；</li>
+<li>真机实验室的测试、真机云平台的测试，需要集成 BundleTool 到相对应的测试中，方便生成对应机型的 apks 包。</li>
+</ol>
+<p>这些场景常常伴随着下列的一些问题：</p>
+<ol>
+<li>一些内部测试包发布渠道不支持 aab 和 apks，我们需要在这些非 GP 非真机实验平台做快速的功能测试，universal apk 才是这类场景的最好选择（但是从头再打一个 apk 显然是浪费资源）；</li>
+<li>在 aab 包上传至 GP 的 Console 后，可以清晰得看到所有支持机型的预计下载大小，但是这个数据指标不方便在 CI 上直接用 Shell 脚本来做收集和量化（硬上或者用 Python 大概也可以）；</li>
+<li>AGP 其实集成了，BundleTool 包，每次又要单独配置 BundleTool 的 CLI 其实显得有些多余。</li>
+</ol>
+<p>不禁思考，AGP 有 BundleTool 的依赖，没有这些 BundleTool 后续转换的 Task 吗？使用 Gradle 来做这些后续的操作其实更适合？</p>
+<h2 id="%E6%B7%B1%E5%85%A5-agp-%26-bundletool" tabindex="-1">深入 AGP &amp; BundleTool</h2>
+<p>如果我们打开 IDE 的 Gradle Task 列表，查询 “Bundle“ 关键词，很容易就会发现 <code>makeApkFromBundleForXxxx</code> 等任务，它们的实现是 <code>com.android.build.gradle.internal.tasks.BundleToApkTask</code> 这个类。</p>
+<p><img src="https://2bab-images.lastmayday.com/20211219_bundle_tool_bundle_to_apk_task.png?imageslim" alt="Task 列表和 BundleToApkTask 截图"></p>
+<p>在源码中查看该类的关联使用，你会发现除了注册没有任何地方有该类的使用痕迹。而这个任务自身的具体作用其实只是：</p>
+<ul>
+<li>依赖 <code>PackageXxxBundle</code>，等它打出一个未签名的 Bundle；</li>
+<li>输入上一步的 Bundle，执行 BundleTool 包里的 <code>BuildApksCommand</code> 命令打出一个 .apks 包。</li>
+<li>从它的输入参数可以看出，用户需要的<strong>配置</strong>它其实只暴露了一个 <code>enableLocalTesting</code>，其余的都使用 BundleTool <code>build-apks</code> 命令的<strong>默认值</strong>；</li>
+<li>从它的输出结果（见下方）可以发现，它竟然只是一个“<strong>中间产物</strong>”（位于 <code>/intermediates</code> 文件夹中），而非最终产物。</li>
+</ul>
+<p><img src="https://2bab-images.lastmayday.com/20211219_bundle_tool_tasks_1.png?imageslim" alt=""></p>
+<p>这就有点食之无味、弃之可惜了：有现成的 Task 但使用范围十分局限。不如...咱借助 BundleTool 库自己封装一个 Gradle Plugin？</p>
+<h2 id="bundle-tool-gradle-plugin-%E6%80%8E%E4%B9%88%E5%B0%81%E8%A3%85%EF%BC%9F" tabindex="-1">bundle-tool-gradle-plugin 怎么封装？</h2>
+<p>简单分析下 BundleTool 的几个命令，我们发现它们的依赖关系如下：</p>
+<p><img src="https://2bab-images.lastmayday.com/20211219_bundle_tool_commands.png?imageslim" alt=""></p>
+<p>其中：</p>
+<ul>
+<li>从顺序来看 <code>build-apks</code> 是其他几个命令的必选前置任务（实线），<code>get-device-sepc</code> 是几个命令的可选前置任务（虚线）。</li>
+<li>从交互来看，<code>build-apks</code> 和 <code>get-size</code>（斜体部分）和构建流程关系紧密，不需要测试设备参与；其余命令需要测试设备参与。</li>
+<li><code>get-device-spec</code> 导出 json 文件是一次性的任务，我们可以假设这部分已经完成；</li>
+</ul>
+<p>如此，我们<strong>涉及的领域</strong>也清楚了：<code>build-apks</code> 和 <code>get-size</code> 等和最终产物直接相关的命令。<code>install-apks</code> 和 <code>extract-apks</code> 在本地测试可以根据当前设备使用 CLI 完成，在 CI 或者云真机测试平台等一般有专用的脚本去结合 BundleTool 处理。</p>
+<p>然后我们考虑获取<strong>如何获取最终输出的 Bundle 并修改</strong>。新版 Variant API 其实已经提供了方便修改和获取最终 Bundle 的方法，整个流程可以参考如下的运行截图。可以看到对比之前的中间产物模式，Variant API 的产物都已经输出到 <code>/outputs</code> 文件夹了。由于我们不需要中间 aab，所以我们只要简单调用 <code>variants.get(SingleArtifact.BUNDLE)</code>，把获取的 .aab 文件传入自定义 Task，之后再借鉴 AGP 的代码包装下各类命令即可：</p>
+<p><img src="https://2bab-images.lastmayday.com/20211219_bundle_tool_tasks_2.png?imageslim" alt=""></p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// 一个验证想法的简单 Task，完整插件的实现比这个复杂一些，请直接参考文末的仓库链接</span><br><span class="token keyword">abstract</span> <span class="token keyword">class</span> ConsumeBundleFileTask <span class="token operator">:</span> <span class="token function">DefaultTask</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token annotation builtin">@get:InputFiles</span><br>    <span class="token keyword">abstract</span> <span class="token keyword">val</span> finalBundleProperty<span class="token operator">:</span> RegularFileProperty<br><br>    <span class="token annotation builtin">@get:Internal</span><br>    <span class="token keyword">abstract</span> <span class="token keyword">val</span> buildToolInfo<span class="token operator">:</span> Property<span class="token operator">&lt;</span>BuildToolInfo<span class="token operator">></span><br><br>    <span class="token annotation builtin">@get:Nested</span><br>    <span class="token keyword">lateinit</span> <span class="token keyword">var</span> signingConfigData<span class="token operator">:</span> SigningConfigDataProvider<br><br>    <span class="token annotation builtin">@get:OutputFile</span><br>    <span class="token keyword">abstract</span> <span class="token keyword">val</span> apksFileProperty<span class="token operator">:</span> RegularFileProperty<br><br>    <span class="token annotation builtin">@TaskAction</span><br>    <span class="token keyword">fun</span> <span class="token function">taskAction</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> aapt2Path <span class="token operator">=</span> buildToolInfo<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">getPath</span><span class="token punctuation">(</span>BuildToolInfo<span class="token punctuation">.</span>PathId<span class="token punctuation">.</span>AAPT2<span class="token punctuation">)</span><br>        <span class="token function">println</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">".get(SingleArtifact.BUNDLE)"</span></span><span class="token punctuation">)</span><br>        <span class="token function">println</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"[ConsumeBundleFileTask][input]:"</span></span> <span class="token operator">+</span> finalBundleProperty<span class="token punctuation">.</span>asFile<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>absolutePath<span class="token punctuation">)</span><br>        <span class="token function">println</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"[ConsumeBundleFileTask][output]:"</span></span> <span class="token operator">+</span> apksFileProperty<span class="token punctuation">.</span>asFile<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>absolutePath<span class="token punctuation">)</span><br>        <span class="token keyword">val</span> signingConfigData <span class="token operator">=</span> signingConfigData<span class="token punctuation">.</span><span class="token function">resolve</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">!!</span><br>        <span class="token keyword">val</span> command <span class="token operator">=</span> BuildApksCommand<span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">setBundlePath</span><span class="token punctuation">(</span>finalBundleProperty<span class="token punctuation">.</span>asFile<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">setOutputFile</span><span class="token punctuation">(</span>apksFileProperty<span class="token punctuation">.</span>asFile<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">setAapt2Command</span><span class="token punctuation">(</span><br>                Aapt2Command<span class="token punctuation">.</span><span class="token function">createFromExecutablePath</span><span class="token punctuation">(</span><br>                    <span class="token function">File</span><span class="token punctuation">(</span>aapt2Path<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toPath</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>                <span class="token punctuation">)</span><br>            <span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">setSigningConfiguration2</span><span class="token punctuation">(</span><br>                keystoreFile <span class="token operator">=</span> signingConfigData<span class="token punctuation">.</span>storeFile<span class="token punctuation">,</span><br>                keystorePassword <span class="token operator">=</span> signingConfigData<span class="token punctuation">.</span>storePassword<span class="token punctuation">,</span><br>                keyAlias <span class="token operator">=</span> signingConfigData<span class="token punctuation">.</span>keyAlias<span class="token punctuation">,</span><br>                keyPassword <span class="token operator">=</span> signingConfigData<span class="token punctuation">.</span>keyPassword<br>            <span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setLocalTestingMode</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><br>        command<span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br>    <span class="token operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">}</span></code></pre>
+<p>不了解<strong>新版 Variant API</strong> 的朋友可以参考我这个月在 GDG 社区的分享《扩展 Android 构建流程 - 基于新版 Variant/Artifact APIs》（<a href="https://www.bilibili.com/video/BV1WP4y1G71h?share_source=copy_web">回放地址</a>）。</p>
+<p>最后我们简单看下 BundleTool 的 BuildApksCommand.Builder，这个 Builder 的 setXxx 相关的 <strong>API</strong> 过去一年也就两个小改动，其中还有一个是新增方法，不太影响原有的兼容性，相比 AGP 来说整体<strong>相对稳定</strong>了。</p>
+<p>至此，整个插件的理论构建成本和维护成本都在可接受范围内。</p>
+<h2 id="%E4%BD%BF%E7%94%A8%E6%8F%92%E4%BB%B6" tabindex="-1">使用插件</h2>
+<p>插件的开发和我之前写过的几个并无差别，我们直接来看插件的使用。</p>
+<p><strong>0x01. Add the plugin to classpath:</strong></p>
+<pre class="language-kotlin"><code class="language-kotlin">buildscript <span class="token punctuation">{</span><br>    repositories <span class="token punctuation">{</span><br>        <span class="token operator">..</span><span class="token punctuation">.</span><br>        <span class="token function">mavenCentral</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br>    dependencies <span class="token punctuation">{</span><br>        <span class="token function">classpath</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"com.android.tools.build:gradle:7.0.4"</span></span><span class="token punctuation">)</span><br>        <span class="token function">classpath</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"me.2bab:bundle-tool-plugin:1.1.0"</span></span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>0x02. Apply Plugin:</strong></p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// For your application module</span><br>plugins <span class="token punctuation">{</span><br>    <span class="token function">id</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"me.2bab.bundletool"</span></span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>0x03. Advanced Configurations</strong></p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">import</span> me<span class="token punctuation">.</span>xx2bab<span class="token punctuation">.</span>bundletool<span class="token punctuation">.</span><span class="token operator">*</span><br><br>bundleTool <span class="token punctuation">{</span><br>    <span class="token comment">// 这里是一个很有趣的配置项，它可以按不同 variant 渠道去</span><br>    <span class="token comment">// 开启插件的几个功能特性，例如这里我们把 debug + Get_SIZE 功能的组合禁掉了。</span><br>    <span class="token comment">// 你可以根据项目实际的 buildtype 和 flavor 去调整和开启需要的功能。</span><br>    enableByVariant <span class="token punctuation">{</span> variant<span class="token punctuation">,</span> feature <span class="token operator">-></span><br>        <span class="token operator">!</span><span class="token punctuation">(</span>variant<span class="token punctuation">.</span>name<span class="token punctuation">.</span><span class="token function">contains</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"debug"</span></span><span class="token punctuation">,</span> <span class="token boolean">true</span><span class="token punctuation">)</span> <span class="token operator">&amp;&amp;</span> feature <span class="token operator">==</span> BundleToolFeature<span class="token punctuation">.</span>GET_SIZE<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br>    <br>    <span class="token comment">// 每个配置项会对应到一个 `build-apks` 命令的执行</span><br>    buildApks <span class="token punctuation">{</span><br>        <span class="token function">create</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"universal"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            buildMode<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>ApkBuildMode<span class="token punctuation">.</span>UNIVERSAL<span class="token punctuation">.</span>name<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        <span class="token function">create</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"pixel4a"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            deviceSpec<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token function">file</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"./pixel4a.json"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// 每个配置项都会依次计算上面 `buildApks` 所有输出的 apks 的大小，</span><br>    <span class="token comment">// 按当前的配置会输出 2 * 1 = 2 份 csv 文件</span><br>    getSize <span class="token punctuation">{</span><br>        <span class="token function">create</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"all"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            dimensions<span class="token punctuation">.</span><span class="token function">addAll</span><span class="token punctuation">(</span><br>                GetSizeDimension<span class="token punctuation">.</span>SDK<span class="token punctuation">.</span>name<span class="token punctuation">,</span><br>                GetSizeDimension<span class="token punctuation">.</span>ABI<span class="token punctuation">.</span>name<span class="token punctuation">,</span><br>                GetSizeDimension<span class="token punctuation">.</span>SCREEN_DENSITY<span class="token punctuation">.</span>name<span class="token punctuation">,</span><br>                GetSizeDimension<span class="token punctuation">.</span>LANGUAGE<span class="token punctuation">.</span>name<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>0x04. Build your App and Enjoy!</strong></p>
+<pre class="language-shell"><code class="language-shell"><span class="token comment"># 确保执行命令里的 Variant 是 `enableByVariant` 中允许的</span><br>./gradlew TransformApksFromBundleForProductionRelease</code></pre>
+<p>最后可以在 <code>/app/outputs/bundle/${variantName}/bundletool</code> 中找到输出的结果。</p>
+<p><img src="https://2bab-images.lastmayday.com/20211219_bundle_tool_outputs2.png?imageslim" alt=""></p>
+<h2 id="%E6%80%BB%E7%BB%93" tabindex="-1">总结</h2>
+<p>希望这个小工具可以帮助大家在集成新的 Android Bundle 时提供一些帮助，插件已经开源到我 Github：<a href="https://github.com/2BAB/bundle-tool-gradle-plugin">bundle-tool-gradle-plugin</a>。关于按 Variant 开关插件功能的思路，请参考下一篇构建指北#12。</p>
+<p><em>欢迎关注我的<a href="/about"> Github / 公众号 / 播客 / 微博 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/en">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
