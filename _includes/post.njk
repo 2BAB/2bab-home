@@ -15,10 +15,10 @@
     </div>
     <hr />
       <div class="text-sm text-center">
-        评论和交流请发送邮件到 hi@taonan.lu
+        {{ 'commentMethod' | i18n }}
       </div>
       <hr />
-    {% include "_donate.njk" %}
+    {% if locale == "zh" %} {% include "_donate.njk"%} {% endif %}
     {% include "_footer.njk" %}
   </div>
 
