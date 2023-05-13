@@ -4,7 +4,7 @@ const dayjs = require('dayjs')
 const modern = require('eleventy-plugin-modern')
 const toc = require('markdown-it-toc-done-right')
 const i18n = require('eleventy-plugin-i18n');
-
+var locale = 'en'
 module.exports = config => {
   config.addPlugin(modern({
     markdownIt(md) {
@@ -47,20 +47,20 @@ module.exports = config => {
     }
   });
 
-  config.setBrowserSyncConfig({
-    callbacks: {
-      ready: function (err, bs) {
-        bs.addMiddleware('*', (req, res) => {
-          if (req.url === '/') {
-            res.writeHead(302, {
-              location: '/en/'
-            });
-            res.end();
-          }
-        });
-      }
-    }
-  });
+  // config.setBrowserSyncConfig({
+  //   callbacks: {
+  //     ready: function (err, bs) {
+  //       bs.addMiddleware('*', (req, res) => {
+  //         if (req.url === '/') {
+  //           res.writeHead(302, {
+  //             location: '/en/'
+  //           });
+  //           res.end();
+  //         }
+  //       });
+  //     }
+  //   }
+  // });
 
   return {
     markdownTemplateEngine: false
