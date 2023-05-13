@@ -1,7 +1,7 @@
 {% extends "_layout.njk" %}
 {% block layoutBody %}
   <div class="container prose prose-zinc prose-sm sm:prose-base mx-auto py-12 sm:py-24 px-12 sm:px-0">
-    <a href="/{{ locale if locale else "en" }}" class="no-underline">
+    <a href="/{{ "zh" if locale == "zh" else "en" }}" class="no-underline">
       <h1>{{ config.title }}</h1>
     </a>
     <nav class="flex gap-4">
