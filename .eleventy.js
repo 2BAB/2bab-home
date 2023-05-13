@@ -41,9 +41,6 @@ module.exports = config => {
         'en': 'Talks',
         'zh': '演讲'
       },
-    },
-    fallbackLocales: {
-      '*': 'en'
     }
   });
 
