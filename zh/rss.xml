@@ -27,7 +27,7 @@ Android 开发经过十多年的技术演进，如今 Gradle 对于开发者，�
 &lt;blockquote&gt;
 &lt;p&gt;那...这些我都不懂呀，一直看大家说 Gradle 难，网上也没有系统性的资料，该怎么学？&lt;/p&gt;
 &lt;/blockquote&gt;
-&lt;p&gt;这便是本书编写的目的所在：本书瞄准的人群，不仅仅是国内外各 Android 团队的高级工程师或架构负责人，还包括&lt;strong&gt;有志成为这样角色的人&lt;/strong&gt;。市面上不乏讲解 Gradle 的书籍，但均使用 Groovy 且已年久失修，不利于快速上手。进一步地，若要涉及到 Android 构建流程（AGP）和对应的架构实战资料，更是寥寥无几。&lt;/p&gt;
+&lt;p&gt;这便是本书编写的目的所在：本书瞄准的人群，不仅仅是国内外各 Android 团队的高级工程师或架构负责人，还包括&lt;strong&gt;有志成为这样角色的人&lt;/strong&gt;。市面上不乏讲解 Gradle 的书籍，但均使用 Groovy 且已年久失修，不利于快速上手。进一步地，若要涉及到 Android 构建流程（AGP）和对应的架构实战资料，更是寥寥无几，无法满足系统性学习的需求。&lt;/p&gt;
 &lt;p&gt;本书采用 &lt;strong&gt;Kotlin&lt;/strong&gt; 编写，基于最新的 &lt;strong&gt;Gradle 7 和 AGP 7&lt;/strong&gt;（含部分 AGP 8 前瞻）。它不局限于 &lt;code&gt;build.gradle(.kts)&lt;/code&gt; 的脚本配置，&lt;strong&gt;而是引入大量 Gradle 的进阶内容为铺垫，超过 40 个自定义的生态协同插件为载体，带你探讨新版 AGP 的接口与原理&lt;/strong&gt;，思考如何在 AGP 相对闭环的容器中定制项目所需的构建流程。&lt;/p&gt;
 &lt;p&gt;通过这些内容，你对于 &lt;strong&gt;Gradle、AGP 的理解，以及插件编写的技术&lt;/strong&gt;可提高数个层级，如下问题便能轻松解决了：&lt;/p&gt;
 &lt;ol&gt;
@@ -45,7 +45,7 @@ Android 开发经过十多年的技术演进，如今 Gradle 对于开发者，�
 &lt;li&gt;字节码修改是不是银弹？组件化路由表的生成如何实现？从架构设计的角度如何字节码修改 API 的升级迭代？&lt;/li&gt;
 &lt;li&gt;构建增速的核心要点是什么？如何在茫茫的构建日志中分析出瓶颈？如何结合 Android 的 Variant 区别开关不同的插件？&lt;/li&gt;
 &lt;/ol&gt;
-&lt;p&gt;&lt;strong&gt;结合架构设计的实战，你将筑起厚实的技术壁垒。特别在编译时的架构设计能力，包括 Gradle 水平已能超过大多数的 Android 开发者。&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;通过系统性地学习 Gradle 与 AGP 的高级应用，你将筑起厚实的技术壁垒，包括 Gradle 技术与 Android 构建的理解已能超过大多数的 Android 开发者。&lt;/strong&gt;&lt;/p&gt;
 &lt;h2 id=&quot;%E6%9C%AC%E4%B9%A6%E7%9B%AE%E5%BD%95&quot; tabindex=&quot;-1&quot;&gt;本书目录&lt;/h2&gt;
 &lt;p&gt;按照传统 A5 大小的纸书估算，本书有近 700 页的容量，是市面上一般技术图书的 2 倍。本书所配套的材料，包括示例源码、参考资料均以开源至我的 Github &lt;a href=&quot;https://github.com/2BAB/Extend-Android-Builds-zh&quot;&gt;仓库&lt;/a&gt;。&lt;/p&gt;
 &lt;p&gt;（篇幅所限此处仅展示了 2 级目录，完整的 3 级目录参见&lt;a href=&quot;https://github.com/2BAB/Extend-Android-Builds-zh/blob/main/TOC.md&quot;&gt;资料仓库&lt;/a&gt;）。&lt;/p&gt;
@@ -116,17 +116,16 @@ Android 开发经过十多年的技术演进，如今 Gradle 对于开发者，�
 &lt;p&gt;本书目前上架了&lt;a href=&quot;https://t.zsxq.com/0eF9jWLpY&quot;&gt;电子版&lt;/a&gt;：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验）。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim&quot; alt=&quot;&quot; /&gt;
 &lt;img src=&quot;https://2bab-images.lastmayday.com/Screenshot%202023-05-14%20at%203.19.38%20PM.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;为了对等待本书的朋友表示感谢，即日起只要关注“Android高效开发”公众号，回复 &lt;em&gt;&lt;strong&gt;Android 构建与架构实战&lt;/strong&gt;&lt;/em&gt; 即可领取&lt;strong&gt;高达 150 元的早鸟优惠券&lt;/strong&gt;。首批 150 元优惠券为 50 张，领完后我会再更新 50 张 100 元，然后再 50 张 50 元，最后恢复原价。（活动最终解释权归本人所有）&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/blog/%E5%85%AC%E4%BC%97%E5%8F%B7.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;既然选择&lt;em&gt;知识星球&lt;/em&gt;作为专栏输出，我就打算再送一些额外福利给大家，目前星球计划的主营内容：&lt;/p&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;《Android 构建与架构实战》电子专栏&lt;/strong&gt;：可能是市面上独一份（统计包括中英文）、系统性学习 Gradle 和 AGP 实战的书籍。随着 Android 的发展，封禁的系统 API 越来越多，Runtime 的黑科技已经越来越没有发挥空间，编译构建的工具却热度不减。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;新知预告&lt;/strong&gt;，不仅是英文社区的一手 Android 架构方面资料，还包括作为 GDE 参与到各个会议、与行业专家交流等了解到的前沿资讯。&lt;/li&gt;
 &lt;li&gt;&lt;strong&gt;会员播客&lt;/strong&gt;：包括软技能分享、行业观察、职场思考、海外的互联网公司发展等。&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;会员问答&lt;/strong&gt;：技术问题包括 AGP、Gradle、Android 架构、Kotlin 编译器等我和嘉宾探索的领域，均可提供一定的帮助；软实力和职业发展方向的问题亦可提供指引。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;会员问答&lt;/strong&gt;：技术问题包括 AGP、Gradle、Android 架构、Kotlin 编译器等我和嘉宾探索的领域，均可提供一定的帮助；软实力和职业发展方向的问题亦可提供指引。此外，&lt;strong&gt;读者终于拥有一个便捷的可直接与书籍作者交流的平台，你可学习的过程中于任意小节留下评论，写下你的疑惑&lt;/strong&gt;。&lt;/li&gt;
 &lt;/ul&gt;
 &lt;p&gt;本书于编写尾期进行了第一轮校对，几位一线的 Android 基础架构工程师提出了数十个宝贵的修改建议。目前正在进行的第二轮校对中，我邀请了十多位 Android 各垂直领域的专家。他们将提供更加全面的审阅视角，而校对的评论将公开于星球当中，因为我相信这些高水平的思想碰撞亦是富有价值的学习材料。&lt;/p&gt;
-&lt;p&gt;为了对等待本书的朋友表示感谢，即日起只要关注“&lt;strong&gt;Android高效开发&lt;/strong&gt;”公众号，回复 &lt;em&gt;&lt;strong&gt;Android 构建与架构实战&lt;/strong&gt;&lt;/em&gt; 即可领取高达 150 元的早鸟优惠券。首批 150 元优惠券为 50 张，领完后我会再更新 50 张 100 元，然后再 50 张 50 元，最后恢复原价。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/blog/%E5%85%AC%E4%BC%97%E5%8F%B7.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-&lt;p&gt;（活动最终解释权归本人所有）&lt;/p&gt;
 &lt;h2 id=&quot;%E5%85%B3%E4%BA%8E%E4%BD%9C%E8%80%85&quot; tabindex=&quot;-1&quot;&gt;关于作者&lt;/h2&gt;
 &lt;p&gt;我是 AB，常用 ID 为 &lt;em&gt;2BAB&lt;/em&gt;。Android 开发者、开源贡献者、技术书籍《KOGE》和《Android 构建与架构实战》作者，以及《二分电台》播客主理人。&lt;/p&gt;
 &lt;p&gt;于 2013 年开始接触 Android 与 Gradle 相关开发，活跃于 Android 技术社区，创作包括文章、书籍、演讲、播客等形式，乐于交流、与他人碰撞思想。曾在阿里巴巴等国际公司就职，主要从事移动基础架构研发。同时，我是中国大陆八位 &lt;a href=&quot;https://developers.google.com/community/experts/directory/profile/profile-el-zhang-2bab&quot;&gt;Android GDE&lt;/a&gt;（Google 开发者专家）之一。&lt;/p&gt;
