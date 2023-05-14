@@ -139,7 +139,7 @@ Gradle 作为一个平台型工具，背后关联的知识体系复杂、学习�
 
 我是 AB，常用 ID 为 *2BAB*。Android 开发者、开源贡献者、技术书籍《KOGE》和《Android 构建与架构实战》作者，以及《二分电台》播客主理人。
 
-于 2013 年开始接触 Android 与 Gradle 相关开发，活跃于 Android 技术社区，创作包括文章、书籍、演讲、播客等形式，乐于交流、与他人碰撞思想。曾在阿里巴巴等国际公司就职，从事移动基础架构研发。同时，我是中国大陆八位 [Android GDE](https://developers.google.com/community/experts/directory/profile/profile-el-zhang-2bab)（Google 开发者专家）之一。
+于 2013 年开始接触 Android 与 Gradle 相关开发，活跃于 Android 技术社区，创作包括文章、书籍、演讲、播客等形式，乐于交流、与他人碰撞思想。曾在阿里巴巴等国际公司就职，主要从事移动基础架构研发。同时，我是中国大陆八位 [Android GDE](https://developers.google.com/community/experts/directory/profile/profile-el-zhang-2bab)（Google 开发者专家）之一。
 
 ![](https://2bab-images.lastmayday.com/202305142100680.png?imageslim)
 
