@@ -40,7 +40,7 @@ Gradle 作为一个平台型工具，背后关联的知识体系复杂、学习�
 5. 字节码修改是不是银弹？组件化路由表的生成如何实现？从架构设计的角度如何字节码修改 API 的升级迭代？
 6. 构建增速的核心要点是什么？如何在茫茫的构建日志中分析出瓶颈？如何结合 Android 的 Variant 区别开关不同的插件？
 
-**通过系统性地学习 Gradle 与 AGP 的高级应用，你将筑起厚实的技术壁垒，包括 Gradle 技术与 Android 构建的理解已能超过大多数的 Android 开发者。**
+**通过系统性地学习 Gradle 与 AGP 的高级应用，你将筑起厚实的技术壁垒，包括 Gradle 技术与 Android 构建的理解已能超过大多数的 Android 开发者。** 倘若成为该领域的专家需要 10 分的知识储备（例如 [Gradle Fellowship](https://gradle.org/fellowship/) 的官方认证专家），完整消化本书能帮你达到 7-8 分。
 
 ## 本书目录
 
@@ -165,7 +165,7 @@ Kotlin DSL 现在成为新 Gradle 构建的默认设置。Gradle Kotlin DSL 带�
 
 同样是使用 Kotlin 作为 Gradle 脚本/插件的编写语言，**《KOGE》完美地成为了本书的前置课程**——事实上《KOGE》便是本书在写作过程中产生的想法：如果能把基础概念都归纳到一本小册子，《Android 构建与架构实战》就能更流畅地专注在插件编写、AGP、架构、最佳实践等进阶命题。
 
-倘若成为该领域的专家需要 10 分的知识储备（例如 [Gradle Fellowship](https://gradle.org/fellowship/) 的官方认证专家），《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。
+借用前文的比喻，倘若成为该领域的专家需要 10 分的知识储备（例如 [Gradle Fellowship](https://gradle.org/fellowship/) 的官方认证专家），《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。
 
 
 *欢迎关注我的[ Github / 公众号 / 播客 / Twitter](/zh)。*
