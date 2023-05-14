@@ -1,7 +1,7 @@
 ---
 layout: post
 date: 2023-05-14
-title: "新书《Android 构建与架构实战》上架！系统学习 Gradle 与 AGP。"
+title: "新书上架！《Android 构建与架构实战》系统学习 Gradle 与 AGP。"
 tags: [Gradle, Kotlin, Android Gradle Plugin, EAB, post]
 ---
 
