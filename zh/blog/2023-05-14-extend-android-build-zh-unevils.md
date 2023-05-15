@@ -158,14 +158,16 @@ Kotlin DSL 现在成为新 Gradle 构建的默认设置。Gradle Kotlin DSL 带�
 
 ## 和《KOGE》小册的关系？
 
-[《KOGE》](https://2bab.me/zh/blog/2023-05-05-kotlin-for-gradle/)和《Android 构建与架构实战》又有哪些不同？
+很多人应该看到了最近 Kotlin 官方和 Gradle 官方在转发我的另外一本开源小册 [《KOGE》](https://2bab.me/zh/blog/2023-05-05-kotlin-for-gradle/)和《Android 构建与架构实战》又有哪些不同？
 
-- 《KOGE》小册是一道开胃小菜，它帮助 Android 和 Gradle 的新手搞懂脚本的配置与简单的自定义任务，大多数内容均为互联网上的公开文章和资料——而遍数全网，Gradle 与 AGP 的内容多数能找到仅为入门的内容。
-- 《Android 构建与架构实战》是一桌宴席，它不再局限于一般的脚本配置与小修小补，而是真枪实弹地编写 Gradle 插件（大小共 40+ 个案例），实战编译构建方向的架构设计，结合 Android 领域的特定场景去理解 AGP 的最佳实践等。
+![](https://2bab-images.lastmayday.com/Screenshot%202023-05-15%20at%209.51.49%20AM.png?imageslim)
+
+- 《KOGE》小册是一道开胃小菜，它**面向 Android 和 Gradle 的新手**，搞懂脚本的配置与简单的自定义任务，大多数内容均为互联网上的公开文章和资料——而遍数全网，Gradle 与 AGP 的内容多数能找到仅为入门的内容。
+- 《Android 构建与架构实战》是一桌宴席，它面向**想要成为高级工程师甚至架构工程师的人**，不再局限于一般的脚本配置与小修小补，而是真枪实弹地编写 Gradle 插件（大小共 40+ 个案例），实战编译构建方向的架构设计，结合 Android 领域的特定场景去理解 AGP 的最佳实践等。
 
 同样是使用 Kotlin 作为 Gradle 脚本/插件的编写语言，**《KOGE》完美地成为了本书的前置课程**——事实上《KOGE》便是本书在写作过程中产生的想法：如果能把基础概念都归纳到一本小册子，《Android 构建与架构实战》就能更流畅地专注在插件编写、AGP、架构、最佳实践等进阶命题。
 
-借用前文的比喻，倘若成为该领域的专家需要 10 分的知识储备（例如 [Gradle Fellowship](https://gradle.org/fellowship/) 的官方认证专家），《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。
+借用前文的比喻，倘若成为该领域的专家需要 10 分的知识储备，《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。
 
 
 *欢迎关注我的[ Github / 公众号 / 播客 / Twitter](/zh)。*
