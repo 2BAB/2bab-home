@@ -4,11 +4,37 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/zh/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2023-05-14T00:00:00Z</updated>
+  <updated>2023-05-17T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>《Android 构建与架构实战》FAQ</title>
+    <link href="https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/"/>
+    <updated>2023-05-17T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/</id>
+    <content type="html">&lt;h3 id=&quot;1.-%E5%9C%A8%E7%9F%A5%E8%AF%86%E6%98%9F%E7%90%83%E8%B4%AD%E4%B9%B0%E5%90%8E%EF%BC%8C%E6%88%91%E9%9C%80%E8%A6%81%E6%AF%8F%E5%B9%B4%E7%BB%AD%E8%B4%B9%E5%90%97%EF%BC%9F%E4%B8%8D%E7%BB%AD%E8%B4%B9%E8%BF%98%E7%9C%8B%E5%BE%97%E5%88%B0%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;1. 在知识星球购买后，我需要每年续费吗？不续费还看得到吗？&lt;/h3&gt;
+&lt;p&gt;知识星球到期后&lt;strong&gt;可以继续阅读&lt;/strong&gt;的，和其他地方购买在线电子书的体验一致。只是不再获得后续的更新或参与星球讨论。&lt;/p&gt;
+&lt;p&gt;请参考知识星球的&lt;a href=&quot;https://help.zsxq.com/howto/faq/user#xing-qiu-dao-qi-hou-hai-neng-bu-neng-cha-kan-zhi-qian-de-nei-rong&quot;&gt;常见问题&lt;/a&gt;说明，只要不出现违法行为被平台踢出或主动点击退出/删除，均可&lt;strong&gt;永久获得你所购买时间内该星球的内容&lt;/strong&gt;。&lt;/p&gt;
+&lt;h3 id=&quot;2.-%E6%9C%AC%E4%B9%A6%E4%BC%9A%E6%9C%89%E7%BA%B8%E8%B4%A8%E7%89%88%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;2. 本书会有纸质版吗？&lt;/h3&gt;
+&lt;p&gt;因为出版社对小众选题很谨慎（一般首印最低 3000 本），今年形式不好他们表达了很多担忧。所以我目前没有拿到出版合同。&lt;/p&gt;
+&lt;h3 id=&quot;3.-%E5%90%8E%E7%BB%AD%E8%BF%98%E4%BC%9A%E6%9B%B4%E6%96%B0%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;3. 后续还会更新吗？&lt;/h3&gt;
+&lt;p&gt;对于《Android 构建与架构实战》主体内容，采用的是跳级更新的形式，例如当前版本为 AGP 7 为主 + 部分 8 的内容前瞻（即 Alpha/Beta 版本）。下次大版本更新为 AGP 9 为主 + 部分 10 的前瞻。因此，中间仅会出现极少的小版本断档。&lt;/p&gt;
+&lt;p&gt;采用这个模式的原因是 AGP 的更新较为谨慎，在改成跟进 Gradle 的版本更新（即从 4.2 跳 7.0）之后，一般不会出现突然连续两个大版本有大量 Breaking Changes。例如 AGP 7 在 2022 年预告了 8 会有很多 API 被删除，而 8 目前&lt;strong&gt;没有&lt;/strong&gt;预告 9 会有很多 API 被删除。&lt;strong&gt;这个模式的更新可以系统性回顾过去、给出一点未来的开发方向预测，让读者更全面的了解变更背后的原因，而不是一味追新不知所以，是应对 AGP API 变化的一个有效策略&lt;/strong&gt;。&lt;/p&gt;
+&lt;p&gt;对于日常的 Gradle 和 AGP 新功能，将采用星球的常规内容发布作为更新渠道，并打上对应的标签（新知预告 或 Gradle&amp;amp;AGP），方便大家系统性阅读更新。&lt;/p&gt;
+&lt;p&gt;最后对于错误的订正包括文字说明不清楚、代码有 bug 等问题，会及时修复更新。&lt;/p&gt;
+&lt;h3 id=&quot;4.-%E5%88%B0%E5%BA%95%E6%98%AF%E5%8D%96%E4%B9%A6%E8%BF%98%E6%98%AF%E5%8D%96%E6%98%9F%E7%90%83%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;4. 到底是卖书还是卖星球？&lt;/h3&gt;
+&lt;p&gt;本 FAQ 写于 2023 年，此时媒介发展的多元性已经超出我们的想象，就如同未来我们与 app 交互可能是 AI 对话框一样——我目前只能说这是一个混合模式。如果按照内容重点划分，70% 是电子书，15% 是新知预告，15% 是问答和会员播客。&lt;/p&gt;
+&lt;p&gt;知识星球对素人申请很友好，支持内容的长期动态更新，是我选择的原因之一。&lt;/p&gt;
+&lt;h3 id=&quot;5.-%E5%93%AA%E9%87%8C%E5%8F%AF%E4%BB%A5%E8%B4%AD%E4%B9%B0%EF%BC%9F%E6%89%BE%E4%B8%8D%E5%88%B0%E9%98%85%E8%AF%BB%E5%85%A5%E5%8F%A3%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;5. 哪里可以购买？找不到阅读入口？&lt;/h3&gt;
+&lt;p&gt;本书目前上架了&lt;a href=&quot;https://t.zsxq.com/0eF9jWLpY&quot;&gt;电子版&lt;/a&gt;：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验，我也提了功能改进建议，希望他们可以在电子专栏页面加入更方便的阅读模式）。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim&quot; alt=&quot;&quot; /&gt;
+另外，首批早鸟优惠券已经领完，第二批即日开始发放。关注&lt;em&gt;&lt;strong&gt;Android高效开发&lt;/strong&gt;&lt;/em&gt;公众号，回复“Android 构建与架构实战”即可领取高达 100 元的优惠。第二批的 50 张 100 元已经开始发放，领完后我会再更新 50 张 50 元，最后恢复原价。（活动最终解释权归本人所有）&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;欢迎关注我的&lt;a href=&quot;https://2bab.me/zh&quot;&gt; Github / 公众号 / 播客 / Twitter&lt;/a&gt;。&lt;/em&gt;&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>新书上架！《Android 构建与架构实战》系统学习 Gradle 与 AGP。</title>
