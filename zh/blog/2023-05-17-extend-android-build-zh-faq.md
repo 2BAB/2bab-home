@@ -5,6 +5,8 @@ title: "《Android 构建与架构实战》FAQ"
 tags: [Gradle, Kotlin, Android Gradle Plugin, EAB, post]
 ---
 
+- [本书介绍](https://2bab.me/zh/blog/2023-05-14-extend-android-build-zh-unevils/)
+- [资料仓库](https://github.com/2BAB/Extend-Android-Builds-zh)
 
 ### 1. 在知识星球购买后，我需要每年续费吗？不续费还看得到吗？
 
@@ -36,7 +38,32 @@ tags: [Gradle, Kotlin, Android Gradle Plugin, EAB, post]
 知识星球对素人申请很友好，支持内容的长期动态更新，是我选择的原因之一。
 
 
-### 5. 哪里可以购买？找不到阅读入口？
+### 5. 是否有试读？
+
+知识星球目前不支持相关功能，但本书的小部分内容曾以演讲、文章的形式公开分享过，下面精选了几个近期的分享，你可以将其当作“另一种试读”：
+
+- [Kotlin Symbol Processor 应用与技巧 - @JetBrains Kotlin 中文开发者大会 / 2022-11](https://www.bilibili.com/video/BV1n3411o7bM/?share_source=copy_web&vd_source=9d2424d15cc388ad6e0a79bae33ceb9f)
+- [构建指北 #12 根据 Variant 决定是否启用插件](https://2bab.me/zh/blog/2021-12-21-enable-feature-by-variant/)
+- [为 Android App Bundle 打包加点料 - @Google 中国“社区说 - AGP 编译构建”专场 / 2023-05](https://www.bilibili.com/video/BV1eM4y1i7xP)
+- [扩展 Android 构建流程 - 基于新版 Variant/Artifact APIs - @Google 中国“社区说”活动 / 2021-12](https://www.bilibili.com/video/BV1WP4y1G71h/?vd_source=7d02d0c6cd783fe64a99f3c7464fb242)
+
+我的[个人网站](https://2bab.me/zh/)中还有更多分享的内容。
+
+
+### 6. 和《KOGE》小册的关系？
+
+很多人应该看到了最近 Kotlin 官方和 Gradle 官方在转发我的另外一本开源小册 [《KOGE》](https://2bab.me/zh/blog/2023-05-05-kotlin-for-gradle/)和《Android 构建与架构实战》又有哪些不同？
+
+![](https://2bab-images.lastmayday.com/Screenshot%202023-05-15%20at%209.51.49%20AM.png?imageslim)
+
+- 《KOGE》小册是一道开胃小菜，它**面向 Android 和 Gradle 的新手**，搞懂脚本的配置与简单的自定义任务，大多数内容均为互联网上的公开文章和资料——而遍数全网，Gradle 与 AGP 的内容多数能找到仅为入门的内容。
+- 《Android 构建与架构实战》是一桌宴席，它面向**想要成为高级工程师甚至架构工程师的人**，不再局限于一般的脚本配置与小修小补，而是真枪实弹地编写 Gradle 插件（大小共 40+ 个案例），实战编译构建方向的架构设计，结合 Android 领域的特定场景去理解 AGP 的最佳实践等。
+
+同样是使用 Kotlin 作为 Gradle 脚本/插件的编写语言，**《KOGE》完美地成为了本书的前置课程**——事实上《KOGE》便是本书在写作过程中产生的想法：如果能把基础概念都归纳到一本小册子，《Android 构建与架构实战》就能更流畅地专注在插件编写、AGP、架构、最佳实践等进阶命题。
+
+倘若成为该领域的专家需要 10 分的知识储备，《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。
+
+### 哪里可以购买？找不到阅读入口？
 
 本书目前上架了[电子版](https://t.zsxq.com/0eF9jWLpY)：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验，我也提了功能改进建议，希望他们可以在电子专栏页面加入更方便的阅读模式）。
 
