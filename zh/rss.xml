@@ -4,11 +4,58 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/zh/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2023-05-17T00:00:00Z</updated>
+  <updated>2023-06-02T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>Google 中国“社区说”：AGP 编译构建的理解与优化 [回放和资料分享]</title>
+    <link href="https://2bab.me/zh/blog/2023-06-02-ctalk-agp/"/>
+    <updated>2023-06-02T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2023-06-02-ctalk-agp/</id>
+    <content type="html">&lt;p&gt;上个月的 Google 中国“社区说”活动，是难得一遇的 Android Gradle Plugin（AGP） &lt;a href=&quot;https://ctalks.gdgcn.net/?p=972&quot;&gt;效能专场&lt;/a&gt;。我邀请了三位一线的 Android 效能专家，一同分享了有关 AGP 实战与架构相关经验。由于很多朋友都在问本期直播是否有回放、PPT 下载等，于是这两天我整理后把相关内容都汇总到这篇文章。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;本次活动分为四个专题分享，和一个结束前的 15 分钟自由 Q&amp;amp;A 时间。所有 PPT 已公开在该&lt;a href=&quot;https://github.com/2BAB/CTalk-AGP-2023-05&quot;&gt;仓库&lt;/a&gt;，所有回放在下面介绍中。&lt;/strong&gt;&lt;/p&gt;
+&lt;h2 id=&quot;%E3%80%8A%E6%88%91%E5%9C%A8-b-%E7%AB%99%E5%81%9A%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD%E3%80%8B--%E7%A9%B6%E6%9E%81%E9%80%AE%E8%99%BE%E6%88%B7&quot; tabindex=&quot;-1&quot;&gt;《我在 B 站做工程效能》- 究极逮虾户&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/16856769376733.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1rh4y1R7aQ/&quot;&gt;回放视频&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;介绍哔哩哔哩在 MonoRepo 中的编译构建优化方案，融合多个不同的 App，将整个工程代码服务化，避免重复造轮子的情况发生，达到降本增效的目的。&lt;/p&gt;
+&lt;h2 id=&quot;%E3%80%8Aandroid-%E5%90%8C%E6%AD%A5%E4%BC%98%E5%8C%96%EF%BC%9A%E5%85%B3%E9%97%AD-jetifier%E3%80%8B--%E5%B0%8F%E7%81%B5%E9%80%9A&quot; tabindex=&quot;-1&quot;&gt;《Android 同步优化：关闭 Jetifier》- 小灵通&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/16856769485791.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV11h4y1R7Ds&quot;&gt;回放视频&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;AGP7.2.2 开始对 enableJetifier 开关进行了 warning 提示，本次分享会介绍 Jetifier 带来的同步耗时问题，分享排查耗时点的技巧，解决方法及后续防劣化的措施。&lt;/p&gt;
+&lt;h2 id=&quot;%E3%80%8A%E5%BF%AB%E6%89%8B%E7%9A%84%E7%A7%92%E7%BA%A7%E7%BC%96%E8%AF%91%E6%8E%A2%E7%B4%A2%E4%B9%8B%E8%B7%AF%E3%80%8B--%E5%91%A8%E5%85%A8&quot; tabindex=&quot;-1&quot;&gt;《快手的秒级编译探索之路》- 周全&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306021136921.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1MP411X7Xf/&quot;&gt;回放视频&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在快手这类超大型 Android 项目中，常规的编译优化手段已经无法解决构建劣化问题。本次分享将带大家深入 AGP 源码，认识一些神坑，以及怎么用非常规的秒级编译手段解决他们。&lt;/p&gt;
+&lt;h2 id=&quot;%E3%80%8A%E4%B8%BA-aab-%E6%89%93%E5%8C%85%E5%8A%A0%E7%82%B9%E6%96%99%E3%80%8B%2B-%E7%BB%93%E5%B0%BE-15-%E5%88%86%E9%92%9F-q%26a---2bab&quot; tabindex=&quot;-1&quot;&gt;《为 AAB 打包加点料》+ 结尾 15 分钟 Q&amp;amp;A - 2BAB&lt;/h2&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306021135650.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1eM4y1i7xP/&quot;&gt;回放视频&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Android App Bundle(.aab) 是 Play Store 当前默认的 App 提交格式，我将分享 Bundle 与 BundleTool 自动化打包、导出解析 apks、辅助测试等流程。&lt;/p&gt;
+&lt;h2 id=&quot;%E6%B4%BB%E5%8A%A8%E4%BA%AE%E7%82%B9%E5%92%8C%E7%BB%84%E7%BB%87%E8%80%85%E6%84%9F%E6%82%9F&quot; tabindex=&quot;-1&quot;&gt;活动亮点和组织者感悟&lt;/h2&gt;
+&lt;p&gt;本次分享中，有两个较为具体主题（Jetifier 和 AAB），也有两个更全面和深入的效能优化主题（B 站和快手的编译构建优化思路），深入浅出地分享了近年来的一些热点话题。在结尾的自由 Q&amp;amp;A 中，我还和大家一起讨论了：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;关于 AI 工具对基建研发的助力：例如 Copilot 的补全、字节码拆解分析等等。&lt;/li&gt;
+&lt;li&gt;小公司如何从大主题中找到适合自己基建升级的小方向？&lt;/li&gt;
+&lt;li&gt;...&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我在这次活动中从以往的分享嘉宾角色，进一步升级为组织者，包括策划主题、找人、拉群、筹备等等，最后还接下了主持的工作。这不仅是个人的成长，也是想办法让更多技术人能露面，让我们在做的有价值的事情让整个社区看见。我在活动前后各发了一条朋友圈表达了当下的心情：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306022145698.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306022140489.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;目测这也是第一次中国大陆的 Android 开发分享活动中，设置了自由 Q&amp;amp;A 的 Closing Panel。这类环节是所有（或大量）嘉宾参与的一个活动结束前问答，目的是让观众扩展思路提出更多和当天“大主题”相关的问题，有趣的是因为嘉宾的讨论也可以带来很多非提前准备的内容，碰撞出火花。大家一定要记得看最后一个视频的后半部分。&lt;/p&gt;
+&lt;p&gt;最后，非常幸运去年我邀请赵锦江老师录制了一期二分电台，[《#17 技术大会，为谁而开？(&lt;a href=&quot;https://binary.2bab.me/episodes/017-tech-conf&quot;&gt;https://binary.2bab.me/episodes/017-tech-conf&lt;/a&gt;)》]，本次活动中的不少技巧就是从他的分享中学到的。对于组织技术分享活动感兴趣的朋友，也欢迎联系我探讨更多内容。&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;欢迎关注我的&lt;a href=&quot;https://2bab.me/zh&quot;&gt; Github / 公众号 / 播客 / Twitter&lt;/a&gt;。&lt;/em&gt;&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>《Android 构建与架构实战》FAQ</title>
@@ -52,8 +99,7 @@
 &lt;p&gt;倘若成为该领域的专家需要 10 分的知识储备，《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。&lt;/p&gt;
 &lt;h3 id=&quot;%E5%93%AA%E9%87%8C%E5%8F%AF%E4%BB%A5%E8%B4%AD%E4%B9%B0%EF%BC%9F%E6%89%BE%E4%B8%8D%E5%88%B0%E9%98%85%E8%AF%BB%E5%85%A5%E5%8F%A3%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;哪里可以购买？找不到阅读入口？&lt;/h3&gt;
 &lt;p&gt;本书目前上架了&lt;a href=&quot;https://t.zsxq.com/0eF9jWLpY&quot;&gt;电子版&lt;/a&gt;：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验，我也提了功能改进建议，希望他们可以在电子专栏页面加入更方便的阅读模式）。&lt;/p&gt;
-&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim&quot; alt=&quot;&quot; /&gt;
-另外，首批早鸟优惠券已经领完，第二批即日开始发放。关注&lt;em&gt;&lt;strong&gt;Android高效开发&lt;/strong&gt;&lt;/em&gt;公众号，回复“Android 构建与架构实战”即可领取高达 100 元的优惠。第二批的 50 张 100 元已经开始发放，领完后我会再更新 50 张 50 元，最后恢复原价。（活动最终解释权归本人所有）&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
 &lt;p&gt;&lt;em&gt;欢迎关注我的&lt;a href=&quot;https://2bab.me/zh&quot;&gt; Github / 公众号 / 播客 / Twitter&lt;/a&gt;。&lt;/em&gt;&lt;/p&gt;
 </content>
   </entry>

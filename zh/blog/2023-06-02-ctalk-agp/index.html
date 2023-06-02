@@ -1,0 +1,105 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Google 中国“社区说”：AGP 编译构建的理解与优化 [回放和资料分享]" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2023-06-02-ctalk-agp/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Google 中国“社区说”：AGP 编译构建的理解与优化 [回放和资料分享] | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Google 中国“社区说”：AGP 编译构建的理解与优化 [回放和资料分享]</h1>
+    <div class="italic text-gray-500">
+      2023/06/02
+    </div>
+    <div>
+      <p>上个月的 Google 中国“社区说”活动，是难得一遇的 Android Gradle Plugin（AGP） <a href="https://ctalks.gdgcn.net/?p=972">效能专场</a>。我邀请了三位一线的 Android 效能专家，一同分享了有关 AGP 实战与架构相关经验。由于很多朋友都在问本期直播是否有回放、PPT 下载等，于是这两天我整理后把相关内容都汇总到这篇文章。</p>
+<p><strong>本次活动分为四个专题分享，和一个结束前的 15 分钟自由 Q&amp;A 时间。所有 PPT 已公开在该<a href="https://github.com/2BAB/CTalk-AGP-2023-05">仓库</a>，所有回放在下面介绍中。</strong></p>
+<h2 id="%E3%80%8A%E6%88%91%E5%9C%A8-b-%E7%AB%99%E5%81%9A%E5%B7%A5%E7%A8%8B%E6%95%88%E8%83%BD%E3%80%8B--%E7%A9%B6%E6%9E%81%E9%80%AE%E8%99%BE%E6%88%B7" tabindex="-1">《我在 B 站做工程效能》- 究极逮虾户</h2>
+<p><img src="https://2bab-images.lastmayday.com/16856769376733.jpg?imageslim" alt=""></p>
+<ul>
+<li><a href="https://www.bilibili.com/video/BV1rh4y1R7aQ/">回放视频</a></li>
+</ul>
+<p>介绍哔哩哔哩在 MonoRepo 中的编译构建优化方案，融合多个不同的 App，将整个工程代码服务化，避免重复造轮子的情况发生，达到降本增效的目的。</p>
+<h2 id="%E3%80%8Aandroid-%E5%90%8C%E6%AD%A5%E4%BC%98%E5%8C%96%EF%BC%9A%E5%85%B3%E9%97%AD-jetifier%E3%80%8B--%E5%B0%8F%E7%81%B5%E9%80%9A" tabindex="-1">《Android 同步优化：关闭 Jetifier》- 小灵通</h2>
+<p><img src="https://2bab-images.lastmayday.com/16856769485791.jpg?imageslim" alt=""></p>
+<ul>
+<li><a href="https://www.bilibili.com/video/BV11h4y1R7Ds">回放视频</a></li>
+</ul>
+<p>AGP7.2.2 开始对 enableJetifier 开关进行了 warning 提示，本次分享会介绍 Jetifier 带来的同步耗时问题，分享排查耗时点的技巧，解决方法及后续防劣化的措施。</p>
+<h2 id="%E3%80%8A%E5%BF%AB%E6%89%8B%E7%9A%84%E7%A7%92%E7%BA%A7%E7%BC%96%E8%AF%91%E6%8E%A2%E7%B4%A2%E4%B9%8B%E8%B7%AF%E3%80%8B--%E5%91%A8%E5%85%A8" tabindex="-1">《快手的秒级编译探索之路》- 周全</h2>
+<p><img src="https://2bab-images.lastmayday.com/202306021136921.png?imageslim" alt=""></p>
+<ul>
+<li><a href="https://www.bilibili.com/video/BV1MP411X7Xf/">回放视频</a></li>
+</ul>
+<p>在快手这类超大型 Android 项目中，常规的编译优化手段已经无法解决构建劣化问题。本次分享将带大家深入 AGP 源码，认识一些神坑，以及怎么用非常规的秒级编译手段解决他们。</p>
+<h2 id="%E3%80%8A%E4%B8%BA-aab-%E6%89%93%E5%8C%85%E5%8A%A0%E7%82%B9%E6%96%99%E3%80%8B%2B-%E7%BB%93%E5%B0%BE-15-%E5%88%86%E9%92%9F-q%26a---2bab" tabindex="-1">《为 AAB 打包加点料》+ 结尾 15 分钟 Q&amp;A - 2BAB</h2>
+<p><img src="https://2bab-images.lastmayday.com/202306021135650.png?imageslim" alt=""></p>
+<ul>
+<li><a href="https://www.bilibili.com/video/BV1eM4y1i7xP/">回放视频</a></li>
+</ul>
+<p>Android App Bundle(.aab) 是 Play Store 当前默认的 App 提交格式，我将分享 Bundle 与 BundleTool 自动化打包、导出解析 apks、辅助测试等流程。</p>
+<h2 id="%E6%B4%BB%E5%8A%A8%E4%BA%AE%E7%82%B9%E5%92%8C%E7%BB%84%E7%BB%87%E8%80%85%E6%84%9F%E6%82%9F" tabindex="-1">活动亮点和组织者感悟</h2>
+<p>本次分享中，有两个较为具体主题（Jetifier 和 AAB），也有两个更全面和深入的效能优化主题（B 站和快手的编译构建优化思路），深入浅出地分享了近年来的一些热点话题。在结尾的自由 Q&amp;A 中，我还和大家一起讨论了：</p>
+<ul>
+<li>关于 AI 工具对基建研发的助力：例如 Copilot 的补全、字节码拆解分析等等。</li>
+<li>小公司如何从大主题中找到适合自己基建升级的小方向？</li>
+<li>...</li>
+</ul>
+<p>我在这次活动中从以往的分享嘉宾角色，进一步升级为组织者，包括策划主题、找人、拉群、筹备等等，最后还接下了主持的工作。这不仅是个人的成长，也是想办法让更多技术人能露面，让我们在做的有价值的事情让整个社区看见。我在活动前后各发了一条朋友圈表达了当下的心情：</p>
+<p><img src="https://2bab-images.lastmayday.com/202306022145698.png?imageslim" alt=""></p>
+<p><img src="https://2bab-images.lastmayday.com/202306022140489.png?imageslim" alt=""></p>
+<p>目测这也是第一次中国大陆的 Android 开发分享活动中，设置了自由 Q&amp;A 的 Closing Panel。这类环节是所有（或大量）嘉宾参与的一个活动结束前问答，目的是让观众扩展思路提出更多和当天“大主题”相关的问题，有趣的是因为嘉宾的讨论也可以带来很多非提前准备的内容，碰撞出火花。大家一定要记得看最后一个视频的后半部分。</p>
+<p>最后，非常幸运去年我邀请赵锦江老师录制了一期二分电台，[《#17 技术大会，为谁而开？(<a href="https://binary.2bab.me/episodes/017-tech-conf">https://binary.2bab.me/episodes/017-tech-conf</a>)》]，本次活动中的不少技巧就是从他的分享中学到的。对于组织技术分享活动感兴趣的朋友，也欢迎联系我探讨更多内容。</p>
+<p><em>欢迎关注我的<a href="/zh"> Github / 公众号 / 播客 / Twitter</a>。</em></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
