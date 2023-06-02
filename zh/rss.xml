@@ -15,7 +15,11 @@
     <link href="https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/"/>
     <updated>2023-05-17T00:00:00Z</updated>
     <id>https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/</id>
-    <content type="html">&lt;h3 id=&quot;1.-%E5%9C%A8%E7%9F%A5%E8%AF%86%E6%98%9F%E7%90%83%E8%B4%AD%E4%B9%B0%E5%90%8E%EF%BC%8C%E6%88%91%E9%9C%80%E8%A6%81%E6%AF%8F%E5%B9%B4%E7%BB%AD%E8%B4%B9%E5%90%97%EF%BC%9F%E4%B8%8D%E7%BB%AD%E8%B4%B9%E8%BF%98%E7%9C%8B%E5%BE%97%E5%88%B0%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;1. 在知识星球购买后，我需要每年续费吗？不续费还看得到吗？&lt;/h3&gt;
+    <content type="html">&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://2bab.me/zh/blog/2023-05-14-extend-android-build-zh-unevils/&quot;&gt;本书介绍&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://github.com/2BAB/Extend-Android-Builds-zh&quot;&gt;资料仓库&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;1.-%E5%9C%A8%E7%9F%A5%E8%AF%86%E6%98%9F%E7%90%83%E8%B4%AD%E4%B9%B0%E5%90%8E%EF%BC%8C%E6%88%91%E9%9C%80%E8%A6%81%E6%AF%8F%E5%B9%B4%E7%BB%AD%E8%B4%B9%E5%90%97%EF%BC%9F%E4%B8%8D%E7%BB%AD%E8%B4%B9%E8%BF%98%E7%9C%8B%E5%BE%97%E5%88%B0%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;1. 在知识星球购买后，我需要每年续费吗？不续费还看得到吗？&lt;/h3&gt;
 &lt;p&gt;知识星球到期后&lt;strong&gt;可以继续阅读&lt;/strong&gt;的，和其他地方购买在线电子书的体验一致。只是不再获得后续的更新或参与星球讨论。&lt;/p&gt;
 &lt;p&gt;请参考知识星球的&lt;a href=&quot;https://help.zsxq.com/howto/faq/user#xing-qiu-dao-qi-hou-hai-neng-bu-neng-cha-kan-zhi-qian-de-nei-rong&quot;&gt;常见问题&lt;/a&gt;说明，只要不出现违法行为被平台踢出或主动点击退出/删除，均可&lt;strong&gt;永久获得你所购买时间内该星球的内容&lt;/strong&gt;。&lt;/p&gt;
 &lt;h3 id=&quot;2.-%E6%9C%AC%E4%B9%A6%E4%BC%9A%E6%9C%89%E7%BA%B8%E8%B4%A8%E7%89%88%E5%90%97%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;2. 本书会有纸质版吗？&lt;/h3&gt;
@@ -28,7 +32,25 @@
 &lt;h3 id=&quot;4.-%E5%88%B0%E5%BA%95%E6%98%AF%E5%8D%96%E4%B9%A6%E8%BF%98%E6%98%AF%E5%8D%96%E6%98%9F%E7%90%83%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;4. 到底是卖书还是卖星球？&lt;/h3&gt;
 &lt;p&gt;本 FAQ 写于 2023 年，此时媒介发展的多元性已经超出我们的想象，就如同未来我们与 app 交互可能是 AI 对话框一样——我目前只能说这是一个混合模式。如果按照内容重点划分，70% 是电子书，15% 是新知预告，15% 是问答和会员播客。&lt;/p&gt;
 &lt;p&gt;知识星球对素人申请很友好，支持内容的长期动态更新，是我选择的原因之一。&lt;/p&gt;
-&lt;h3 id=&quot;5.-%E5%93%AA%E9%87%8C%E5%8F%AF%E4%BB%A5%E8%B4%AD%E4%B9%B0%EF%BC%9F%E6%89%BE%E4%B8%8D%E5%88%B0%E9%98%85%E8%AF%BB%E5%85%A5%E5%8F%A3%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;5. 哪里可以购买？找不到阅读入口？&lt;/h3&gt;
+&lt;h3 id=&quot;5.-%E6%98%AF%E5%90%A6%E6%9C%89%E8%AF%95%E8%AF%BB%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;5. 是否有试读？&lt;/h3&gt;
+&lt;p&gt;知识星球目前不支持相关功能，但本书的小部分内容曾以演讲、文章的形式公开分享过，下面精选了几个近期的分享，你可以将其当作“另一种试读”：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1n3411o7bM/?share_source=copy_web&amp;amp;vd_source=9d2424d15cc388ad6e0a79bae33ceb9f&quot;&gt;Kotlin Symbol Processor 应用与技巧 - @JetBrains Kotlin 中文开发者大会 / 2022-11&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://2bab.me/zh/blog/2021-12-21-enable-feature-by-variant/&quot;&gt;构建指北 #12 根据 Variant 决定是否启用插件&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1eM4y1i7xP&quot;&gt;为 Android App Bundle 打包加点料 - @Google 中国“社区说 - AGP 编译构建”专场 / 2023-05&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&quot;https://www.bilibili.com/video/BV1WP4y1G71h/?vd_source=7d02d0c6cd783fe64a99f3c7464fb242&quot;&gt;扩展 Android 构建流程 - 基于新版 Variant/Artifact APIs - @Google 中国“社区说”活动 / 2021-12&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;我的&lt;a href=&quot;https://2bab.me/zh/&quot;&gt;个人网站&lt;/a&gt;中还有更多分享的内容。&lt;/p&gt;
+&lt;h3 id=&quot;6.-%E5%92%8C%E3%80%8Akoge%E3%80%8B%E5%B0%8F%E5%86%8C%E7%9A%84%E5%85%B3%E7%B3%BB%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;6. 和《KOGE》小册的关系？&lt;/h3&gt;
+&lt;p&gt;很多人应该看到了最近 Kotlin 官方和 Gradle 官方在转发我的另外一本开源小册 &lt;a href=&quot;https://2bab.me/zh/blog/2023-05-05-kotlin-for-gradle/&quot;&gt;《KOGE》&lt;/a&gt;和《Android 构建与架构实战》又有哪些不同？&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/Screenshot%202023-05-15%20at%209.51.49%20AM.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;《KOGE》小册是一道开胃小菜，它&lt;strong&gt;面向 Android 和 Gradle 的新手&lt;/strong&gt;，搞懂脚本的配置与简单的自定义任务，大多数内容均为互联网上的公开文章和资料——而遍数全网，Gradle 与 AGP 的内容多数能找到仅为入门的内容。&lt;/li&gt;
+&lt;li&gt;《Android 构建与架构实战》是一桌宴席，它面向&lt;strong&gt;想要成为高级工程师甚至架构工程师的人&lt;/strong&gt;，不再局限于一般的脚本配置与小修小补，而是真枪实弹地编写 Gradle 插件（大小共 40+ 个案例），实战编译构建方向的架构设计，结合 Android 领域的特定场景去理解 AGP 的最佳实践等。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;同样是使用 Kotlin 作为 Gradle 脚本/插件的编写语言，&lt;strong&gt;《KOGE》完美地成为了本书的前置课程&lt;/strong&gt;——事实上《KOGE》便是本书在写作过程中产生的想法：如果能把基础概念都归纳到一本小册子，《Android 构建与架构实战》就能更流畅地专注在插件编写、AGP、架构、最佳实践等进阶命题。&lt;/p&gt;
+&lt;p&gt;倘若成为该领域的专家需要 10 分的知识储备，《KOGE》能做到 2 分，而完整消化本书能帮你提升至 7-8 分。&lt;/p&gt;
+&lt;h3 id=&quot;%E5%93%AA%E9%87%8C%E5%8F%AF%E4%BB%A5%E8%B4%AD%E4%B9%B0%EF%BC%9F%E6%89%BE%E4%B8%8D%E5%88%B0%E9%98%85%E8%AF%BB%E5%85%A5%E5%8F%A3%EF%BC%9F&quot; tabindex=&quot;-1&quot;&gt;哪里可以购买？找不到阅读入口？&lt;/h3&gt;
 &lt;p&gt;本书目前上架了&lt;a href=&quot;https://t.zsxq.com/0eF9jWLpY&quot;&gt;电子版&lt;/a&gt;：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验，我也提了功能改进建议，希望他们可以在电子专栏页面加入更方便的阅读模式）。&lt;/p&gt;
 &lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim&quot; alt=&quot;&quot; /&gt;
 另外，首批早鸟优惠券已经领完，第二批即日开始发放。关注&lt;em&gt;&lt;strong&gt;Android高效开发&lt;/strong&gt;&lt;/em&gt;公众号，回复“Android 构建与架构实战”即可领取高达 100 元的优惠。第二批的 50 张 100 元已经开始发放，领完后我会再更新 50 张 50 元，最后恢复原价。（活动最终解释权归本人所有）&lt;/p&gt;
