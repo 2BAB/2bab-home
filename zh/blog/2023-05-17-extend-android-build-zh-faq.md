@@ -68,7 +68,6 @@ tags: [Gradle, Kotlin, Android Gradle Plugin, EAB, post]
 本书目前上架了[电子版](https://t.zsxq.com/0eF9jWLpY)：定价 ¥499，点击链接或扫描下面二维码购买，进入后请点击“专栏”阅读（推荐使用网页版获得最佳阅读体验，我也提了功能改进建议，希望他们可以在电子专栏页面加入更方便的阅读模式）。
 
 ![](https://2bab-images.lastmayday.com/51112188854524T3.JPG?imageslim)
-另外，首批早鸟优惠券已经领完，第二批即日开始发放。关注***Android高效开发***公众号，回复“Android 构建与架构实战”即可领取高达 100 元的优惠。第二批的 50 张 100 元已经开始发放，领完后我会再更新 50 张 50 元，最后恢复原价。（活动最终解释权归本人所有）
 
 *欢迎关注我的[ Github / 公众号 / 播客 / Twitter](/zh)。*
 
