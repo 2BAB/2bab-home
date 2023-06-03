@@ -4,11 +4,96 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/zh/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2023-06-02T00:00:00Z</updated>
+  <updated>2023-06-06T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>I/O 23 暨 AGP 10周年：为什么我还是学不会 Gradle？</title>
+    <link href="https://2bab.me/zh/blog/2023-06-05-agp-10years/"/>
+    <updated>2023-06-06T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2023-06-05-agp-10years/</id>
+    <content type="html">&lt;p&gt;距离 Google 在 I/O 2013 上首次发布 Android Gradle Plugin（AGP） 0.1 版本，已有十年之久。然而，即使是经验丰富的 Android 开发者，也可能对 Gradle 和 AGP 的使用和深度掌握感到困惑。我写过不少的 Gradle/AGP 相关文章，做过多次线上分享，甚至写了一本书和一本小册子；但平时的交流中发现对多数人来说还是难以找到学习的路径，即便花时间也未有明显进步。于是在 AGP 十周年之际，我决定用简短文字记录“为什么我还是学不会 Gradle/AGP”的一点观察。&lt;/p&gt;
+&lt;p&gt;这篇文章将回顾 Gradle 的演变，尤其是过去的困难，以及最近两三年的改进。最后，我将提供一些学习策略，帮助新手和有经验的工程师更好地掌握这个构建系统。&lt;/p&gt;
+&lt;p&gt;免责声明：本文章涵盖的均为公开可获取的资料，主要来自于官方的公开分享或社区的声音。&lt;/p&gt;
+&lt;p&gt;Gradle 自身有诸多难点，包括但不限于多变的 DSL、生命周期的细节、兼容性问题多、调试定位和优化难度大等等。整体来看，要实现一个扩展插件，一次性需要掌握的概念较多。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306031646569.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;（不妨问问神奇的海螺）&lt;/p&gt;
+&lt;p&gt;但概念多、难点多不是问题，React.js、Jetpack Compose 等等框架的概念也相当复杂，为什么对大家来说上手难度就不算大呢？&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306031712664.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;p&gt;实际上，不少常见的框架工具，都能在学习初期为开发者快速找到适用场景；而 Gradle 和 AGP 的学习则需要投入大量时间后才能看到效果。对于多数初学者而言，即便你英语不错，看得懂 Gradle 官方的 User Guide，也没法一下找对使用场景，更别提组合相关部件获得最佳实践。而另外一个角度看，我们可能忘了作为 Android 开发者，这个工具本质上要作用于 Android App 的构建过程中才能发挥出它最大的价值，AGP 的学习被不少人所忽略。&lt;/p&gt;
+&lt;p&gt;上述观察引出了本文的两个思考：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Gradle 的官方文档是零散的知识点，缺少了面向初学者的实战教程，也就是 Tutorial 类的文档。&lt;/li&gt;
+&lt;li&gt;AGP 的公开 API 与可扩展性存在一定限制。AGP 的目标长远，其首要目的是为了推动 Android 构建生态的整体发展，但为了平衡维护成本，不可能开放所有的 API。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h2 id=&quot;gradle-%E7%9A%84%E6%96%87%E6%A1%A3%E9%97%AE%E9%A2%98&quot; tabindex=&quot;-1&quot;&gt;Gradle 的文档问题&lt;/h2&gt;
+&lt;p&gt;第一点，文档的问题。“零散”指代了有两个方面：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;不少必要的知识点没有指导文档：举个例子，大家都用过 &lt;code&gt;android.buildTypes{...}&lt;/code&gt; 的定义，它本质上是 &lt;code&gt;NamedDomainObjectContainer&lt;/code&gt; 类和它一系列父类的基础使用。你能找到的是 API 注释文档，但在 User Guide 上找不到指导性的说明，例如多个类似 API 的比较，在 Groovy DSL 中的增删查改、Kotlin 中的增删查改、如何在两个 DSL 之间迁移和使用等等。Google 搜索出来的相关早期参考资料，是 Mr.HAKi 的&lt;a href=&quot;https://blog.mrhaki.com/2016/02/gradle-goodness-create-objects-with-dsl.html&quot;&gt;&lt;code&gt;Gradle Goodness&lt;/code&gt; 系列文章&lt;/a&gt;，该系列博客中还有众多其他的 API 使用案例。&lt;/li&gt;
+&lt;li&gt;文档有小部分从 0 到 1 的内容，例如生命周期，任务基础。而大量其他常见的组件、API 技巧、如何组合应用多个工具，不够详细、或可能放在犄角旮旯。综合的阅读体验有些差强人意：你明明好像在哪里见过它，但又想不起来，甚至关键词搜索都有些困难。用户缺失了一套自身的学习路线参考。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;但这里必须要插一个转折：大部分框架/工具的文档在知识点充足的情况下，仍存在零散、没有先后顺序的问题，背后有其特定原因。对于很多优秀的框架开发而言，写好每一个文件里的 API 注释，再加上大量的测试，就是一套严谨且可被其他开发者自行学习参悟的文档了。而其导出的 API 文档即为核心“文档”，并非要大量案例、指导性材料才能称之为“文档”，那是锦上添花的 Tutorial。&lt;/p&gt;
+&lt;p&gt;这也是为什么不少技术公司、技术产品会招聘特别的技术布道师、技术写作者等职位，指导性的文档以及开源的 Sample 仓库，多数会经他们之手而释出。典型的例子如 &lt;a href=&quot;https://github.com/android/nowinandroid&quot;&gt;Now-In-Android&lt;/a&gt;。&lt;/p&gt;
+&lt;p&gt;缺少一定的完整指导文档，那 Gradle 的文档中剩下最多的便是脚本插件（Script Plugin）的案例。脚本因为 DSL API 的原因，虽然文档上看着很整洁，可一旦需要自己编写二进制插件（即编译后发布的插件，内部包含了一个或多个 &lt;code&gt;Plugin&lt;/code&gt; 的实现，通常我们引用的库都是以二进制插件的形式发布）时，往往却需要原生 API。而前面七八年由于 Groovy 为主的脚本生态，从一些 DSL 中找到对应的原生 API 有些困难——&lt;code&gt;NamedDomainObjectContainer&lt;/code&gt; 再次成为该问题的典型案例。通过 Groovy 动态特性实现的查找、添加融为一体的 API，使用者实际上不知道背后到底是用的 &lt;code&gt;create()&lt;/code&gt; 还是 &lt;code&gt;getByName()&lt;/code&gt; 或者 &lt;code&gt;named()&lt;/code&gt; 等等，这在写 &lt;code&gt;build.gradle&lt;/code&gt; 配置时是优势，在真的写二进制插件时是劣势。我的观察中，Groovy 放大了普通人想要掌握该工具的难度；但对于很多行业先锋而言，熟练的 Groovy 技巧反倒让他们觉得 Gradle 很好用，并且直到 K2 发布前都可因 Groovy 让配置阶段的脚本编译速度更快。&lt;/p&gt;
+&lt;p&gt;最后，因为 Gradle 的产品立场，不会给出太多 Android 生态协同的案例，关于 AGP 可参考下个问题的讨论。可惜由于某些特殊原因，很多监控的 API 也没有放出，甚至我们看到部分第三方插件都已经在调用私有 API 的情况下，仍然没有这部分问题的说明。这其中包括了多数公开的生命周期钩子的废弃（因为 Configuration Cache），对这些公开 API 的平替也未有完整说明，有些官方的最新实践需从 Gradle 论坛或 Slack 讨论组才能看到。&lt;/p&gt;
+&lt;h2 id=&quot;agp-%E7%9A%84%E5%BC%80%E6%94%BE%E6%80%A7%E9%97%AE%E9%A2%98&quot; tabindex=&quot;-1&quot;&gt;AGP 的开放性问题&lt;/h2&gt;
+&lt;p&gt;Gradle 学习曲线陡峭，但“学了很多基础”却做不出来东西，更多是因为缺少对生态的理解。Gradle 作为一个下层基础，支持的不只是 Android，还包括 Java、Kotlin、Scala 等语言生态，以及几乎最庞大的 JVM 后端框架生态，包括 Spring 等等。不难想到对于 Android 开发者而言，理解 Android Gradle Plugin（AGP）和相关编译工具的种种细节，是打包过程的核心一环。&lt;/p&gt;
+&lt;p&gt;AGP 在早期的五六年中，较少公开其开发计划和社区发展支持。2018、2019 年逐步在一些重要的官方会议中发声，理解第三方插件开发者的痛点并同步其了公开 API 的建设进步，并于 2021 年的 I/O 会议上完整发布了 AGP 7.0 的相关大改动，包括了&lt;a href=&quot;https://developer.android.com/build/extend-agp&quot;&gt;文档&lt;/a&gt;和 &lt;a href=&quot;https://github.com/android/gradle-recipes&quot;&gt;Sample&lt;/a&gt; 的支持。&lt;/p&gt;
+&lt;p&gt;从 issue tracker 的情况来看，P1/S1 的问题虽然得到了解决，但仍然有很多“次一级”的问题待完善。我个人也在努力帮忙推动新 API 的过程中发现了一些问题，例如：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;公开的 Artifact API 目前只有十几种，而私有 API 中有多达 200 种。&lt;/li&gt;
+&lt;li&gt;公开的字节码修改 Artifact API 和私有实现有所不同，当存在多个转换任务时会出现&lt;a href=&quot;https://issuetracker.google.com/issues/276431893&quot;&gt;缓存失效&lt;/a&gt;。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;基于上述客观内容，开发者学习 AGP 没有一条直观的路径。很多文章在介绍 AGP 时直接罗列其任务列表、逐一分析，亦是无可奈何的选择。但这种方式的学习效果可能...不算太好。既然没有文档和架构设计，系统学习就是要靠阅读源码，理解整体设计范式。阅读的过程需要带着多个平时碰到的单点问题去思考，例如 AGP 的任务注册流程有什么规律，新的 Artifact API 背后的链式结构如何帮助数据的传递和最终 API 的暴露等等。而有这些问题的前提是，你作为效能专项的开发者，或者你把自己放到这个位置去思考，写出一个又一个可能并不符合 Gradle 和 AGP “规范” 的插件，从中看到问题、阅读源码、解决问题，最终获得成长。注：编写的这类插件我称之为“Android 生态的协同插件”，和一些平台无关的插件有天壤之别（例如分析 Gradle 依赖的插件）。&lt;/p&gt;
+&lt;p&gt;我想，很多人没办法或没机会经历上述过程。于是市场上就只有两类人，初学者和专家。而中间的几个层级断档明显。这也反应在了主题曝光的分配上，过去十年 AGP 的主题分享不少是夹杂在 AS 或 Android 开发工具更新当中。直到最近，AGP 终于在文档区拥有了自己的一个子页卡。&lt;/p&gt;
+&lt;p&gt;&lt;img src=&quot;https://2bab-images.lastmayday.com/202306032220148.png?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;h2 id=&quot;%E8%BF%91%E5%B9%B4%E6%94%B9%E8%BF%9B%E4%B8%8E%E5%AD%A6%E4%B9%A0%E7%AD%96%E7%95%A5%E6%8E%A8%E8%8D%90&quot; tabindex=&quot;-1&quot;&gt;近年改进与学习策略推荐&lt;/h2&gt;
+&lt;p&gt;尽管上述种种问题曾经使得 Gradle 的学习和应用变得困难，但是在过去的两三年里，有一些重大的改进：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;Kotlin 成为默认的脚本语言&lt;/strong&gt;：Kotlin 语言现在是 Gradle 的默认脚本语言。对于 Android 开发者来说，这是个好消息，因为他们可以使用同一种语言来完成应用开发和构建脚本的开发。相较于 Groovy，Kotlin 更容易上手。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;AGP 的新特性&lt;/strong&gt;：AGP 跟进了 Gradle 的 Lazy Property、Configuration Cache、Work Executor 等特性；提供了真正的公开 API，包括完整面向开发者的 Variant 生命周期，Artifact 暴露机制，以及相关的 Sample 说明。开发者可以更容易地扩展 AGP 的功能。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;编译速度的提升&lt;/strong&gt;：Google、JetBrains 和 Gradle 三家公司的合作共建，例如：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Kotlin 的编译速度不断地提升。&lt;/li&gt;
+&lt;li&gt;Google 开发的 KSP 符号处理工具，引入到各类 Android、Kotlin 的开发工具中，大幅提高了符号处理器的效率。&lt;/li&gt;
+&lt;li&gt;Android Studio 的各项 Gradle 周边功能支持，包括 AGP API 迁移、性能分析工具等。&lt;/li&gt;
+&lt;li&gt;未来新的 Kotlin 编译器 K2 和完整的编译器插件生态工具链，会带来更极致的性能提升。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;基于上述的改进，如果让我为新手和中高级工程师给点学习建议，我认为是：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;针对&lt;strong&gt;新手的策略&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;1.1 先学习 Kotlin 和 Gradle 的基础概念，如 DSL，项目的组织结构，任务机制等。&lt;/li&gt;
+&lt;li&gt;1.2 再学习常见插件及其 Extension 的使用，例如 Android、Java、Kotlin、Maven 发布等。&lt;/li&gt;
+&lt;li&gt;1.3 最后逐渐深入一些进阶话题，如简单的脚本修改、简单的任务编写、基础的编译问题定位等。&lt;/li&gt;
+&lt;li&gt;1.4 我组织编写的&lt;a href=&quot;https://koge.2bab.me/#/zh-cn/&quot;&gt;《KOGE》&lt;/a&gt;开源小册，涵盖了大部分上述话题，欢迎阅读&amp;amp;提出建议&amp;amp;参与编写。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;针对&lt;strong&gt;中高级工程师的策略&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;2.1 围绕“增强 Android Gradle Plugin 功能”，学习编写与 Android 生态协同的插件。这是提高编译构建全方面素质的一个重要门槛，需要坚决跨越。由目标驱动，发现问题、阅读源码、解决问题，循环这个步骤，不断提高对生态协同插件的认知。&lt;/li&gt;
+&lt;li&gt;2.2 将插件技术应用到生产的方方面面，如资源修改、源码修改、字节码修改等，不仅学习相关编译工具链，还要从多个角度思考问题，结合编译时和运行时的方案，优势互补。&lt;/li&gt;
+&lt;li&gt;2.3 学习更多 AGP 的内核思想和架构设计，优化上述多种插件方案，将其中优秀的架构思路带到 App 的效能架构中，为团队带来“低成本低编译耗时、高性能高可维护性”的开发体验。&lt;/li&gt;
+&lt;li&gt;对于想提速学习的朋友，也可以考虑入手我的新书&lt;a href=&quot;https://2bab.me/zh/blog/2023-05-14-extend-android-build-zh-unevils/&quot;&gt;《Android 构建与架构实战》&lt;/a&gt;，系统学习 Gradle 插件开发与 AGP 的内核设计。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;总的来说，尽管早期 Gradle 和 AGP 的学习过程可能令人望而却步，但是随着最近的改进和正确的学习策略，开发者能够更好地掌握这个强大的构建工具，以提高生产效率和代码质量。&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;欢迎关注我的&lt;a href=&quot;https://2bab.me/zh&quot;&gt; Github / 公众号 / 播客 / Twitter&lt;/a&gt;。&lt;/em&gt;&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>Google 中国“社区说”：AGP 编译构建的理解与优化 [回放和资料分享]</title>
