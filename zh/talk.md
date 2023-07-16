@@ -4,16 +4,16 @@ layout: page
 
 ### Android 国际化与设计 - UX 篇
 
-Google 中国，“出海日” / 2023-07 / [回放]() / [活动介绍](https://mp.weixin.qq.com/s/m_nLzbwM6D8MyBBparfgTA)
+Google 中国，“出海日” / 2023-07 / [回放]() / [活动介绍](https://mp.weixin.qq.com/s/m_nLzbwM6D8MyBBparfgTA) / [Slides](https://github.com/2BAB/Export-Day-Hangzhou-2023)
 
 ### 为 Android App Bundle 打包加点料
 
-Google 中国，“社区说 - AGP 编译构建”专场 / 2023-05 / [回放](https://www.bilibili.com/video/BV1eM4y1i7xP) / [活动介绍](https://mp.weixin.qq.com/s/x9TsRec95D4stnsa4_muzg)
+Google 中国，“社区说 - AGP 编译构建”专场 / 2023-05 / [回放](https://www.bilibili.com/video/BV1eM4y1i7xP) / [活动介绍](https://mp.weixin.qq.com/s/x9TsRec95D4stnsa4_muzg) / [Slides](https://github.com/2BAB/CTalk-AGP-2023-05)
 
     
 ### Kotlin Symbol Processor 应用与技巧
 
-JetBrains，Kotlin 中文开发者大会 / 2022-11 / [回放](https://www.bilibili.com/video/BV1n3411o7bM/?share_source=copy_web&vd_source=9d2424d15cc388ad6e0a79bae33ceb9f) / [活动介绍](https://blog.jetbrains.com/zh-hans/2022/11/08/2022-kotlin-online-event-for-chinese-developers/)
+JetBrains，Kotlin 中文开发者大会 / 2022-11 / [回放](https://www.bilibili.com/video/BV1n3411o7bM/?share_source=copy_web&vd_source=9d2424d15cc388ad6e0a79bae33ceb9f) / [活动介绍](https://blog.jetbrains.com/zh-hans/2022/11/08/2022-kotlin-online-event-for-chinese-developers/) / [Slides](https://github.com/2BAB/Kotlin-Online-Conference-For-Chinese-Developers-2022-KSP-Use-Cases-n-Trick)
 
 
 ### Android 国际化与设计 - UI 篇
@@ -23,7 +23,7 @@ Google 中国，“社区说 - 开发者出海”专场 / 2022-08 / [回放](htt
 
 ### Kotlin Symbol Processing Trick
 
-英语 / [Android Worldwide](https://android-worldwide.com/) / 2022-07 / [回放](https://www.youtube.com/watch?v=lXbtfwsFXqs) 
+英语 / [Android Worldwide](https://android-worldwide.com/) / 2022-07 / [回放](https://www.youtube.com/watch?v=lXbtfwsFXqs) / [Slides](https://github.com/2BAB/Android-Worldwide-July-2022-KSP-Trick)
    
 
 ### Kotlin Symbol Processor 技巧与实战
