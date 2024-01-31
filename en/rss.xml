@@ -4,21 +4,40 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/en/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2014-12-10T00:00:00Z</updated>
+  <updated>2024-01-31T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
   
   <entry>
-    <title>Working on bringing featured blog posts from Chinese to English</title>
-    <link href="https://2bab.me/en/blog/2014-12-10-hello-world/"/>
-    <updated>2014-12-10T00:00:00Z</updated>
-    <id>https://2bab.me/en/blog/2014-12-10-hello-world/</id>
-    <content type="html">&lt;p&gt;Hello World!&lt;/p&gt;
-&lt;p&gt;I&#39;m working on bringing some featured blog posts from Chinese to English. Meanwhile, if you would like to read them in Chinese or using translator, please click the [中文] text-button at the bottom.&lt;/p&gt;
-&lt;p&gt;Stay tuned.&lt;/p&gt;
-&lt;p&gt;El&lt;/p&gt;
+    <title>2023 Global Odyssey: My Six &#39;Firsts&#39; in the Tech Community</title>
+    <link href="https://2bab.me/en/blog/2024-01-31-recap-2023/"/>
+    <updated>2024-01-31T00:00:00Z</updated>
+    <id>https://2bab.me/en/blog/2024-01-31-recap-2023/</id>
+    <content type="html">&lt;p&gt;Having navigated through the Covid-19 pandemic, I believe many of us share a renewed emphasis on the importance of life experiences. In 2023, my second year as an Android GDE, I ventured into several &amp;quot;firsts&amp;quot; in tech community involvement. These experiences not only recharged me with new energy but also sparked fresh ideas, which I&#39;m eager to share with everyone.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;April at Kotlin Conf in Amsterdam&lt;/strong&gt;: In April 2023, I attended Kotlin Conf in Amsterdam, marking my &lt;strong&gt;first journey outside Asia&lt;/strong&gt;. Every detail of this trip, from the conference agenda and booth setups to the high-quality attendees and presentations, left a lasting impression on me. Beurs van Berlage, a venue brimming with history, I witnessed a tech event that masterfully blended the past with the modern. I delved into themes like Kotlin Multiplatform, Kotlin Compiler, Compose for iOS, and ecosystem tools—cutting-edge topics that enriched my knowledge and connected me with like-minded friends, a rarity in the Android or mobile development circles at the time. Networking with peers from Europe added a valuable international dimension to my professional circle. Interestingly, conversations about my E-ink phone sparked connections beyond tech, discussing various gadgets and innovations for our file. At the booth area, I had the opportunity to engage in-depth with some Google staffs, who offered precious advice on my book, &lt;em&gt;Extending Android Builds&lt;/em&gt;. &lt;img src=&quot;https://2bab-images.lastmayday.com/2024-six-firsts-01.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;May&#39;s Online &amp;quot;Community Talks - AGP Special&amp;quot; Event&lt;/strong&gt;: In May, I took a significant step in volunteer sharing by organizing a special event titled &amp;quot;Community Talks - AGP Compilation &amp;amp; Build.&amp;quot; This was my &lt;strong&gt;first dual role&lt;/strong&gt; as a host and speaker and my initial foray into planning and executing an entire event. I experimented with a roundtable forum, a format seldom seen in China&#39;s GDG, discussing technical topics with several experts. This event bolstered my willingness to try new things and revealed my potential in organizing and conveying technical knowledge.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;July&#39;s &amp;quot;Internationalized App Design&amp;quot; at Google Export Day in Hangzhou&lt;/strong&gt;: In July, I shared insights on internationalized app design at an event in Hangzhou. This was my &lt;strong&gt;first time addressing a non-programming topic&lt;/strong&gt; at a large offline event, focusing on how culture, behaviors, and legal regulations impact app design. Using vivid examples from around the globe, I challenged both my knowledge and public speaking skills.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;September at Google IO Connect and the Greater China Community Mixer&lt;/strong&gt;: In September, I participated in the Google IO Connect and the Greater China Community Mixer in Shanghai, my &lt;strong&gt;first attendance at a community event of this scale&lt;/strong&gt;. Conversations with community members from Mainland China, Hong Kong, and Taiwan provided diverse perspectives and inspirations. This also marked my first insight into the operations of different chinese-speaking communities, greatly broadening my horizon. It represents a valuable chance for us, aiming to encourage increased technological dialogue among diverse areas. &lt;img src=&quot;https://2bab-images.lastmayday.com/2024-six-firsts-03.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;September&#39;s Google Devfest - Experts BootCamp&lt;/strong&gt;: Another September event took me to the Devfest - Experts BootCamp in Silicon Valley, my &lt;strong&gt;first participation in a global GDE gathering&lt;/strong&gt;. It offered a close-up on the design philosophies behind various Google technologies and face-to-face interactions with official Google engineers. Discussions on industry-specific development pain points provided a fresh perspective on challenges faced by developers in specific business sectors. &lt;img src=&quot;https://2bab-images.lastmayday.com/2024-six-firsts-04.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;December&#39;s Google Devfest Taipei&lt;/strong&gt;: In December, at Devfest Taipei, I presented &amp;quot;Ten Years into Android Gradle Plugin: Unraveling the Mysteries of Gradle.&amp;quot; My initial programming project began a decade ago with learning Android development, where Gradle and AGP were notably challenging for beginners. Yet, I found these experiences intriguing. I aimed to consolidate ten years of experience and technical evolution to share my learning techniques with more people. This was &lt;strong&gt;my first full presentation using the technical terminology of the Taiwan community&lt;/strong&gt;, a step outside my comfort zone. Preparing the presentation took weeks, including additional checks and note organization. Speaking at National Taiwan University, I felt the enthusiasm and excitement of a full classroom, enhancing my adaptability and deepening my connection with Taiwan&#39;s tech community. &lt;img src=&quot;https://2bab-images.lastmayday.com/2024-six-firsts-05.jpg?imageslim&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;In conclusion, I extend my gratitude to all event organizers and passionate developers worldwide, whether from Singapore, Europe, the United States, Mainland China, Taiwan, or elsewhere, for adding vibrant colors to my life and tech evangelism spectrum.&lt;/p&gt;
+&lt;p&gt;Feel free to share your &amp;quot;first&amp;quot; experiences in the tech community in the comments. I&#39;m looking forward to exploring new life experiences in 2024. Let&#39;s strive for greatness together!&lt;/p&gt;
 </content>
   </entry>
 </feed>
