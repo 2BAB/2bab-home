@@ -81,20 +81,23 @@ Compose 这边除了一些常规的性能优化和常见的多平台实践分享
   
 ## Extending Android Builds (EAB)  
   
-EAB 是[《Android 构建与架构实战》](https://mp.weixin.qq.com/s?__biz=MzkzOTIwNjc4MA==&mid=2247484113&idx=1&sn=5513bae3e35675820d261c7794c6ddce&scene=21#wechat_redirect)一书的英文版，上个月刚刚出版。去年我在 KotlinConf 大会现场有些青涩地找人帮忙看 'Extending Android Builds' 的目录和书稿，得亏了那次大会才使得本书内容更完善。今年则是自信多了，直接带着刚发售的纸书和海报去的。  
+EAB 是[《Android 构建与架构实战》](https://2bab.me/zh/book/)一书的英文版，上个月刚刚出版。去年我在 KotlinConf 大会现场有些青涩地找人帮忙看 'Extending Android Builds' 的目录和书稿，得亏了那次大会才使得本书内容更完善。今年则是自信多了，直接带着刚发售的纸书和海报去的。  
+
+![](https://2bab-images.lastmayday.com/Screenshot%202024-04-02%20at%209.09.51%E2%80%AFAM.png?imageslim)
   
 第一天早上 8 点刚到会场，我就去了 Gradle 的展台。上个月 Gradle 官方 [Newsletter 刚刚推荐过我的新书](https://newsletter.gradle.org/2024/04)，这次一来就现场送书给 Gradle 团队，算是还愿了吧。我们聊了特别多东西，当他们问我要试读内容的二维码时，正好把海报给了他们。  
 
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-16.png?imageslim)
   
-然后，他们真的把海报放在了 Gradle 的展台，帮忙宣传了两天，大家路过围观时他们还会介绍下这本书！而 Gradle 团队的热情还不止于此，我还被邀去参加了 Gradle 的采访，聊聊书的创作过程，给新人的建议，对 Gradle 未来的展望等等。视频之后会在他们的 YouTube 频道放出。  
+然后，他们真的**把海报放在了 Gradle 的展台，帮忙宣传了两天，大家路过围观时他们还会介绍下这本书**！而 Gradle 团队的热情还不止于此，我还被邀去**参加了 Gradle 的采访**，聊聊书的创作过程，给新人的建议，对 Gradle 未来的展望等等。视频之后会在他们的 YouTube 频道放出。  
 
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-17.jpg?imageslim)
   
 而到了 Google 的展台，我一眼认出 AGP 团队的 Chris Willington，没听错的话他说他现在是 AGP 团队在伦敦的 Manager 了。我表示自己看过很多遍他之前在 ADS 上的分享视频，真是相见恨晚。去年遇到 Ivan 给了我很多帮助，今年 Chris 同样给了我很多信心，对本书的覆盖范围给予了肯定。可惜 Google 的展台没有放书 or 海报的机会哈哈哈，把书送给他后，他还分享给了其他同事看。  
   
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-18.jpg?imageslim)  
-除此之外，Google 的 Jeffrey 和 Uber 的 Ty 也翻看了本书，给到了一些建议，对于第二版的更新很有启发。特别感谢各位大佬的帮助，以及一定要珍惜线下为数不多的聊天机会。  
+
+除此之外，Google 的 Jeffrey 和 Uber 的 Ty 也翻看了本书，给到了一些建议，对于第二版的更新很有启发。特别感谢各位大佬的帮助，以及一定要珍惜线下为数不多的聊天机会。
   
 ## 总结  
   
