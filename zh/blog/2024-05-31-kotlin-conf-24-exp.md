@@ -72,6 +72,7 @@ Compose 这边除了一些常规的性能优化和常见的多平台实践分享
 此外我还和他以及 Sterling 聊了下 Declarative DSL 的工具支持，他们在现场演示的那个 Compose Desktop 工具超赞，可以支持查看一个 dcl 下相关 Software Type 的所有配置。而这个工具还只是 demo，我建议他们可以合并到 IDE 插件里（毕竟 compose 也是 idea 的插件支持技术）。该工具并且未来会和更多其他的源码跳转支持进行整合，既可以点击看文档和声明，也可以链接到后面的插件源码。  
   
 第三段是和 Slack 的 Boon 多次加起来长达一个多小时的聊天。Boon 来自新加坡，目前在西雅图的 Slack 负责 Android 的一些业务架构。Slack Android 有上千的模块，Kotlin 和 Compose 的使用已经多年。有趣的是它们的基础架构和开发者体验组（更偏工具感觉）是分开的，公司被 SF 收购后也仍有不少开源项目的支持。而近年痛点有对 Compose 性能部分的，也有编译构建执行时间的。比较感慨并且观察一致的是新加坡因为和美国有 h1b1 的协定，很多人才去了美国，新加坡本土的技术氛围其实较为薄弱。他常年跑技术大会，IO DroidCon KotlinConf 都会去，帮忙认出了不少在现场的牛人，像 DroidCon 的 ceo、Kotlin 语言前任和现任设计师、Uber 的 Ty Smith 等。包括后来我去和 cashapp 的一桌人聊天也是因为他早早提示我 paparazzi 的维护者 John 也在现场。  
+
 题外话，后面还去了 CashApp 那桌和 John、Ty、Mohit 等人聊了半小时，发现 John 和 Jake 还在现场工作，合并 PR，真丶社区大佬。  
 
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-14.jpg?imageslim)
@@ -82,7 +83,7 @@ Compose 这边除了一些常规的性能优化和常见的多平台实践分享
   
 EAB 是[《Android 构建与架构实战》](https://mp.weixin.qq.com/s?__biz=MzkzOTIwNjc4MA==&mid=2247484113&idx=1&sn=5513bae3e35675820d261c7794c6ddce&scene=21#wechat_redirect)一书的英文版，上个月刚刚出版。去年我在 KotlinConf 大会现场有些青涩地找人帮忙看 'Extending Android Builds' 的目录和书稿，得亏了那次大会才使得本书内容更完善。今年则是自信多了，直接带着刚发售的纸书和海报去的。  
   
-第一天早上 8 点刚到会场，我就去了 Gradle 的展台。上个月 Gradle 官方 Newsletter 刚刚推荐过我的新书，这次一来就现场送书给 Gradle 团队，算是还愿了吧。我们聊了特别多东西，当他们问我要试读内容的二维码时，正好把海报给了他们。  
+第一天早上 8 点刚到会场，我就去了 Gradle 的展台。上个月 Gradle 官方 [Newsletter 刚刚推荐过我的新书](https://newsletter.gradle.org/2024/04)，这次一来就现场送书给 Gradle 团队，算是还愿了吧。我们聊了特别多东西，当他们问我要试读内容的二维码时，正好把海报给了他们。  
 
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-16.png?imageslim)
   
@@ -95,7 +96,7 @@ EAB 是[《Android 构建与架构实战》](https://mp.weixin.qq.com/s?__biz=Mz
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-18.jpg?imageslim)  
 除此之外，Google 的 Jeffrey 和 Uber 的 Ty 也翻看了本书，给到了一些建议，对于第二版的更新很有启发。特别感谢各位大佬的帮助，以及一定要珍惜线下为数不多的聊天机会。  
   
-总结  
+## 总结  
   
 最后，今年比去年更开心的是中文开发者小分队的人数又增加了。除了我和圣佑，还有 Android GDE 兼 KUG 上海组织者的禹昂，KMP 专家 Yinlong，以及在瑞典的高中生 Zhuoxuan 和在伦敦的 SiaoJie。  
   
@@ -107,7 +108,7 @@ EAB 是[《Android 构建与架构实战》](https://mp.weixin.qq.com/s?__biz=Mz
 
 ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-22.jpg?imageslim)
 
-  
+
 希望明年 KotlinConf 再相聚！  
 
 See you soon!
