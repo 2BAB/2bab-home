@@ -5,7 +5,7 @@ layout: page
 
 ### [《Android 构建与架构实战》](https://t.zsxq.com/0eF9jWLpY)
 
-本书英文版 "Extending Android Builds" 获得了 Gradle 官方的多次推荐：
+本书英文版 ["Extending Android Builds"](https://eab.2bab.com/) 获得了 Gradle 官方的多次推荐：
 
 1. **Gradle 官方 newsletter** 2024 年 [4 月刊](https://newsletter.gradle.org/2024/04)和 [5 月刊](https://newsletter.gradle.org/2024/05)的**推荐**。
 2. KotlinConf 2024 上，**Gradle 官方展台推荐**了本书，覆盖了多达 3000 位与会人员。
