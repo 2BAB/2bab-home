@@ -5,9 +5,18 @@ layout: page
 
 ### [《Android 构建与架构实战》](https://t.zsxq.com/0eF9jWLpY)
 
-Gradle 对于 Android 开发者来说，算是必备工具之一。市面上不乏讲解 Gradle 的书籍，但真正涉及到 Android Gradle Plugin（下称 AGP）构建流程和对应的架构应用，却寥寥无几。本书以大量 Gradle 的进阶内容为铺垫，多个自定义的生态协同 Gradle 插件为载体，带你探讨新版 AGP 的接口与原理，思考如何在 AGP 相对闭环的容器中定制项目所需的构建流程，增强整体的架构建设。后期还设定了一系列的架构实践章节，涵盖资源、源码、字节码等多个部分，巩固对 Android App 构建与架构的认知。 使用 Kotlin 编写，基于全新的 Gradle 7 与 AGP 7。
+本书英文版 "Extending Android Builds" 获得了 Gradle 官方的多次推荐：
 
-本书电子版已上架至知识星球专栏（点击标题链接或扫描下方二维码），配套资料包括示例源码已开源在该 [Github 仓库](https://github.com/2BAB/Extend-Android-Builds-zh)。更多介绍见 *[新书上架！《Android 构建与架构实战》](https://2bab.me/zh/blog/2023-05-14-extend-android-build-zh-unevils/)*，以及 *[FAQ](https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/)*。
+1. **Gradle 官方 newsletter** 2024 年 [4 月刊](https://newsletter.gradle.org/2024/04)和 [5 月刊](https://newsletter.gradle.org/2024/05)的**推荐**。
+2. KotlinConf 2024 上，**Gradle 官方展台推荐**了本书，覆盖了多达 3000 位与会人员。
+
+![](https://2bab-images.lastmayday.com/kotlin-conf-2024-17.jpg?imageslim)
+
+本书的各类 Contributor （含提供了技术指导和后期审阅人员）覆盖了前 Gradle 高级工程师，前 Android Studio & Android Gradle Plugin 的高级工程师，全球多位 Android GDE (Google Developer Experts)，以及来自各大公司的一线 Android 基础架构工程师。
+
+简介：Gradle 对于 Android 开发者来说，算是必备工具之一。市面上不乏讲解 Gradle 的书籍，但真正涉及到 Android Gradle Plugin（下称 AGP）构建流程和对应的架构应用，却寥寥无几。本书以大量 Gradle 的进阶内容为铺垫，多个自定义的生态协同 Gradle 插件为载体，带你探讨新版 AGP 的接口与原理，思考如何在 AGP 相对闭环的容器中定制项目所需的构建流程，增强整体的架构建设。后期还设定了一系列的架构实践章节，涵盖资源、源码、字节码等多个部分，巩固对 Android App 构建与架构的认知。 使用 Kotlin 编写，基于全新的 Gradle 7 与 AGP 7。
+
+购买：本书中文电子版已上架至知识星球专栏（点击标题链接或扫描下方二维码），配套资料包括示例源码已开源在该 [Github 仓库](https://github.com/2BAB/Extend-Android-Builds-zh)。更多介绍见 *[新书上架！《Android 构建与架构实战》](https://2bab.me/zh/blog/2023-05-14-extend-android-build-zh-unevils/)*，以及 *[FAQ](https://2bab.me/zh/blog/2023-05-17-extend-android-build-zh-faq/)*。因出版社原因，暂无中文纸质书发布计划。
     
 ![《Android 构建与架构实战》封面](https://2bab-images.lastmayday.com/202305131112571.png?imageslim)
 
