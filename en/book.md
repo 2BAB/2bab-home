@@ -4,7 +4,7 @@ layout: page
 
 ### Extending Android Builds (1st Edition, April 2024)
 
-The book goes beyond the Gradle configuration, it targets the intermediate level and introduces Gradle Plugin development along with the Android Gradle Plugin (AGP). You will learn practical skills of Gradle Plugin/Task development, AGP APIs, and practice with multiple case-studies. It covers 9 major chapters with 41 sections in total. You can find it from below stores:
+*Extending Android Builds* goes beyond the Gradle configuration, it targets the intermediate level and introduces Gradle Plugin development along with the Android Gradle Plugin (AGP). You will learn practical skills of Gradle Plugin/Task development, AGP APIs, and practice with multiple case-studies. It covers 9 major chapters with 41 sections in total. You can find it from below stores:
 
 1. Amazon (including all regional sites): [Paperback](https://www.amazon.com/gp/product/B0CZXPP2JS), [HardCover](https://www.amazon.com/Extending-Android-Builds-Pragmatic-Gradle/dp/B0CZWYQTQC/) and [Kindle ebook](https://www.amazon.com/Extending-Android-Builds-Pragmatic-Gradle-ebook/dp/B0CXMZBZL6).
 2. Leanpub: [PDF and EPUB](https://leanpub.com/extending-android-builds).
@@ -21,9 +21,9 @@ It has been featured by the Gradle team in many ways:
     ![](https://2bab-images.lastmayday.com/kotlin-conf-2024-17.jpg?imageslim)
 
 
-### KOGE
+### Kotlin-oriented Gradle Essentials
 
-*KOGE* stands for *Kotlin-oriented Gradle Essentials*, a concise self-study handbook for Gradle. It lists a dozen of confusing points for newcomers, points out the learning sequence, and links to appropriate reference materials - from questions, source code, and samples already available on the Internet.
+*Kotlin-oriented Gradle Essentials* (KOGE), a concise self-study handbook for Gradle. It lists a dozen of confusing points for newcomers, points out the learning sequence, and links to appropriate reference materials - from questions, source code, and samples already available on the Internet.
 
 The handbook chooses Kotlin as the language for DSL script and plugin development. The Gradle Kotlin DSL gets excellent support of IDE code completion, active community, as an Android developer I prefer unified workflow on one language for both App and build tools development. The links and use cases in this handbook, while referred to the Android development, are intended to be easy to understand for Gradle users of other platforms as well.
 
