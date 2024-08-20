@@ -27,6 +27,8 @@ It has been featured by the Gradle team in many ways:
 
 The handbook chooses Kotlin as the language for DSL script and plugin development. The Gradle Kotlin DSL gets excellent support of IDE code completion, active community, as an Android developer I prefer unified workflow on one language for both App and build tools development. The links and use cases in this handbook, while referred to the Android development, are intended to be easy to understand for Gradle users of other platforms as well.
 
+The handbook has been featured by the Gradle team in its newsletter: the [May 2024 issue](https://newsletter.gradle.org/2024/05).
+
 KOGE is [open-sourced](https://github.com/2BAB/KOGE) and welcome your PRs, click to [READ](https://koge.2bab.me/) it now.
 
 ![](https://2bab-images.lastmayday.com/koge-book-cover.png?imageslim)
