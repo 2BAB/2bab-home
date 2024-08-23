@@ -2,6 +2,13 @@
 layout: page
 ---
 
+### On-Device Model 集成（KMP）与用例
+
+Google I/O Extended Guangzhou / GDG 广州 / 2024-07 / [活动介绍](https://mp.weixin.qq.com/s/AvB3KhQeLCYY_KzB9_6pdQ) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / 无回放
+
+Google I/O Extended Xiamen / GDG 厦门 / 2024-06 / [活动介绍](https://mp.weixin.qq.com/s/3EcRMbgmjXx8QdVrwzN49g) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / 无回放
+
+
 ### [Android Gradle Plugin 十周年: 解密 Gradle 入门](https://mp.weixin.qq.com/s/JOQEqglG7pv1JlI71dKS-g)
 
 Google DevFest Taipei / GDG 台北 / 2023-12 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2023/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2023-12-Ten-Years-Into-AGP) / 无回放
