@@ -75,7 +75,7 @@ Mediapipe 官方的 [LLM Inference Demo](https://github.com/google-ai-edge/media
 
 我们在 `commonMain` 中，根据 Mediapipe LLM Task SDK 的特征抽象一个简单的接口，使用 Kotlin 编写，用以满足 Android 和 iOS 两端的需要。该接口取代了原有仓库里的 `InferenceModel.kt` 类。
 
-``` Kotlin
+``` kotlin
 // app/src/commonMain/.../llm/LLMOperator
 interface LLMOperator {
 
@@ -106,7 +106,7 @@ interface LLMOperator {
 
 在 Android 上面，因为 LLM Task SDK 原先就是 Kotlin 实现的，所以除了初始化加载模型文件，其余的部分基本就是代理原有的 SDK 功能。
 
-``` Kotlin
+``` kotlin
 class LLMInferenceAndroidImpl(private val ctx: Context): LLMOperator {
 
     private lateinit var llmInference: LlmInference
@@ -164,7 +164,7 @@ class LLMInferenceAndroidImpl(private val ctx: Context): LLMOperator {
 
 而针对 iOS，我们先尝试第一种调用方式：**直接调用 Cocoapods 引入的库**。在 app 模块引入 cocoapods 的插件，同时添加 Mediapipe 的 LLM Task 库：
 
-``` Kotlin
+``` kotlin
 // app/build.gradle.kts
 plugins {
     ...
@@ -191,7 +191,7 @@ cocoapods {
 
 之后，我们在 iosMain 中便可直接 import 相关的库代码，如法炮制 Android 端的代理思路：
 
-``` Kotlin
+``` kotlin
 // 注意这些 import 是 cocoapods 开头的
 import cocoapods.MediaPipeTasksGenAI.MPPLLMInference
 import cocoapods.MediaPipeTasksGenAI.MPPLLMInferenceOptions
@@ -225,7 +225,7 @@ class LLMOperatorIOSImpl: LLMOperator {
 
 但这回我们没那么幸运，`MPPLLMInference` 初始化结束的一瞬间有 NPE 抛出。最可能的问题是因为 Kotlin 现在 interop 的目标是 Objective-C，`MPPLLMInference` 的构造器比 Swift 版本多一个 error 参数，而我们传入的是 null。
 
-``` Kotlin
+``` kotlin
 constructor(
   options: cocoapods.MediaPipeTasksGenAI.MPPLLMInferenceOptions, 
   error: CPointer<ObjCObjectVar<platform.Foundation.NSError?>>?)
@@ -233,7 +233,7 @@ constructor(
 
 但几番测试各种指针传入，也并未解决这个问题，：
 
-``` Kotlin
+``` kotlin
 // 其中一种尝试
 memScoped {
     val pp: CPointerVar<ObjCObjectVar<NSError?>> = allocPointerTo()
@@ -244,7 +244,7 @@ memScoped {
 
 于是只能另辟蹊径采用第二种方案：通过 iOS 工程调用第三方库。
 
-``` Kotlin
+``` kotlin
 // 1. 声明一个类似 LLMOperator 的接口但更简单，方便适配 iOS 的 SDK。
 // app/src/iosMain/.../llm/LLMOperator.kt
 interface LLMOperatorSwift {
@@ -318,7 +318,7 @@ class LLMOperatorIOSImpl(
 1. 利用了 expect class 不需要构造器参数声明的特点加了层封装（类似接口）。
 2. 利用了 Koin 实现各自平台所需参数的注入，再统一把创建的接口实例注入到 Common 层所需的地方。
 
-``` Kotlin
+``` kotlin
 // Common
 expect class LLMOperatorFactory {
     fun create(): LLMOperator
@@ -375,7 +375,7 @@ class ChatViewModel(
 
 相应的 ViewModel 初始化方式也更改成 ScreenModel 的方法：
 
-``` Kotlin
+``` kotlin
 // Android 版本
 @Composable
 internal fun ChatRoute(
@@ -416,7 +416,7 @@ fun AiScreen(llmOperator:LLMOperator = koinInject()) {
 
 对应的 ViewModel 内部的 LLM 功能调用接口也要进行替换：
 
-``` Kotlin
+``` kotlin
 // Android 版本
 inferenceModel.generateResponseAsync(fullPrompt)
 inferenceModel.partialResults
@@ -433,7 +433,7 @@ llmOperator.generateResponseAsync(fullPrompt)
 
 然后是 Compose Multiplatform 特定的资源加载方式，把 `R` 文件替换为 `Res`：
 
-``` Kotlin
+``` kotlin
 // Android 版本
 Text(stringResource(R.string.chat_label))
 
