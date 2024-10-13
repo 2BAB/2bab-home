@@ -1,7 +1,7 @@
 ---
 layout: post
 date: 2024-09-01
-title: "Adapting the MediaPipe LLM Demo for Kotlin Multiplatform"
+title: "Adapting MediaPipe Demos for Kotlin Multiplatform: LLM Inference"
 tags: [KMP, android, gemma, enpost]
 ---
 

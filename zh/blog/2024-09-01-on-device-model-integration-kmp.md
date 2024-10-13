@@ -1,11 +1,11 @@
 ---
 layout: post
 date: 2024-09-01
-title: "移植 Mediapipe LLM Demo 到 Kotlin Multiplatform"
+title: "移植 Mediapipe Demo 到 Kotlin Multiplatform (1) LLM Inference"
 tags: [KMP, android, gemma, post]
 ---
 
-不久前我在厦门和广州的 Google I/O Extended 分享了 《On-Device Model 集成（KMP）与用例》，本文是当时 Demo 的深入细节分析，同时也是后面几篇同类型文章的开头。通过本文你将了解到：
+在不久前的厦门和广州 Google I/O Extended 上，我分享了 《On-Device Model 集成（KMP）与用例》。本文将对当时 Demo 进行深入分析，并为后续几篇同类型文章奠定基础。通过本文你将了解到：
 
 1. **移植 Mediapipe 的 LLM Inference Android 官方 Demo 到 KMP，支持在 iOS 上运行。** 项目地址：https://github.com/2BAB/mediapiper
 2. **KMP 两种常见的调用 iOS SDK 的方式**：
@@ -21,10 +21,10 @@ tags: [KMP, android, gemma, post]
 
 大语言模型（LLM）持续火热了很长一段时间，而今年开始这股风正式吹到了移动端，包括 Google 在内的最新手机与系统均深度集成了此类 On-Device Model 的相关功能。对于 Google 目前的公开战略中，On-Device Model 这块的大语言模型主要分为两个：
 
-1. Gemini Nano：非开源，支持机型较少（某些机型支持特定芯片加速如 Tensor G4），具有极其强劲进的表现。目前可以在桌面平台（Chrome）和部分 Android 手机上使用（Pixel 8/9 和 Samsung S23/24 等）。据报道晚些时候会公开给更多的开发者进行使用和测试。
+1. Gemini Nano：非开源，支持机型较少（某些机型支持特定芯片加速如 Tensor G4），具有强劲的表现。目前可以在桌面平台（Chrome）和部分 Android 手机上使用（Pixel 8/9 和 Samsung S23/24 等）。据报道晚些时候会公开给更多的开发者进行使用和测试。
 2. Gemma：开源，支持所有满足最低要求的机型，同样有不俗的性能表现，与 Nano 使用类似的技术路线进行训练。目前可以在多平台上体验（Android/iOS/Desktop）。据报道晚些时候会提供 Gemma2 版本的 Mediapipe 适配。
 
-因 Gemini Nano 目前多数开发者都还摸不到，所以今天的主角便是 Gemma 1 的 2B 版本。想在移动平台上直接使用 Gemma，Google 已给我们提供一个开箱即用的工具：Mediapipe。MediaPipe 是一个跨平台的框架，它封装了一系列预构建的 On-Device 机器学习模型和工具，支持实时的手势识别、面部检测、姿态估计等任务，还可应用于生成图片、聊天机器人等各种应用场景。感兴趣的朋友可以试玩它的 Web 版 [Demo](https://mediapipe-studio.webapps.google.com/)，以及相关[文档](https://ai.google.dev/edge/mediapipe/solutions/guide)。
+目前多数开发者尚无法直接基于 Gemini Nano 开发，所以今天的主角便是 Gemma 1 的 2B 版本。想在移动平台上直接使用 Gemma，Google 已给我们提供一个开箱即用的工具：Mediapipe。MediaPipe 是一个跨平台的框架，它封装了一系列预构建的 On-Device 机器学习模型和工具，支持实时的手势识别、面部检测、姿态估计等任务，还可应用于生成图片、聊天机器人等各种应用场景。感兴趣的朋友可以试玩它的 Web 版 [Demo](https://mediapipe-studio.webapps.google.com/)，以及相关[文档](https://ai.google.dev/edge/mediapipe/solutions/guide)。
 
 ![](https://2bab-images.lastmayday.com/on-device-model-mediapipe-intro.jpg?imageslim)
 
@@ -218,7 +218,7 @@ constructor(
   error: CPointer<ObjCObjectVar<platform.Foundation.NSError?>>?)
 ```
 
-但几番测试各种指针传入，也并未解决这个问题，：
+尝试了多种指针传入方式后，仍未解决该问题：
 
 ``` kotlin
 // 其中一种尝试
@@ -228,6 +228,8 @@ memScoped {
     Napier.i(pp.value.toString())
 }
 ```
+
+（后与一位 Kotlin 专家 BennyHuo 探讨后，推测可能是 Interop 目前的支持有限，对 Swift 的代码里 init 方法有 throws 关键字的支持有局限，详情可看 LlmInference 的[源码](https://github.com/google-ai-edge/mediapipe/blob/cdc08d04ee83f36085894e3a24cb61c949f56b14/mediapipe/tasks/ios/genai/inference/sources/LlmInference.swift#L56)，以及 Kotlin 的[文档](https://kotlinlang.org/docs/native-objc-interop.html#errors-and-exceptions)）
 
 于是只能另辟蹊径采用第二种方案：通过 iOS 工程调用第三方库。
 
@@ -300,7 +302,7 @@ class LLMOperatorIOSImpl(
 }
 ```
 
-细心的朋友可能已经发现，两端的 Impl 实例需要不同的构造器参数，这个问题一般使用 KMP 的 `expect` 与 `actual` 关键字解决。下面的代码中：
+细心的朋友可能已经发现，两端的 Impl 实例需要不同的构造器参数，这个需求一般使用 KMP 的 `expect` 与 `actual` 关键字解决。下面的代码中：
 
 1. 利用了 expect class 不需要构造器参数声明的特点加了层封装（类似接口）。
 2. 利用了 Koin 实现各自平台所需参数的注入，再统一把创建的接口实例注入到 Common 层所需的地方。
@@ -462,12 +464,12 @@ Text(stringResource(Res.string.chat_label))
 ![](https://2bab-images.lastmayday.com/202408-on-device-model-test-1.jpg?imageslim)
 
 
-接着我们升级了测试问题，让它执行区分动植物的单词分类：不管是 GPU 或者 CPU 的版本都不错。
+接着我们提高了测试问题的难度，让它执行区分动植物的单词分类：不管是 GPU 或者 CPU 的版本都不错。
 
 ![](https://2bab-images.lastmayday.com/202408-on-device-model-test-2.jpg?imageslim)
 
 
-再次升级上个问题，让它用 JSON 的方式输出答案，就出现明显的问题：
+再次提高上个问题，让它用 JSON 的方式输出答案，就出现明显的问题：
 
 1. 图1没有输出完整的代码片段，缺少了结尾的三个点 ```。
 2. 图二分类错误，把山竹放到动物，植物出现了两次向日葵。
