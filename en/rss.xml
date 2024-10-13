@@ -11,7 +11,7 @@
   </author>
   
   <entry>
-    <title>Adapting the MediaPipe LLM Demo for Kotlin Multiplatform</title>
+    <title>Adapting MediaPipe Demos for Kotlin Multiplatform: LLM Inference</title>
     <link href="https://2bab.me/en/blog/2024-09-01-on-device-model-integration-kmp/"/>
     <updated>2024-09-01T00:00:00Z</updated>
     <id>https://2bab.me/en/blog/2024-09-01-on-device-model-integration-kmp/</id>
