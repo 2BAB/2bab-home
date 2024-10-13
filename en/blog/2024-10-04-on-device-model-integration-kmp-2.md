@@ -2,7 +2,7 @@
 layout: post
 date: 2024-10-04
 title: "Adapting MediaPipe Demos for Kotlin Multiplatform: Object Detection"
-tags: [KMP, android, mediapipe, mediapiper, objectdetection, post]
+tags: [KMP, android, mediapipe, mediapiper, objectdetection, enpost]
 ---
 
 Following our previous exploration of porting Mediapipe's LLM Inference, this article delves into migrating the Object Detection Demo. By reading this, you'll learn:
