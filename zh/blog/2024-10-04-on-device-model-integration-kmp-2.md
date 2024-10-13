@@ -60,7 +60,7 @@ tags: [KMP, android, mediapipe, mediapiper, objectdetection, post]
 
 如上文分析我们需要拆除 CameraView 的部分用 Native 实现，因此在 Common 的 `CameraView` 里我们使用了两个 `expect` 的 Composable 函数 `CameraPermissionControl` 和 `CameraPreview`：
 
-``` Kotlin
+```kotlin
 @Composable
 fun CameraView(
     threshold: Float,
@@ -84,7 +84,7 @@ fun CameraView(
 
 @Composable
 expect fun CameraPermissionControl(PermissionGrantedContent:  @Composable @UiComposable () -> Unit)
-
+```kotlin
 @Composable
 expect fun CameraPreview(
     threshold: Float,
@@ -99,7 +99,7 @@ expect fun CameraPreview(
 
 Android 端的实现十分简单，直接将原有的 Jetpack Compose 代码拷贝过来：
 
-``` Kotlin
+```swift
 // Android implementation
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -251,7 +251,7 @@ actual fun CameraPreview(...) {
 
 iOS 则稍微需要一些精力。对于相机权限控制，我们直接在这个 Composable 函数中调用 iOS 的 `platform.AVFoundation` 相关 API，异步发起请求然后根据结果显示加载中、失败、或成功时直接显示相机预览。可以看到我们做的 iOS 实现已十分完善，考虑到了三个不同场景 :D
 
-``` Kotlin
+```kotlin
 ...
 import platform.AVFoundation.AVAuthorizationStatusAuthorized
 import platform.AVFoundation.AVAuthorizationStatusDenied
@@ -310,7 +310,7 @@ private suspend fun requestCameraAccess(): Boolean = suspendCoroutine { continua
 
 然后来到核心的相机预览功能。从 CMP 的[文档](https://www.jetbrains.com/help/kotlin-multiplatform-dev/compose-uikit-integration.html)中我们知道，使用 `UIKitView` 即可在 Composable 函数中嵌入一个 iOS 的 View。
 
-``` Kotlin
+```kotlin
 // Example 1
 UIKitView(
     factory = { MKMapView() },
@@ -356,7 +356,7 @@ fun UseUITextField(modifier: Modifier = Modifier) {
 
 此处我们采用第二种方案，定义 `IOSCameraPreviewCreator` 作为两侧交互的协议。
 
-``` Kotlin
+```kotlin
 // 定义
 typealias IOSCameraPreviewCreator = (
     threshold: Float,
@@ -417,7 +417,7 @@ actual fun CameraPreview(
 
 上述代码使用 Koin 管理依赖简化了流程。至此 CMP 的部分已经完成，我们顺延启动参数的注入去探究 iOS 的部分。
 
-``` Swift
+```swift
 MainKt.onStartup(iosCameraPreviewCreator: { threshold, maxResults, delegate, mlModel, onInferenceTimeUpdate, resultCallback in
     return IOSCameraView.init(
         frame: CGRectMake(0, 0, 0, 0),
