@@ -5,8 +5,6 @@ title: "Kotlin 对 SDK 初始化回调的四种优化方式"
 tags: [kotlin, android, callback, coroutine, CompletableDeferred,Channel, Flow, post]
 ---
 
-# Kotlin 对 SDK 初始化回调的四种优化方式
-
 在 Android 开发中，我们经常需要小心处理各种 SDK 的初始化和回调，尤其是在需要异步操作时。本文我们将聊聊 Kotlin 中处理这些回调的四种优化方式，主要以 Google 的几个 SDK 为例。
 
 ## 回调机制的问题
