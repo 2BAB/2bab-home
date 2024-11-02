@@ -102,19 +102,17 @@ suspend fun queryMerchandise(...) = withContext(Dispatchers.IO) {
   - 避免了手动检查状态的麻烦，提升代码可读性。
 
 - **缺点**：
-  - 需要引入协程，可能对项目有一定的改动。
   - 如果初始化一直无法完成，协程会一直挂起，需要处理超时等情况。
 
 
-### 3. 使用 `Channel` 处理一次性结果
+### 3. 使用 `Channel` 处理生产者消费者模式
 
-当我们只需要处理一次性的回调结果时，`Channel` 是个不错的选择。
-
-**示例**：加载激励广告
+当我们只需要处理单一的“生产者消费者”回调结果时，`Channel` 可能是个不错的选择。下面以加载 AdMob 激励广告为例。
 
 ```kotlin
 private val rewardedAdChannel = Channel<RewardedAd?>(1)
 
+...
 RewardedAd.load(
     activity,
     adUnitId,
@@ -151,7 +149,7 @@ suspend fun showSingleRewardedAd(activity: Activity) {
 #### 优缺点分析
 
 - **优点**：
-  - 适合一次性结果的处理，避免了回调嵌套。
+  - 适合单一结果的生产者消费者模式的处理，避免了回调嵌套。
   - 可以在协程中以同步的方式处理异步结果，代码清晰。
 
 - **缺点**：
