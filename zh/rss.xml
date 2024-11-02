@@ -4,11 +4,130 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/zh/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2024-10-04T00:00:00Z</updated>
+  <updated>2024-11-02T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>Kotlin 对 SDK 初始化回调的四种优化方式</title>
+    <link href="https://2bab.me/zh/blog/2024-10-25-kotlin-initialization-callback-to-async-notification-with-coroutine/"/>
+    <updated>2024-11-02T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2024-10-25-kotlin-initialization-callback-to-async-notification-with-coroutine/</id>
+    <content type="html">&lt;h1 id=&quot;kotlin-%E5%AF%B9-sdk-%E5%88%9D%E5%A7%8B%E5%8C%96%E5%9B%9E%E8%B0%83%E7%9A%84%E5%9B%9B%E7%A7%8D%E4%BC%98%E5%8C%96%E6%96%B9%E5%BC%8F&quot; tabindex=&quot;-1&quot;&gt;Kotlin 对 SDK 初始化回调的四种优化方式&lt;/h1&gt;
+&lt;p&gt;在 Android 开发中，我们经常需要小心处理各种 SDK 的初始化和回调，尤其是在需要异步操作时。本文我们将聊聊 Kotlin 中处理这些回调的四种优化方式，主要以 Google 的几个 SDK 为例。&lt;/p&gt;
+&lt;h2 id=&quot;%E5%9B%9E%E8%B0%83%E6%9C%BA%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98&quot; tabindex=&quot;-1&quot;&gt;回调机制的问题&lt;/h2&gt;
+&lt;p&gt;首先，回顾一下传统的回调机制。在 Java 中，回调函数是处理异步任务结果的常用方式，但这种方法有不少问题：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;代码可读性差&lt;/strong&gt;：回调嵌套过多，容易陷入“回调地狱”。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;状态管理复杂&lt;/strong&gt;：需要手动维护初始化状态，增加了代码复杂度。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;无法动态等待&lt;/strong&gt;：无法在调用方法时动态地等待初始化完成，只能通过轮询或阻塞。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;在 Kotlin 中，虽然有协程等强大的工具，但由于需要兼容大量的 Java 代码和历史项目，回调问题仍然存在。以 Google 提供的 SDK 为例，尽管有些已经提供 KTX 扩展包，但并没有在初始化上的问题上进行优化。&lt;/p&gt;
+&lt;h2 id=&quot;%E5%9B%9B%E7%A7%8D%E4%BC%98%E5%8C%96%E6%96%B9%E5%BC%8F&quot; tabindex=&quot;-1&quot;&gt;四种优化方式&lt;/h2&gt;
+&lt;h3 id=&quot;1.-%E4%BD%BF%E7%94%A8-atomicboolean-%E7%AE%80%E5%8D%95%E8%AE%B0%E5%BD%95%E7%8A%B6%E6%80%81&quot; tabindex=&quot;-1&quot;&gt;1. 使用 &lt;code&gt;AtomicBoolean&lt;/code&gt; 简单记录状态&lt;/h3&gt;
+&lt;p&gt;最直接的方法是使用 &lt;code&gt;AtomicBoolean&lt;/code&gt; 来记录 SDK 是否已经初始化成功。&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;val&lt;/span&gt; sdkInitialized &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;AtomicBoolean&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token boolean&quot;&gt;false&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;MobileAds&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;context&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; result&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; InitializationStatus &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token comment&quot;&gt;// 检查所有的适配器是否已准备就绪&lt;/span&gt;&lt;br /&gt;    sdkInitialized&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;result&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;adapterStatusMap&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;values&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;any&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        it&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;initializationState &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; AdapterStatus&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;State&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;READY&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;问题在于&lt;/strong&gt;：这种方式只能在调用 SDK 其他方法时，手动检查 &lt;code&gt;sdkInitialized&lt;/code&gt;，无法动态地等待初始化完成。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;示例&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;prepareNextRewardedAd&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;sdkInitialized&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token comment&quot;&gt;// 正常初始化&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token comment&quot;&gt;// 错误提示&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;h4 id=&quot;%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90&quot; tabindex=&quot;-1&quot;&gt;优缺点分析&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;实现简单，适用于初始化流程较短的情况。&lt;/li&gt;
+&lt;li&gt;线程安全，避免并发问题。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;需要在每个使用 SDK 的地方手动检查状态，增加代码冗余。&lt;/li&gt;
+&lt;li&gt;无法动态等待初始化完成，可能导致某些功能无法及时使用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;2.-%E4%BD%BF%E7%94%A8-completabledeferred-%E5%8A%A8%E6%80%81%E7%AD%89%E5%BE%85&quot; tabindex=&quot;-1&quot;&gt;2. 使用 &lt;code&gt;CompletableDeferred&lt;/code&gt; 动态等待&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;CompletableDeferred&lt;/code&gt; 可以让我们在协程中挂起，直到任务完成，非常适合等待 SDK 初始化的场景。&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;val&lt;/span&gt; isSDKInitialized &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; CompletableDeferred&lt;span class=&quot;token operator&quot;&gt;&amp;lt;&lt;/span&gt;Unit&lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;billingClient&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;startConnection&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;object&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; BillingClientStateListener &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;onBillingSetupFinished&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;billingResult&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; BillingResult&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;billingResult&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;responseCode &lt;span class=&quot;token operator&quot;&gt;==&lt;/span&gt; BillingClient&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;BillingResponseCode&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;OK&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;            &lt;span class=&quot;token comment&quot;&gt;// 初始化成功&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;            &lt;span class=&quot;token comment&quot;&gt;// 初始化失败&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token comment&quot;&gt;// 无论成功与否，都标记为完成，避免协程一直挂起&lt;/span&gt;&lt;br /&gt;        isSDKInitialized&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;complete&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;Unit&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;onBillingServiceDisconnected&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token comment&quot;&gt;// 可以尝试重新连接&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;使用方式&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;suspend&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;queryMerchandise&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;withContext&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;Dispatchers&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;IO&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token comment&quot;&gt;// 等待初始化完成&lt;/span&gt;&lt;br /&gt;    isSDKInitialized&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;await&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;    billingClient&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;queryProductDetails&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;..&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;h4 id=&quot;%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-1&quot; tabindex=&quot;-1&quot;&gt;优缺点分析&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;可以动态地等待初始化完成，代码更加简洁。&lt;/li&gt;
+&lt;li&gt;避免了手动检查状态的麻烦，提升代码可读性。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;需要引入协程，可能对项目有一定的改动。&lt;/li&gt;
+&lt;li&gt;如果初始化一直无法完成，协程会一直挂起，需要处理超时等情况。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;3.-%E4%BD%BF%E7%94%A8-channel-%E5%A4%84%E7%90%86%E4%B8%80%E6%AC%A1%E6%80%A7%E7%BB%93%E6%9E%9C&quot; tabindex=&quot;-1&quot;&gt;3. 使用 &lt;code&gt;Channel&lt;/code&gt; 处理一次性结果&lt;/h3&gt;
+&lt;p&gt;当我们只需要处理一次性的回调结果时，&lt;code&gt;Channel&lt;/code&gt; 是个不错的选择。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;示例&lt;/strong&gt;：加载激励广告&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;val&lt;/span&gt; rewardedAdChannel &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; Channel&lt;span class=&quot;token operator&quot;&gt;&amp;lt;&lt;/span&gt;RewardedAd&lt;span class=&quot;token operator&quot;&gt;?&lt;/span&gt;&lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;RewardedAd&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;load&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;br /&gt;    activity&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;&lt;br /&gt;    adUnitId&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;&lt;br /&gt;    adRequest&lt;span class=&quot;token punctuation&quot;&gt;,&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;object&lt;/span&gt; &lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;RewardedAdLoadCallback&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token keyword&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;onAdLoaded&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;ad&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; RewardedAd&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;            rewardedAdChannel&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;trySend&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;ad&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;isSuccess&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;        &lt;span class=&quot;token keyword&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;onAdFailedToLoad&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;adError&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; LoadAdError&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;            rewardedAdChannel&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;trySend&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token keyword&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;isSuccess&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;使用方式&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;suspend&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;showSingleRewardedAd&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;activity&lt;span class=&quot;token operator&quot;&gt;:&lt;/span&gt; Activity&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token comment&quot;&gt;// 等待广告加载完成&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;val&lt;/span&gt; ad &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; rewardedAdChannel&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;receive&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;    &lt;span class=&quot;token keyword&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;ad &lt;span class=&quot;token operator&quot;&gt;!=&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;null&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        ad&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;show&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;activity&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; rewardItem &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt;&lt;br /&gt;            &lt;span class=&quot;token comment&quot;&gt;// 处理奖励逻辑&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;else&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token comment&quot;&gt;// 处理加载失败的情况&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;h4 id=&quot;%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-2&quot; tabindex=&quot;-1&quot;&gt;优缺点分析&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;适合一次性结果的处理，避免了回调嵌套。&lt;/li&gt;
+&lt;li&gt;可以在协程中以同步的方式处理异步结果，代码清晰。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;需要手动管理 &lt;code&gt;Channel&lt;/code&gt; 的生命周期，防止内存泄漏。&lt;/li&gt;
+&lt;li&gt;如果没有消费者，&lt;code&gt;Channel&lt;/code&gt; 可能会阻塞，需要设置合适的容量或处理超时。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;4.-%E4%BD%BF%E7%94%A8-sharedflow-%E5%A4%84%E7%90%86%E5%A4%9A%E6%AC%A1%E9%87%8D%E7%8E%B0%E7%9A%84%E4%BA%8B%E4%BB%B6&quot; tabindex=&quot;-1&quot;&gt;4. 使用 &lt;code&gt;SharedFlow&lt;/code&gt; 处理多次重现的事件&lt;/h3&gt;
+&lt;p&gt;当我们需要处理多次初始化或状态更新时，&lt;code&gt;SharedFlow&lt;/code&gt; 非常适合。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;示例&lt;/strong&gt;：假设我们有一个需要多次监听的网络状态变化&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;private&lt;/span&gt; &lt;span class=&quot;token keyword&quot;&gt;val&lt;/span&gt; networkStatusFlow &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; MutableSharedFlow&lt;span class=&quot;token operator&quot;&gt;&amp;lt;&lt;/span&gt;NetworkStatus&lt;span class=&quot;token operator&quot;&gt;&gt;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;replay &lt;span class=&quot;token operator&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token number&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;&lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;startNetworkMonitoring&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    networkMonitor&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;setOnNetworkStatusChangedListener&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; status &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt;&lt;br /&gt;        networkStatusFlow&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;tryEmit&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;status&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;使用方式&lt;/strong&gt;：&lt;/p&gt;
+&lt;pre class=&quot;language-kotlin&quot;&gt;&lt;code class=&quot;language-kotlin&quot;&gt;&lt;span class=&quot;token keyword&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;token function&quot;&gt;observeNetworkStatus&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;    lifecycleScope&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;launch&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;        networkStatusFlow&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;token function&quot;&gt;collect&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt; status &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt;&lt;br /&gt;            &lt;span class=&quot;token keyword&quot;&gt;when&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;(&lt;/span&gt;status&lt;span class=&quot;token punctuation&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;{&lt;/span&gt;&lt;br /&gt;                NetworkStatus&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Available &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt; &lt;span class=&quot;token comment&quot;&gt;// 网络可用&lt;/span&gt;&lt;br /&gt;                NetworkStatus&lt;span class=&quot;token punctuation&quot;&gt;.&lt;/span&gt;Unavailable &lt;span class=&quot;token operator&quot;&gt;-&gt;&lt;/span&gt; &lt;span class=&quot;token comment&quot;&gt;// 网络不可用&lt;/span&gt;&lt;br /&gt;            &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;        &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token punctuation&quot;&gt;}&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;h4 id=&quot;%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-3&quot; tabindex=&quot;-1&quot;&gt;优缺点分析&lt;/h4&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;优点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;适用于需要多次发送和接收事件的场景。&lt;/li&gt;
+&lt;li&gt;订阅者可以共享同一个数据源，避免重复工作。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;strong&gt;缺点&lt;/strong&gt;：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;需要注意背压策略，防止事件积压。&lt;/li&gt;
+&lt;li&gt;需要手动管理订阅和取消，避免内存泄漏。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E6%80%BB%E7%BB%93&quot; tabindex=&quot;-1&quot;&gt;总结&lt;/h2&gt;
+&lt;p&gt;根据不同的需求，我们可以选择不同的方式来优化回调处理：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;单次使用，单次初始化&lt;/strong&gt;：&lt;code&gt;AtomicBoolean&lt;/code&gt;，适用于简单的初始化状态记录。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多次使用，单次初始化&lt;/strong&gt;：&lt;code&gt;CompletableDeferred&lt;/code&gt;，适用于需要在协程中等待初始化完成的情况。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;单次使用，多次初始化&lt;/strong&gt;：&lt;code&gt;Channel&lt;/code&gt;，适用于一次性结果的回调，如广告加载。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多次使用，多次初始化&lt;/strong&gt;：&lt;code&gt;SharedFlow&lt;/code&gt;，适用于需要监听多次状态更新的场景。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;希望这篇文章能给大家带来一些处理 SDK 初始化回调的思路，未来碰到类似问题时可尝试选择最适合的方式，提高代码的可读性和维护性。&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>移植 Mediapipe Demo 到 Kotlin Multiplatform (2) Object Detection</title>

@@ -1,0 +1,177 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Kotlin 对 SDK 初始化回调的四种优化方式" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2024-10-25-kotlin-initialization-callback-to-async-notification-with-coroutine/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Kotlin 对 SDK 初始化回调的四种优化方式 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Kotlin 对 SDK 初始化回调的四种优化方式</h1>
+    <div class="italic text-gray-500">
+      2024/11/02
+    </div>
+    <div>
+      <h1 id="kotlin-%E5%AF%B9-sdk-%E5%88%9D%E5%A7%8B%E5%8C%96%E5%9B%9E%E8%B0%83%E7%9A%84%E5%9B%9B%E7%A7%8D%E4%BC%98%E5%8C%96%E6%96%B9%E5%BC%8F" tabindex="-1">Kotlin 对 SDK 初始化回调的四种优化方式</h1>
+<p>在 Android 开发中，我们经常需要小心处理各种 SDK 的初始化和回调，尤其是在需要异步操作时。本文我们将聊聊 Kotlin 中处理这些回调的四种优化方式，主要以 Google 的几个 SDK 为例。</p>
+<h2 id="%E5%9B%9E%E8%B0%83%E6%9C%BA%E5%88%B6%E7%9A%84%E9%97%AE%E9%A2%98" tabindex="-1">回调机制的问题</h2>
+<p>首先，回顾一下传统的回调机制。在 Java 中，回调函数是处理异步任务结果的常用方式，但这种方法有不少问题：</p>
+<ul>
+<li><strong>代码可读性差</strong>：回调嵌套过多，容易陷入“回调地狱”。</li>
+<li><strong>状态管理复杂</strong>：需要手动维护初始化状态，增加了代码复杂度。</li>
+<li><strong>无法动态等待</strong>：无法在调用方法时动态地等待初始化完成，只能通过轮询或阻塞。</li>
+</ul>
+<p>在 Kotlin 中，虽然有协程等强大的工具，但由于需要兼容大量的 Java 代码和历史项目，回调问题仍然存在。以 Google 提供的 SDK 为例，尽管有些已经提供 KTX 扩展包，但并没有在初始化上的问题上进行优化。</p>
+<h2 id="%E5%9B%9B%E7%A7%8D%E4%BC%98%E5%8C%96%E6%96%B9%E5%BC%8F" tabindex="-1">四种优化方式</h2>
+<h3 id="1.-%E4%BD%BF%E7%94%A8-atomicboolean-%E7%AE%80%E5%8D%95%E8%AE%B0%E5%BD%95%E7%8A%B6%E6%80%81" tabindex="-1">1. 使用 <code>AtomicBoolean</code> 简单记录状态</h3>
+<p>最直接的方法是使用 <code>AtomicBoolean</code> 来记录 SDK 是否已经初始化成功。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> sdkInitialized <span class="token operator">=</span> <span class="token function">AtomicBoolean</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><br><br>MobileAds<span class="token punctuation">.</span><span class="token function">initialize</span><span class="token punctuation">(</span>context<span class="token punctuation">)</span> <span class="token punctuation">{</span> result<span class="token operator">:</span> InitializationStatus <span class="token operator">-></span><br>    <span class="token comment">// 检查所有的适配器是否已准备就绪</span><br>    sdkInitialized<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>adapterStatusMap<span class="token punctuation">.</span>values<span class="token punctuation">.</span><span class="token function">any</span> <span class="token punctuation">{</span><br>        it<span class="token punctuation">.</span>initializationState <span class="token operator">==</span> AdapterStatus<span class="token punctuation">.</span>State<span class="token punctuation">.</span>READY<br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>问题在于</strong>：这种方式只能在调用 SDK 其他方法时，手动检查 <code>sdkInitialized</code>，无法动态地等待初始化完成。</p>
+<p><strong>示例</strong>：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">prepareNextRewardedAd</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>sdkInitialized<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 正常初始化</span><br>    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 错误提示</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90" tabindex="-1">优缺点分析</h4>
+<ul>
+<li>
+<p><strong>优点</strong>：</p>
+<ul>
+<li>实现简单，适用于初始化流程较短的情况。</li>
+<li>线程安全，避免并发问题。</li>
+</ul>
+</li>
+<li>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要在每个使用 SDK 的地方手动检查状态，增加代码冗余。</li>
+<li>无法动态等待初始化完成，可能导致某些功能无法及时使用。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E4%BD%BF%E7%94%A8-completabledeferred-%E5%8A%A8%E6%80%81%E7%AD%89%E5%BE%85" tabindex="-1">2. 使用 <code>CompletableDeferred</code> 动态等待</h3>
+<p><code>CompletableDeferred</code> 可以让我们在协程中挂起，直到任务完成，非常适合等待 SDK 初始化的场景。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> isSDKInitialized <span class="token operator">=</span> CompletableDeferred<span class="token operator">&lt;</span>Unit<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>billingClient<span class="token punctuation">.</span><span class="token function">startConnection</span><span class="token punctuation">(</span><span class="token keyword">object</span> <span class="token operator">:</span> BillingClientStateListener <span class="token punctuation">{</span><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onBillingSetupFinished</span><span class="token punctuation">(</span>billingResult<span class="token operator">:</span> BillingResult<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>billingResult<span class="token punctuation">.</span>responseCode <span class="token operator">==</span> BillingClient<span class="token punctuation">.</span>BillingResponseCode<span class="token punctuation">.</span>OK<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token comment">// 初始化成功</span><br>        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>            <span class="token comment">// 初始化失败</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// 无论成功与否，都标记为完成，避免协程一直挂起</span><br>        isSDKInitialized<span class="token punctuation">.</span><span class="token function">complete</span><span class="token punctuation">(</span>Unit<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onBillingServiceDisconnected</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 可以尝试重新连接</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p><strong>使用方式</strong>：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">suspend</span> <span class="token keyword">fun</span> <span class="token function">queryMerchandise</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token function">withContext</span><span class="token punctuation">(</span>Dispatchers<span class="token punctuation">.</span>IO<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// 等待初始化完成</span><br>    isSDKInitialized<span class="token punctuation">.</span><span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>    billingClient<span class="token punctuation">.</span><span class="token function">queryProductDetails</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-1" tabindex="-1">优缺点分析</h4>
+<ul>
+<li>
+<p><strong>优点</strong>：</p>
+<ul>
+<li>可以动态地等待初始化完成，代码更加简洁。</li>
+<li>避免了手动检查状态的麻烦，提升代码可读性。</li>
+</ul>
+</li>
+<li>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要引入协程，可能对项目有一定的改动。</li>
+<li>如果初始化一直无法完成，协程会一直挂起，需要处理超时等情况。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3.-%E4%BD%BF%E7%94%A8-channel-%E5%A4%84%E7%90%86%E4%B8%80%E6%AC%A1%E6%80%A7%E7%BB%93%E6%9E%9C" tabindex="-1">3. 使用 <code>Channel</code> 处理一次性结果</h3>
+<p>当我们只需要处理一次性的回调结果时，<code>Channel</code> 是个不错的选择。</p>
+<p><strong>示例</strong>：加载激励广告</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> rewardedAdChannel <span class="token operator">=</span> Channel<span class="token operator">&lt;</span>RewardedAd<span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><br><br>RewardedAd<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span><br>    activity<span class="token punctuation">,</span><br>    adUnitId<span class="token punctuation">,</span><br>    adRequest<span class="token punctuation">,</span><br>    <span class="token keyword">object</span> <span class="token operator">:</span> <span class="token function">RewardedAdLoadCallback</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onAdLoaded</span><span class="token punctuation">(</span>ad<span class="token operator">:</span> RewardedAd<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            rewardedAdChannel<span class="token punctuation">.</span><span class="token function">trySend</span><span class="token punctuation">(</span>ad<span class="token punctuation">)</span><span class="token punctuation">.</span>isSuccess<br>        <span class="token punctuation">}</span><br><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onAdFailedToLoad</span><span class="token punctuation">(</span>adError<span class="token operator">:</span> LoadAdError<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            rewardedAdChannel<span class="token punctuation">.</span><span class="token function">trySend</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">.</span>isSuccess<br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">)</span></code></pre>
+<p><strong>使用方式</strong>：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">suspend</span> <span class="token keyword">fun</span> <span class="token function">showSingleRewardedAd</span><span class="token punctuation">(</span>activity<span class="token operator">:</span> Activity<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// 等待广告加载完成</span><br>    <span class="token keyword">val</span> ad <span class="token operator">=</span> rewardedAdChannel<span class="token punctuation">.</span><span class="token function">receive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>ad <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        ad<span class="token punctuation">.</span><span class="token function">show</span><span class="token punctuation">(</span>activity<span class="token punctuation">)</span> <span class="token punctuation">{</span> rewardItem <span class="token operator">-></span><br>            <span class="token comment">// 处理奖励逻辑</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>        <span class="token comment">// 处理加载失败的情况</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-2" tabindex="-1">优缺点分析</h4>
+<ul>
+<li>
+<p><strong>优点</strong>：</p>
+<ul>
+<li>适合一次性结果的处理，避免了回调嵌套。</li>
+<li>可以在协程中以同步的方式处理异步结果，代码清晰。</li>
+</ul>
+</li>
+<li>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要手动管理 <code>Channel</code> 的生命周期，防止内存泄漏。</li>
+<li>如果没有消费者，<code>Channel</code> 可能会阻塞，需要设置合适的容量或处理超时。</li>
+</ul>
+</li>
+</ul>
+<h3 id="4.-%E4%BD%BF%E7%94%A8-sharedflow-%E5%A4%84%E7%90%86%E5%A4%9A%E6%AC%A1%E9%87%8D%E7%8E%B0%E7%9A%84%E4%BA%8B%E4%BB%B6" tabindex="-1">4. 使用 <code>SharedFlow</code> 处理多次重现的事件</h3>
+<p>当我们需要处理多次初始化或状态更新时，<code>SharedFlow</code> 非常适合。</p>
+<p><strong>示例</strong>：假设我们有一个需要多次监听的网络状态变化</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> networkStatusFlow <span class="token operator">=</span> MutableSharedFlow<span class="token operator">&lt;</span>NetworkStatus<span class="token operator">></span><span class="token punctuation">(</span>replay <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">)</span><br><br><span class="token keyword">fun</span> <span class="token function">startNetworkMonitoring</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    networkMonitor<span class="token punctuation">.</span><span class="token function">setOnNetworkStatusChangedListener</span> <span class="token punctuation">{</span> status <span class="token operator">-></span><br>        networkStatusFlow<span class="token punctuation">.</span><span class="token function">tryEmit</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>使用方式</strong>：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">observeNetworkStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    lifecycleScope<span class="token punctuation">.</span><span class="token function">launch</span> <span class="token punctuation">{</span><br>        networkStatusFlow<span class="token punctuation">.</span><span class="token function">collect</span> <span class="token punctuation">{</span> status <span class="token operator">-></span><br>            <span class="token keyword">when</span> <span class="token punctuation">(</span>status<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                NetworkStatus<span class="token punctuation">.</span>Available <span class="token operator">-></span> <span class="token comment">// 网络可用</span><br>                NetworkStatus<span class="token punctuation">.</span>Unavailable <span class="token operator">-></span> <span class="token comment">// 网络不可用</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="%E4%BC%98%E7%BC%BA%E7%82%B9%E5%88%86%E6%9E%90-3" tabindex="-1">优缺点分析</h4>
+<ul>
+<li>
+<p><strong>优点</strong>：</p>
+<ul>
+<li>适用于需要多次发送和接收事件的场景。</li>
+<li>订阅者可以共享同一个数据源，避免重复工作。</li>
+</ul>
+</li>
+<li>
+<p><strong>缺点</strong>：</p>
+<ul>
+<li>需要注意背压策略，防止事件积压。</li>
+<li>需要手动管理订阅和取消，避免内存泄漏。</li>
+</ul>
+</li>
+</ul>
+<h2 id="%E6%80%BB%E7%BB%93" tabindex="-1">总结</h2>
+<p>根据不同的需求，我们可以选择不同的方式来优化回调处理：</p>
+<ul>
+<li><strong>单次使用，单次初始化</strong>：<code>AtomicBoolean</code>，适用于简单的初始化状态记录。</li>
+<li><strong>多次使用，单次初始化</strong>：<code>CompletableDeferred</code>，适用于需要在协程中等待初始化完成的情况。</li>
+<li><strong>单次使用，多次初始化</strong>：<code>Channel</code>，适用于一次性结果的回调，如广告加载。</li>
+<li><strong>多次使用，多次初始化</strong>：<code>SharedFlow</code>，适用于需要监听多次状态更新的场景。</li>
+</ul>
+<p>希望这篇文章能给大家带来一些处理 SDK 初始化回调的思路，未来碰到类似问题时可尝试选择最适合的方式，提高代码的可读性和维护性。</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
