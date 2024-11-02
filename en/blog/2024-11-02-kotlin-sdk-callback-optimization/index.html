@@ -1,0 +1,170 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Four Ways to Optimize SDK Initialization Callbacks in Kotlin" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2024-11-02-kotlin-sdk-callback-optimization/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Four Ways to Optimize SDK Initialization Callbacks in Kotlin | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Four Ways to Optimize SDK Initialization Callbacks in Kotlin</h1>
+    <div class="italic text-gray-500">
+      2024/11/02
+    </div>
+    <div>
+      <h1 id="four-ways-to-optimize-sdk-initialization-callbacks-in-kotlin" tabindex="-1">Four Ways to Optimize SDK Initialization Callbacks in Kotlin</h1>
+<p>In Android development, we often need to carefully handle the initialization and callbacks of various SDKs, especially when asynchronous operations are involved. In this article, we'll discuss four ways to optimize these callbacks in Kotlin, primarily using several of Google's SDKs as examples.</p>
+<h2 id="problems-with-the-traditional-callback-mechanism" tabindex="-1">Problems with the Traditional Callback Mechanism</h2>
+<p>First, let's revisit the traditional callback mechanism. In Java, callback functions are commonly used to handle the results of asynchronous tasks, but this method has several drawbacks:</p>
+<ul>
+<li><strong>Poor code readability</strong>: Excessive callback nesting can easily lead to &quot;callback hell.&quot;</li>
+<li><strong>Complex state management</strong>: Manually maintaining initialization states increases code complexity.</li>
+<li><strong>Inability to await</strong>: It's impossible to await for initialization to complete when calling methods; polling or blocking are the only options.</li>
+</ul>
+<p>In Kotlin, although we have powerful tools like coroutines, callback issues still exist due to the need to maintain compatibility with a large amount of Java code and legacy projects. Taking Google's SDKs as an example, although some have provided KTX extension packages, they have not optimized the initialization process.</p>
+<h2 id="four-optimization-methods" tabindex="-1">Four Optimization Methods</h2>
+<h3 id="1.-using-atomicboolean-to-simply-record-state" tabindex="-1">1. Using <code>AtomicBoolean</code> to Simply Record State</h3>
+<p>The most straightforward method is to use an <code>AtomicBoolean</code> to record whether the SDK has been successfully initialized.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> sdkInitialized <span class="token operator">=</span> <span class="token function">AtomicBoolean</span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><br><br>MobileAds<span class="token punctuation">.</span><span class="token function">initialize</span><span class="token punctuation">(</span>context<span class="token punctuation">)</span> <span class="token punctuation">{</span> result<span class="token operator">:</span> InitializationStatus <span class="token operator">-></span><br>    <span class="token comment">// Check if all adapters are ready</span><br>    sdkInitialized<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>result<span class="token punctuation">.</span>adapterStatusMap<span class="token punctuation">.</span>values<span class="token punctuation">.</span><span class="token function">any</span> <span class="token punctuation">{</span><br>        it<span class="token punctuation">.</span>initializationState <span class="token operator">==</span> AdapterStatus<span class="token punctuation">.</span>State<span class="token punctuation">.</span>READY<br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>The issue is</strong>: This method requires manually checking <code>sdkInitialized</code> every time you call other SDK methods; it cannot await for initialization to complete (while yield the CPU resources).</p>
+<p><strong>Example</strong>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">prepareNextRewardedAd</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>sdkInitialized<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// Proceed with normal initialization</span><br>    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>        <span class="token comment">// Show error message</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="pros-and-cons" tabindex="-1">Pros and Cons</h4>
+<ul>
+<li>
+<p><strong>Pros</strong>:</p>
+<ul>
+<li>Simple to implement, suitable for situations where the initialization process is short.</li>
+<li>Thread-safe, avoiding concurrency issues.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cons</strong>:</p>
+<ul>
+<li>Requires manual state checks wherever the SDK is used, increasing code redundancy.</li>
+<li>Cannot await for initialization to complete, which may cause some functions to be unavailable when needed.</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-using-completabledeferred-to-await" tabindex="-1">2. Using <code>CompletableDeferred</code> to Await</h3>
+<p><code>CompletableDeferred</code> allows us to suspend a coroutine until a task is completed, making it ideal for scenarios where we need to wait for SDK initialization.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> isSDKInitialized <span class="token operator">=</span> CompletableDeferred<span class="token operator">&lt;</span>Unit<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>billingClient<span class="token punctuation">.</span><span class="token function">startConnection</span><span class="token punctuation">(</span><span class="token keyword">object</span> <span class="token operator">:</span> BillingClientStateListener <span class="token punctuation">{</span><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onBillingSetupFinished</span><span class="token punctuation">(</span>billingResult<span class="token operator">:</span> BillingResult<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>billingResult<span class="token punctuation">.</span>responseCode <span class="token operator">==</span> BillingClient<span class="token punctuation">.</span>BillingResponseCode<span class="token punctuation">.</span>OK<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token comment">// Initialization successful</span><br>        <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>            <span class="token comment">// Initialization failed</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// Mark as complete regardless of success or failure to avoid the coroutine being suspended indefinitely</span><br>        isSDKInitialized<span class="token punctuation">.</span><span class="token function">complete</span><span class="token punctuation">(</span>Unit<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onBillingServiceDisconnected</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// You can attempt to reconnect</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p><strong>Usage</strong>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">suspend</span> <span class="token keyword">fun</span> <span class="token function">queryMerchandise</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">=</span> <span class="token function">withContext</span><span class="token punctuation">(</span>Dispatchers<span class="token punctuation">.</span>IO<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// Wait for initialization to complete</span><br>    isSDKInitialized<span class="token punctuation">.</span><span class="token function">await</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>    billingClient<span class="token punctuation">.</span><span class="token function">queryProductDetails</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="pros-and-cons-1" tabindex="-1">Pros and Cons</h4>
+<ul>
+<li>
+<p><strong>Pros</strong>:</p>
+<ul>
+<li>Can await for initialization to complete, making the code more concise.</li>
+<li>Avoids the need for manual state checks, improving code readability.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cons</strong>:</p>
+<ul>
+<li>If initialization never completes, the coroutine will remain suspended, so you need to handle timeouts and other potential issues.</li>
+</ul>
+</li>
+</ul>
+<h3 id="3.-using-channel-to-handle-producer-consumer" tabindex="-1">3. Using <code>Channel</code> to Handle Producer-Consumer</h3>
+<p>When you need to handle a callback result in a single producer-consumer scenario, <code>Channel</code> is a good choice.</p>
+<p><strong>Example</strong>: Loading a rewarded ad</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> rewardedAdChannel <span class="token operator">=</span> Channel<span class="token operator">&lt;</span>RewardedAd<span class="token operator">?</span><span class="token operator">></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><br><br><span class="token operator">..</span><span class="token punctuation">.</span><br>RewardedAd<span class="token punctuation">.</span><span class="token function">load</span><span class="token punctuation">(</span><br>    activity<span class="token punctuation">,</span><br>    adUnitId<span class="token punctuation">,</span><br>    adRequest<span class="token punctuation">,</span><br>    <span class="token keyword">object</span> <span class="token operator">:</span> <span class="token function">RewardedAdLoadCallback</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onAdLoaded</span><span class="token punctuation">(</span>ad<span class="token operator">:</span> RewardedAd<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            rewardedAdChannel<span class="token punctuation">.</span><span class="token function">trySend</span><span class="token punctuation">(</span>ad<span class="token punctuation">)</span><span class="token punctuation">.</span>isSuccess<br>        <span class="token punctuation">}</span><br><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onAdFailedToLoad</span><span class="token punctuation">(</span>adError<span class="token operator">:</span> LoadAdError<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            rewardedAdChannel<span class="token punctuation">.</span><span class="token function">trySend</span><span class="token punctuation">(</span><span class="token keyword">null</span><span class="token punctuation">)</span><span class="token punctuation">.</span>isSuccess<br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">)</span></code></pre>
+<p><strong>Usage</strong>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">suspend</span> <span class="token keyword">fun</span> <span class="token function">showSingleRewardedAd</span><span class="token punctuation">(</span>activity<span class="token operator">:</span> Activity<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// Wait for the ad to load</span><br>    <span class="token keyword">val</span> ad <span class="token operator">=</span> rewardedAdChannel<span class="token punctuation">.</span><span class="token function">receive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>ad <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        ad<span class="token punctuation">.</span><span class="token function">show</span><span class="token punctuation">(</span>activity<span class="token punctuation">)</span> <span class="token punctuation">{</span> rewardItem <span class="token operator">-></span><br>            <span class="token comment">// Handle reward logic</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>        <span class="token comment">// Handle loading failure</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="pros-and-cons-2" tabindex="-1">Pros and Cons</h4>
+<ul>
+<li>
+<p><strong>Pros</strong>:</p>
+<ul>
+<li>Suitable for handling one-time or continuous producer-consumer single result, avoiding callback nesting.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cons</strong>:</p>
+<ul>
+<li>Requires manual management of the <code>Channel</code> lifecycle to prevent memory leaks.</li>
+<li>If there are no consumers, the <code>Channel</code> may block; you need to set an appropriate capacity or handle timeouts.</li>
+</ul>
+</li>
+</ul>
+<h3 id="4.-using-sharedflow-to-handle-recurring-events" tabindex="-1">4. Using <code>SharedFlow</code> to Handle Recurring Events</h3>
+<p>When you need to handle multiple initializations or state updates, <code>SharedFlow</code> is very suitable.</p>
+<p><strong>Example</strong>: Suppose we have a network status change that needs to be monitored multiple times</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">private</span> <span class="token keyword">val</span> networkStatusFlow <span class="token operator">=</span> MutableSharedFlow<span class="token operator">&lt;</span>NetworkStatus<span class="token operator">></span><span class="token punctuation">(</span>replay <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">)</span><br><br><span class="token keyword">fun</span> <span class="token function">startNetworkMonitoring</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    networkMonitor<span class="token punctuation">.</span><span class="token function">setOnNetworkStatusChangedListener</span> <span class="token punctuation">{</span> status <span class="token operator">-></span><br>        networkStatusFlow<span class="token punctuation">.</span><span class="token function">tryEmit</span><span class="token punctuation">(</span>status<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>Usage</strong>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token function">observeNetworkStatus</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    lifecycleScope<span class="token punctuation">.</span><span class="token function">launch</span> <span class="token punctuation">{</span><br>        networkStatusFlow<span class="token punctuation">.</span><span class="token function">collect</span> <span class="token punctuation">{</span> status <span class="token operator">-></span><br>            <span class="token keyword">when</span> <span class="token punctuation">(</span>status<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                NetworkStatus<span class="token punctuation">.</span>Available <span class="token operator">-></span> <span class="token comment">// Network is available</span><br>                NetworkStatus<span class="token punctuation">.</span>Unavailable <span class="token operator">-></span> <span class="token comment">// Network is unavailable</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="pros-and-cons-3" tabindex="-1">Pros and Cons</h4>
+<ul>
+<li>
+<p><strong>Pros</strong>:</p>
+<ul>
+<li>Suitable for scenarios where events need to be sent and received multiple times.</li>
+<li>Subscribers can share the same data source, avoiding redundant work.</li>
+</ul>
+</li>
+<li>
+<p><strong>Cons</strong>:</p>
+<ul>
+<li>Need to pay attention to backpressure strategies to prevent event backlog.</li>
+<li>Requires manual management of subscriptions and cancellations to avoid memory leaks.</li>
+</ul>
+</li>
+</ul>
+<h2 id="conclusion" tabindex="-1">Conclusion</h2>
+<p>Depending on your specific needs, you can choose different methods to optimize callback handling:</p>
+<ul>
+<li><strong>Single use, single initialization</strong>: Use <code>AtomicBoolean</code> for simple initialization state recording.</li>
+<li><strong>Multiple uses, single initialization</strong>: Use <code>CompletableDeferred</code> when you need to wait for initialization to complete within coroutines.</li>
+<li><strong>Single use, multiple initializations</strong>: Use <code>Channel</code> for one-time result callbacks, such as ad loading.</li>
+<li><strong>Multiple uses, multiple initializations</strong>: Use <code>SharedFlow</code> when you need to monitor multiple state updates.</li>
+</ul>
+<p>I hope this article provides some insights into handling SDK initialization callbacks. When you encounter similar issues in the future, you can try choosing the most suitable method to improve your code's readability and maintainability.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
