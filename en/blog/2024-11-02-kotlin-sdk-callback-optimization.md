@@ -5,8 +5,6 @@ title: "Four Ways to Optimize SDK Initialization Callbacks in Kotlin"
 tags: [kotlin, android, callback, coroutine, CompletableDeferred, Channel, Flow, enpost]
 ---
 
-# Four Ways to Optimize SDK Initialization Callbacks in Kotlin
-
 In Android development, we often need to carefully handle the initialization and callbacks of various SDKs, especially when asynchronous operations are involved. In this article, we'll discuss four ways to optimize these callbacks in Kotlin, primarily using several of Google's SDKs as examples.
 
 ## Problems with the Traditional Callback Mechanism
@@ -108,7 +106,7 @@ suspend fun queryMerchandise(...) = withContext(Dispatchers.IO) {
 
 When you need to handle a callback result in a single producer-consumer scenario, `Channel` is a good choice.
 
-**Example**: Loading a rewarded ad
+**Example**: Loading a rewarded ad from AdMob SDK
 
 ```kotlin
 private val rewardedAdChannel = Channel<RewardedAd?>(1)
