@@ -12,9 +12,9 @@
   
   <entry>
     <title>Four Ways to Optimize SDK Initialization Callbacks in Kotlin</title>
-    <link href="https://2bab.me/en/blog/2024-01-02-kotlin-sdk-callback-optimization/"/>
+    <link href="https://2bab.me/en/blog/2025-01-02-kotlin-sdk-callback-optimization/"/>
     <updated>2025-01-02T00:00:00Z</updated>
-    <id>https://2bab.me/en/blog/2024-01-02-kotlin-sdk-callback-optimization/</id>
+    <id>https://2bab.me/en/blog/2025-01-02-kotlin-sdk-callback-optimization/</id>
     <content type="html">&lt;p&gt;In Android development, we often need to carefully handle the initialization and callbacks of various SDKs, especially when asynchronous operations are involved. In this article, we&#39;ll discuss four ways to optimize these callbacks in Kotlin, primarily using several of Google&#39;s Android SDKs as examples like Firebase, AdMob, etc.&lt;/p&gt;
 &lt;h2 id=&quot;problems-with-the-traditional-callback-mechanism&quot; tabindex=&quot;-1&quot;&gt;Problems with the Traditional Callback Mechanism&lt;/h2&gt;
 &lt;p&gt;First, let&#39;s revisit the traditional callback mechanism. In Java, callback functions are commonly used to handle the results of asynchronous tasks, but this method has several drawbacks:&lt;/p&gt;
