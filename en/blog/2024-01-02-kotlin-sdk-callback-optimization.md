@@ -1,11 +1,11 @@
 ---
 layout: post
-date: 2024-11-02
+date: 2025-01-02
 title: "Four Ways to Optimize SDK Initialization Callbacks in Kotlin"
 tags: [kotlin, android, callback, coroutine, CompletableDeferred, Channel, Flow, enpost]
 ---
 
-In Android development, we often need to carefully handle the initialization and callbacks of various SDKs, especially when asynchronous operations are involved. In this article, we'll discuss four ways to optimize these callbacks in Kotlin, primarily using several of Google's SDKs as examples.
+In Android development, we often need to carefully handle the initialization and callbacks of various SDKs, especially when asynchronous operations are involved. In this article, we'll discuss four ways to optimize these callbacks in Kotlin, primarily using several of Google's Android SDKs as examples like Firebase, AdMob, etc.
 
 ## Problems with the Traditional Callback Mechanism
 

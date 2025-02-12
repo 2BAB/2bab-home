@@ -2,6 +2,10 @@
 layout: page
 ---
 
+### Adapting the MediaPipe Demos for Kotlin Multiplatform
+
+Google DevFest Taipei / GDG Taipei / 2024-11 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP)  / No replay provided
+
 ### On-device Model Integration (KMP) and Use Cases
 
 In Mandarin / Google I/O Extended Guangzhou / GDG Guangzhou / July 2024 / [Event Intro](https://mp.weixin.qq.com/s/AvB3KhQeLCYY_KzB9_6pdQ) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / No replay provided
