@@ -2,6 +2,20 @@
 layout: page
 ---
 
+
+### [多语言技术文档翻译 with Gemini 2.5](https://www.bilibili.com/video/BV1WZ7QzjEA3/)
+
+Google 中国，“社区说 - Gemini”专场 / 2025-05 / [活动介绍](https://ctalks.gdgcn.net/blog/develop-1/2025nian-5yue-29ri-jie-suo-gemini-2-5-xin-neng-li-zhu-li-kai-fa-zhe-gao-xiao-chu-hai-60) / [Slides](https://docs.google.com/presentation/d/1g6xS72t8E5gUydij9ieLgYi0___0CpDoglpTRcQ9u4o/edit?usp=sharing) 
+
+### Expanding Android Development Perspectives - Agents on Android
+
+英语 / Singapore Institute of Technology / 2025-04 / [Slides](https://docs.google.com/presentation/d/1N2kP9wHu8pq95jBQQV8fDs3AkotwvzKTjoNSxCI_Ez4/edit?slide=id.g34679ed1cf9_0_32#slide=id.g34679ed1cf9_0_32) / 无回放
+
+### Agents on Android: On-device LLMs and Intelligent Agents
+
+Google - Build with AI Guangzhou / GDG 广州 / 2025-03 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-guangzhou-presents-build-with-ai-ji-da-wan-qu-ai-meetup/) / [Slides](https://docs.google.com/presentation/d/1W2MImL_v1jLKxZs_GCr-Selk1oBwvKkcz7qGqRNcqZM/edit?usp=sharing)  / 无回放
+
+
 ### 移植 Mediapipe Demo 到 Kotlin Multiplatform
 
 Google DevFest Taipei / GDG 台北 / 2024-11 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP) / 无回放
