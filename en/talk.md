@@ -12,11 +12,11 @@ Singapore Institute of Technology / April 2025 / [Slides](https://docs.google.co
 
 ### Agents on Android: On-device LLMs and Intelligent Agents
 
-Google - Build with AI Guangzhou / GDG Guangzhou / March 2025/ [Event Intro](https://gdg.community.dev/events/details/google-gdg-guangzhou-presents-build-with-ai-ji-da-wan-qu-ai-meetup/) / [Slides](https://docs.google.com/presentation/d/1W2MImL_v1jLKxZs_GCr-Selk1oBwvKkcz7qGqRNcqZM/edit?usp=sharing)  / No replay provided
+In Mandarin / Google - Build with AI Guangzhou / GDG Guangzhou / March 2025/ [Event Intro](https://gdg.community.dev/events/details/google-gdg-guangzhou-presents-build-with-ai-ji-da-wan-qu-ai-meetup/) / [Slides](https://docs.google.com/presentation/d/1W2MImL_v1jLKxZs_GCr-Selk1oBwvKkcz7qGqRNcqZM/edit?usp=sharing)  / No replay provided
 
 ### Adapting the MediaPipe Demos for Kotlin Multiplatform
 
-Google DevFest Taipei / GDG Taipei / 2024-11 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP)  / No replay provided
+In Mandarin / Google DevFest Taipei / GDG Taipei / 2024-11 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP)  / No replay provided
 
 ### On-device Model Integration (KMP) and Use Cases
 
