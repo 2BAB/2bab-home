@@ -2,6 +2,15 @@
 layout: page
 ---
 
+### Agents on Mobile 2025
+
+In Mandarin / Google Devfest Shenzhen / GDG Shenzhen / Nov 2025 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / No replay provided
+
+### [Google's On-device AI Roadmap: From Ecosystem to Personal Assistant](https://www.bilibili.com/video/BV12yWuz2Exw)
+
+Google I/O Connect - Creator Studio / Google / 2025-08
+
+
 ### [Multi-language Translation for Tech Documents with Gemini 2.5](https://www.bilibili.com/video/BV1WZ7QzjEA3/)
 
 In Mandarin / CTalk (GDG Community Talk) / Gemini Special Event / May 2025 / [Event Intro](https://ctalks.gdgcn.net/blog/develop-1/2025nian-5yue-29ri-jie-suo-gemini-2-5-xin-neng-li-zhu-li-kai-fa-zhe-gao-xiao-chu-hai-60) / [Slides](https://docs.google.com/presentation/d/1g6xS72t8E5gUydij9ieLgYi0___0CpDoglpTRcQ9u4o/edit?usp=sharing) 

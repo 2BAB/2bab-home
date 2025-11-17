@@ -2,6 +2,13 @@
 layout: page
 ---
 
+### Agents on Mobile 2025
+
+Google Devfest Shenzhen / GDG 深圳 / 2025-11 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / 无回放
+
+### [Google On-device AI 演进路线图: 从技术生态到个人助理](https://www.bilibili.com/video/BV12yWuz2Exw)
+
+Google I/O Connect - Creator Studio / Google 中国 / 2025-08
 
 ### [多语言技术文档翻译 with Gemini 2.5](https://www.bilibili.com/video/BV1WZ7QzjEA3/)
 
