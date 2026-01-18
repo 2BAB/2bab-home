@@ -2,7 +2,7 @@
 layout: post
 date: 2021-06-17
 title: "Moving Forward: Google I/O 21 Android Gradle Plugin Update Summary"
-tags: [Android, Gradle, Android Gradle Plugin, Build, post]
+tags: [Android, Gradle, Android Gradle Plugin, Build, enpost]
 ---
 
 It's been nearly a month since Google I/O 2021. In the past few days, I've been reviewing the Android Gradle Plugin (AGP) content, mainly focusing on the "What's new in Android Gradle plugin" session. However, since there was no Google I/O in 2020 and all offline events were suspended due to the pandemic, this 11-minute session contains an enormous amount of information - it's essentially a condensed highlight of the past two years' updates (I watched it three times). Therefore, in this article, I'll include many additional reference materials, digging into talks/posts/repos that you might have missed in the past year or two. The overall structure still follows the session's agenda.

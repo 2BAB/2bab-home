@@ -2,7 +2,7 @@
 layout: post
 date: 2021-12-19
 title: "Build Guide #11 BundleTool Gradle Plugin"
-tags: [Android, Gradle, Android Gradle Plugin, Build, post]
+tags: [Android, Gradle, Android Gradle Plugin, Build, enpost]
 ---
 
 App Bundle (.aab) as the officially promoted new delivery format for Android has been around for a while. This year's PlayStore policy mandating that "all new apps must use .aab" for submission has become a major driver for everyone to make the switch. Making your app compatible with and packaging into .aab format is not complicated - simply add the corresponding DSL configuration and replace the packaging command with `bundle${VariantName}`. However, the .aab obtained after packaging cannot be directly installed on debugging devices using adb locally. You need to use [bundletool](https://github.com/google/bundletool) to convert it to .apks before calling its install command to install.

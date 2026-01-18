@@ -2,7 +2,7 @@
 layout: post
 date: 2021-05-09
 title: "Pitfalls of MavenCentral Publishing Integration"
-tags: [Android, Gradle, post]
+tags: [Android, Gradle, enpost]
 ---
 
 Due to [JCenter shutting down](https://jfrog.com/blog/into-the-sunset-bintray-jcenter-gocenter-and-chartcenter/), I recently migrated the publishing process of several active open-source projects to [MavenCentral](https://search.maven.org). The two reference articles below already explain the details of each step quite well:

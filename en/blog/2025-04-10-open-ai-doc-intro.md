@@ -2,7 +2,7 @@
 layout: post
 date: 2025-04-10
 title: "Automated AI Workflow - We Localized Popular Documentation for the Community"
-tags: [kotlin, koin, sqldelight, ktor, coil, doc, ai, translation, post]
+tags: [kotlin, koin, sqldelight, ktor, coil, doc, ai, translation, enpost]
 ---
 
 Recently, together with community partners, I built a site called [Open AIDoc](https://openaidoc.org). It's a **public welfare** project powered by Gemini, aimed at **tracking and translating popular open-source library documentation into Simplified/Traditional Chinese, Japanese, Korean, and multiple other languages**. In today's v0.1.0 release, we've provided synchronized translations of the latest **Kotlin** and **Koin** documentation. Plans already include expanding to **SqlDelight**, **Ktor**, and other libraries we're familiar with, and continuously adding documentation translation sync services for **different domains** in the future.

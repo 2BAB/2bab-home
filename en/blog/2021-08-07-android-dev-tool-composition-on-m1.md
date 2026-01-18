@@ -2,7 +2,7 @@
 layout: post
 date: 2021-08-07
 title: "Build Guide #10 Android Development Tool Compatibility"
-tags: [Android, Gradle, Android Gradle Plugin, Build, post]
+tags: [Android, Gradle, Android Gradle Plugin, Build, enpost]
 ---
 
 *"Build Guide" is a series of articles exploring Android build-related topics, covering Gradle, Android Gradle Plugin, Kotlin Script, and other tools, as well as their architectural applications. Discovering problems, solving problems, sharing new knowledge, and improving efficiency.*

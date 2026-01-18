@@ -2,7 +2,7 @@
 layout: post
 date: 2024-05-31
 title: "KotlinConf 2024 Experience"
-tags: [Community, post]
+tags: [Community, enpost]
 ---
 
 The annual Kotlin festival has arrived again. I mentioned "Next year, see you again" in last year's [KotlinConf 2023 Experience](https://2bab.me/en/blog/2023-04-15-kotlin-conf-23-exp/) and delivered on that promise. This time I posted the ticket release information in some Android groups in mainland China at the first opportunity and naturally got myself a super early bird ticket. This article is also a quick note on my phone, so please forgive simplification or omission of some technical term explanations and formatting issues.

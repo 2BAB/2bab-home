@@ -2,7 +2,7 @@
 layout: post
 date: 2023-04-15
 title: "KotlinConf 2023 Experience"
-tags: [Community, post]
+tags: [Community, enpost]
 ---
 
 Just finished the KotlinConf 2023 journey, my heart is surging with excitement. While the feeling is still fresh, I'm recording what I saw and heard. In just two days, I gained numerous life experiences I'd never had before. The conference's agenda arrangement, booth setup, high-quality attendees and content sharing, even the peripheral support like food, coffee, and Party band were all top-tier.

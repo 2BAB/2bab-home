@@ -2,7 +2,7 @@
 layout: post
 date: 2021-12-21
 title: "Build Guide #12 Enabling Plugin Features Based on Variant"
-tags: [Android, Gradle, Android Gradle Plugin, Build, post]
+tags: [Android, Gradle, Android Gradle Plugin, Build, enpost]
 ---
 
 Anyone who has used third-party Gradle plugins in Android development should have encountered this problem: **I only want to apply this plugin in certain buildTypes or flavors, but I can't find a suitable way.**
