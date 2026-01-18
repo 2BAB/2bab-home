@@ -39,4 +39,4 @@ Additionally: Gemini costs are currently paid personally. Thanks here to the [Go
 
 Since it's a public welfare project, we can't guarantee time to do too much documentation adaptation. We hope more like-minded partners will join to build together. Everyone is also welcome to **share, like, and forward** more, so more developers can **enjoy the latest localized documentation services** and get updates on documentation changes.
 
-(Click "Read Original" to view the website)
+Website: [openaidoc.org](https://openaidoc.org)
