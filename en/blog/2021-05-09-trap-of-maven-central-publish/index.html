@@ -1,0 +1,104 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Pitfalls of MavenCentral Publishing Integration" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2021-05-09-trap-of-maven-central-publish/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Pitfalls of MavenCentral Publishing Integration | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Pitfalls of MavenCentral Publishing Integration</h1>
+    <div class="italic text-gray-500">
+      2021/05/09
+    </div>
+    <div>
+      <p>Due to <a href="https://jfrog.com/blog/into-the-sunset-bintray-jcenter-gocenter-and-chartcenter/">JCenter shutting down</a>, I recently migrated the publishing process of several active open-source projects to <a href="https://search.maven.org">MavenCentral</a>. The two reference articles below already explain the details of each step quite well:</p>
+<ul>
+<li><a href="https://dev.to/kotlin/how-to-build-and-publish-a-kotlin-multiplatform-library-going-public-4a8k">Publishing your Kotlin Multiplatform library to Maven Central</a></li>
+<li><a href="https://proandroiddev.com/publishing-android-libraries-to-mavencentral-in-2021-8ac9975c3e52">Publishing Android libraries to MavenCentral in 2021</a></li>
+</ul>
+<p>However, I still encountered some pitfalls during this process, as well as some baffling operations, which prompted me to write this article to share.</p>
+<h2 id="don't-apply-for-a-single-artifact" tabindex="-1">Don't Apply for a Single Artifact</h2>
+<p>When applying for an OSSRH Ticket, what we're actually applying for is a <strong>Group ID</strong>. The key parameter is the Group Id; the title doesn't even need to mention the specific Artifact.</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210509204352.png?imageslim" alt="group-id"></p>
+<p>Generally, the Group ID is the reversed domain name. You'll be asked to verify domain ownership, Github repository ownership, JCenter Group ownership, etc. Just follow the corresponding reply instructions. Once approved, all future new package publishing won't require another application. For example: if I apply for the <code>me.2bab</code> group, then all future <code>me.2bab.*</code> publishing will be supported.</p>
+<h2 id="implicit-configuration-of-signing-plugin" tabindex="-1">Implicit Configuration of Signing Plugin</h2>
+<p>To verify the legitimacy of uploads, we sign the packages to be uploaded using GPG, using Gradle's official <a href="https://docs.gradle.org/current/userguide/signing_plugin.html">The Signing Plugin</a>. When I first integrated it, I followed the steps in the two tutorials above and always felt something was off: I didn't see myself passing the key information needed by the signing plugin into the plugin.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// The most basic DSL configuration for the plugin is just this one line</span><br>signing <span class="token punctuation">{</span><br>    <span class="token function">sign</span><span class="token punctuation">(</span>publishing<span class="token punctuation">.</span>publications<span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p>After briefly browsing the documentation, you'll discover that it actually defines some Keys by convention, and the plugin configuration reads directly from the Project's Properties.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// So you can see the reference tutorial writes it like this</span><br>ext<span class="token punctuation">[</span><span class="token string-literal singleline"><span class="token string">"signing.keyId"</span></span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">..</span><span class="token punctuation">.</span><br>ext<span class="token punctuation">[</span><span class="token string-literal singleline"><span class="token string">"signing.password"</span></span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">..</span><span class="token punctuation">.</span><br>ext<span class="token punctuation">[</span><span class="token string-literal singleline"><span class="token string">"signing.secretKeyRingFile"</span></span><span class="token punctuation">]</span> <span class="token operator">=</span> <span class="token operator">..</span><span class="token punctuation">.</span></code></pre>
+<p>And this convention that I never knew was possible, referring to <a href="https://docs.gradle.org/current/userguide/build_environment.html#sec:project_properties">Build Environment</a>:</p>
+<pre><code>// Using the following setup, you can pass the secret key (in ascii-
+// armored format) and the password using the
+// ORG_GRADLE_PROJECT_signingKey and ORG_GRADLE_PROJECT_signingPassword
+// environment variables, respectively:
+signing {
+    val signingKey: String? by project
+    val signingPassword: String? by project
+    useInMemoryPgpKeys(signingKey, signingPassword)
+    sign(tasks[&quot;stuffZip&quot;])
+}
+</code></pre>
+<p>I really dislike this overly &quot;implicit&quot; convention - you can't know what you've actually written without carefully reading the documentation. Fortunately, there's also an explicit configuration method:</p>
+<pre class="language-kotlin"><code class="language-kotlin">signing <span class="token punctuation">{</span><br>    <span class="token keyword">val</span> signingKeyId<span class="token operator">:</span> String<span class="token operator">?</span> <span class="token keyword">by</span> project <span class="token comment">// Where to put it is optional, not necessarily using Project Properties</span><br>    <span class="token keyword">val</span> signingKey<span class="token operator">:</span> String<span class="token operator">?</span> <span class="token keyword">by</span> project<br>    <span class="token keyword">val</span> signingPassword<span class="token operator">:</span> String<span class="token operator">?</span> <span class="token keyword">by</span> project<br>    <span class="token function">useInMemoryPgpKeys</span><span class="token punctuation">(</span>signingKeyId<span class="token punctuation">,</span> signingKey<span class="token punctuation">,</span> signingPassword<span class="token punctuation">)</span> <span class="token comment">// This line is the key</span><br>    <span class="token function">sign</span><span class="token punctuation">(</span>tasks<span class="token punctuation">[</span><span class="token string-literal singleline"><span class="token string">"stuffZip"</span></span><span class="token punctuation">]</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p>Similar approaches are used in some experimental configs of Android Gradle Plugin, but due to their widespread existence and usage, perhaps people are too tired to complain (though most switches can still be configured directly from the DSL). If you don't see the problem here, consider this scenario:</p>
+<ul>
+<li>Obviously, DSL can provide <strong>constrained configuration</strong>. With excellent DSL, you can understand what APIs are available and how to interact just through <strong>IDE completion</strong>;</li>
+<li>If all plugins use such implicit configuration, losing the advantages of DSL, it's no different from writing a JSON configuration - <strong>too loose, error-prone, hard to get started</strong>. You might not know which configuration file corresponds to which module, whether this Key is correct, etc.;</li>
+</ul>
+<p>Next time I update the plugin, I plan to change to <code>useInMemoryPgpKeys(...)</code>, otherwise after a year I'll forget this pitfall, or anyone taking over your project who doesn't understand the Signing plugin will be confused again.</p>
+<h2 id="signing-plugin-key-path-specification" tabindex="-1">Signing Plugin Key Path Specification</h2>
+<p>If you use the <code>signing.secretKeyRingFile</code> configuration, you need to consider different configurations for local and CI environments:</p>
+<ul>
+<li>Local: <code>../local/secret.gpg</code>, recommended to place in the project root directory or create a <code>local</code> folder and add the entire folder to gitignore. The reason is that one machine might use more than one secret.gpg; keeping the key with the project makes it easier to find, and setup is also convenient for other collaborators;</li>
+<li>CI: <code>/secret.gpg</code>, placed directly in the virtual environment root directory, convenient for coordinating with the RingFile generation script;</li>
+</ul>
+<h2 id="batch-upload-%2B-control-panel-operations" tabindex="-1">Batch Upload + Control Panel Operations</h2>
+<p>I recently saw someone's MavenCentral publishing tutorial on Juejin mentioning not to upload multiple packages and then Close together. In fact, this is supported and recommended - packages with the same Group ID will be placed in one staging repo, and can then be closed &amp; released together. If you've referenced plugins that automatically handle the close &amp; release process, aggregate upload (batch upload) can actually improve the success rate of subsequent operations (SonaType's API and webpage are not very stable). For example, this <a href="https://github.com/2BAB/Polyfill">project</a> of mine has six modules and actually uses the Batch Upload strategy.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

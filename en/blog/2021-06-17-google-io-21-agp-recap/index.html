@@ -1,0 +1,189 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Moving Forward: Google I/O 21 Android Gradle Plugin Update Summary" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2021-06-17-google-io-21-agp-recap/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Moving Forward: Google I/O 21 Android Gradle Plugin Update Summary | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Moving Forward: Google I/O 21 Android Gradle Plugin Update Summary</h1>
+    <div class="italic text-gray-500">
+      2021/06/17
+    </div>
+    <div>
+      <p>It's been nearly a month since Google I/O 2021. In the past few days, I've been reviewing the Android Gradle Plugin (AGP) content, mainly focusing on the &quot;What's new in Android Gradle plugin&quot; session. However, since there was no Google I/O in 2020 and all offline events were suspended due to the pandemic, this 11-minute session contains an enormous amount of information - it's essentially a condensed highlight of the past two years' updates (I watched it three times). Therefore, in this article, I'll include many additional reference materials, digging into talks/posts/repos that you might have missed in the past year or two. The overall structure still follows the session's agenda.</p>
+<h2 id="performance-improvements" tabindex="-1">Performance Improvements</h2>
+<h3 id="configuration-cache" tabindex="-1">Configuration Cache</h3>
+<p>Gradle's lifecycle is divided into three major parts: Initialization Phase, Configuration Phase, and Execution Phase. The task execution part can already be well cached and reused if handled properly - reusing existing caches is a crucial part of speeding up compilation. If this mechanism is applied to other phases, it should naturally bring some benefits as well. The next most time-consuming phase after execution is usually the configuration phase, and this year AGP brings us Gradle <a href="https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements">Configuration Cache</a> support, a new feature that has been incubating since <a href="https://blog.gradle.org/introducing-configuration-caching">Gradle 6.6</a>. It enables the main output of the configuration phase - the Task Graph - to be reused. In the example project, this optimization can eliminate about 8 seconds of unnecessary waiting (if Gradle script configuration hasn't changed).</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/20210617155730.png?imageslim" alt=""></p>
+<p>To experience this optimization, simply add <code>--configuration-cache</code> when executing Gradle commands, such as <code>./gradlew --configuration-cache help</code>. Since Configuration Cache is not yet fully stable, if you want to keep it enabled (including optimization during IDE Sync), you need to use the following properties:</p>
+<pre class="language-properties"><code class="language-properties"><span class="token key attr-name">org.gradle.unsafe.configuration-cache</span><span class="token punctuation">=</span><span class="token value attr-value">true</span></code></pre>
+<p>On first use, you'll see a prompt about calculating the Task Graph:</p>
+<blockquote>
+<p>Calculating task graph as no configuration cache is available for tasks: :test-app:assembleDebug</p>
+</blockquote>
+<p>On success, it will prompt at the end of the Build:</p>
+<blockquote>
+<p>Configuration cache entry stored.</p>
+</blockquote>
+<p>Then the Cache can be reused by the next build (if there are no build script modifications):</p>
+<blockquote>
+<p>Reusing configuration cache.</p>
+<p>...</p>
+<p>51 actionable tasks: 2 executed, 49 up-to-date</p>
+<p>Configuration cache entry reused.</p>
+</blockquote>
+<p>As a plugin user, if you find that commonly used plugins are unsupported, you can first search whether the same issue has already appeared. For example, here's an issue that occurred with Kotlin 1.4.32 plugin and Gradle 7.0:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-config-cache-kotlin-plugin.png?imageslim" alt=""></p>
+<p>In this YouTrack <a href="https://youtrack.jetbrains.com/issue/KT-43605">issue</a>, we can see that upgrading the Kotlin plugin to version 1.5.0 or above solves the problem.</p>
+<p>In fact, the core plugins of AGP/Kotlin/Gradle (mainly the Tasks behind them) already support Configuration Cache in recent versions. You can learn more through these documents/issues:</p>
+<ul>
+<li><a href="https://github.com/gradle/gradle/issues/13490">Help community Gradle plugins adopt the configuration cache #13490 - Gradle Github Issues</a></li>
+<li><a href="https://developer.android.com/studio/releases/gradle-plugin#4.2-gradle-properties">Gradle Properties Change - Android Gradle Plugin 4.2 Release Note</a></li>
+<li><a href="https://kotlinlang.org/docs/gradle.html#gradle-configuration-cache-support">Gradle Configuration Cache Support - Kotlin Doc</a></li>
+</ul>
+<p>As a plugin developer, you also need to be concerned with Configuration Cache adaptation work. The key point is: Task parameters and internal implementations need to avoid directly passing in/using Gradle's Context classes and some non-serializable classes. Taking my maintained <a href="https://github.com/2BAB/Seal">Seal</a> plugin as an example, it's a small plugin that solves <code>AndroidManifest.xml</code> conflicts. Running <code>/gradlew --configuration-cache :test-app:assembleDebug</code> reveals two issues to fix:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-config-cache-seal-plugin.png?imageslim" alt=""></p>
+<p>Through the Configuration Cache HTML Report output at the end of the build, we can view the detailed stack trace:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-config-cache-error-html.png?imageslim" alt=""></p>
+<p>For this error, we simply need to change <code>project.logger</code> to a <code>this.logger</code> reference:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-config-cache-git-change.png?imageslim" alt=""></p>
+<p>For more complex rules and use cases, refer to Gradle's documentation and AGP's journey to Configuration Cache compatibility (fixing over 400 issues):</p>
+<ul>
+<li><a href="https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements">Configuration Cache</a></li>
+<li><a href="https://medium.com/androiddevelopers/configuration-caching-deep-dive-bcb304698070">Configuration caching deep dive - Android Developers</a></li>
+</ul>
+<p>Finally, there's an official Gradle-maintained <a href="https://github.com/gradle/android-cache-fix-gradle-plugin">android-cache-fix-gradle-plugin</a>. For some special AGP build cache and configuration cache issues, you can check here - it might be exactly what your project encountered.</p>
+<h3 id="non-transitive-r-classes" tabindex="-1">Non-transitive R-classes</h3>
+<p>In fact, R file features like this have been developing for many years. You can refer to this <a href="https://www.mobileit.cz/Blog/Pages/r-class.aspx">article</a> organized in chronological order. However, the latest <code>nonTransitiveAppRClass</code> feature requires AGP 7.0 or above. Currently there's limited documentation, with partial mention in the Android Studio Arctic Fox release notes:</p>
+<blockquote>
+<p>Non-transitive R class refactoring: Using non-transitive R classes in Android Gradle Plugin can bring faster build speeds for apps with multiple modules. It prevents resource duplication by ensuring that each module only contains references to its own resources without pulling references from dependencies. You can use this feature through Refactor &gt; Migrate to Non-transitive R Classes.</p>
+</blockquote>
+<p>Enable it as follows:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-non-transitive-r-as-refactor2.png?imageslim" alt=""></p>
+<p>This operation helps you automatically add two lines of feature-enabling code to <code>gradle.properties</code> and rebuilds the project:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-non-transitive-r-properties.png?imageslim" alt=""></p>
+<h3 id="cacheable-lint-task" tabindex="-1">Cacheable Lint Task</h3>
+<p>Lint has always been a time-consuming task. After AGP 7.0 (originally planned for 3.5, see this <a href="https://docs.gradle.org/current/userguide/caching_android_projects.html#lint">document</a>), it finally becomes a cacheable Task.</p>
+<h3 id="others" tabindex="-1">Others</h3>
+<p>Additionally, AS + AGP have had some improvement points since 4.x:</p>
+<ul>
+<li>Gradle Kotlin DSL experience and performance improvements - you can see the <a href="https://github.com/google/iosched">Google I/O Android App</a> project has been completely converted to <code>*.gradle.kts</code> scripts;</li>
+<li>AAPT2 performance improvements;</li>
+<li>Performance improvements from JDK 11;</li>
+<li>...</li>
+</ul>
+<p>You can find this information in the AGP/AS Release Notes.</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-new-as-bumblebee.png?imageslim" alt=""></p>
+<h2 id="new-dsl" tabindex="-1">New DSL</h2>
+<h3 id="dsl-doc-migration-to-android.com" tabindex="-1">DSL Doc Migration to <a href="http://android.com">android.com</a></h3>
+<p>The old AGP DSL <a href="https://google.github.io/android-gradle-dsl/">documentation</a> hasn't been updated since 3.4. The new documentation has migrated to <a href="https://developer.android.com/reference/tools/gradle-api">android.com</a>, making it more unified. You can still view by version:</p>
+<ul>
+<li>Current Release: i.e., stable version 4.2;</li>
+<li>Preview Releases: i.e., beta 7.0 and alpha 7.1 test versions;</li>
+<li>Past Releases: all previous old versions, but due to transitions/switches in between, documentation for versions 3.5 -&gt; 4.0 is actually missing;</li>
+</ul>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-dsl-doc.png?imageslim" alt=""></p>
+<p>This change is also reflected in <a href="https://android.googlesource.com/platform/manifest/+refs">google source</a> tags. For AGP source code, <code>gradle-x.y.z</code> tags no longer exist after 3.4. Currently you can use <code>studio-x.y.z</code> such as <code>studio-4.2.0</code> to reverse-locate AGP versions.</p>
+<h3 id="agp-upgrade-assistant-provided-by-android-studio" tabindex="-1">AGP Upgrade Assistant Provided by Android Studio</h3>
+<p>To help developers upgrade AGP conveniently and smoothly, AGP in cooperation with AS has launched the upgrade assistant feature. This new feature has iterated through several versions and is currently very useful for upgrading Gradle Groovy DSL scripts. When you see an upgrade prompt (usually when first opening a project):</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-upgrade-assistant.png?imageslim" alt=""></p>
+<p>Clicking <code>Upgrade</code> will also have a preview function (screenshot from session slide):</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-upgrade-assistant-2.png?imageslim" alt=""></p>
+<p>However, support for Gradle Kotlin DSL still needs to be completed. For example, migration of deprecated DSL like basic <code>compileSdkVersion</code> is not yet supported:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-agp-upgrade-assistant-3.png?imageslim" alt=""></p>
+<p>Of course, complex object references also cannot be directly modified for you, such as <code>classpath(Deps.agp)</code> - this is beyond the scope of what the tool can do. You can treat it as an auxiliary tool similar to <code>Java</code> to <code>Kotlin</code> conversion - first use it to quickly upgrade and organize basic DSL, then manually modify the small portions that have errors by referring to the DSL documentation.</p>
+<h2 id="new-variant-api" tabindex="-1">New Variant API</h2>
+<p>Variant API is the most important update related to Android and plugin development in the past two years. For friends who haven't developed cooperative plugins for AGP before, you can understand &quot;what is Variant&quot; through the image below:</p>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-variant-api-definition-2.png?imageslim" alt=""></p>
+<p>The Variant API update can be summarized as: To make cooperative plugin developers depend on more stable APIs, the original <code>com.android.tools.build:gradle</code> package has been split into <code>gradle</code> and <code>gradle-api</code> packages, achieving separation of interface and implementation. From a practical perspective, we can focus on two parts: Variant traversal entry changes and simplification of some custom Tasks.</p>
+<h3 id="variant-traversal-entry-changes" tabindex="-1">Variant Traversal Entry Changes</h3>
+<p>Most AGP ecosystem cooperative plugins need to register Variant-aware Tasks, i.e., traverse Variants to register corresponding custom Tasks, such as the Seal plugin's <code>postUpdateDebugManifest</code> and <code>postUpdateReleaseManifest</code> mentioned above. You must have seen code like this (Groovy):</p>
+<pre class="language-groovy"><code class="language-groovy"><span class="token keyword">def</span> android <span class="token operator">=</span> project<span class="token punctuation">.</span>extensions<span class="token punctuation">.</span>android<br>android<span class="token punctuation">.</span>applicationVariants<span class="token punctuation">.</span>all <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>    <span class="token keyword">def</span> variantName <span class="token operator">=</span> variant<span class="token punctuation">.</span>name<span class="token punctuation">.</span><span class="token function">capitalize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token function">createTask</span><span class="token punctuation">(</span>project<span class="token punctuation">,</span> variantName<span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p>Or the Kotlin version:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">val</span> androidExtension <span class="token operator">=</span> project<span class="token punctuation">.</span>extensions<span class="token punctuation">.</span><span class="token function">findByType</span><span class="token punctuation">(</span>AppExtension<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">.</span>java<span class="token punctuation">)</span><span class="token operator">!!</span><br>androidExtension<span class="token punctuation">.</span>applicationVariants<span class="token punctuation">.</span><span class="token function">all</span> <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>    <span class="token keyword">val</span> variantName <span class="token operator">=</span> variant<span class="token punctuation">.</span>name<span class="token punctuation">.</span><span class="token function">capitalize</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token function">createTask</span><span class="token punctuation">(</span>project<span class="token punctuation">,</span> variantName<span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
+<p>For plugins applicable to libraries, you need <code>LibraryExtension</code> and <code>libraryVariants</code>.</p>
+<p>This type of API has now changed to new API calls within <code>gradle-api</code>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">val</span> androidExtension <span class="token operator">=</span> project<span class="token punctuation">.</span>extensions<span class="token punctuation">.</span>getByType<span class="token operator">&lt;</span>ApplicationAndroidComponentsExtension<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>androidExtension<span class="token punctuation">.</span><span class="token function">onVariants</span> <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>    <span class="token operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">}</span></code></pre>
+<p>The Variant obtained here is <a href="https://developer.android.com/reference/tools/gradle-api/7.1/com/android/build/api/variant/ApplicationVariant">com.android.build.api.variant.ApplicationVariant</a>, and the Extension comes from <a href="https://developer.android.com/reference/tools/gradle-api/4.2/com/android/build/api/extension/ApplicationAndroidComponentsExtension">com.android.build.api.extension.ApplicationAndroidComponentsExtension</a>. Another interface you might use is <code>beforeVariants(...)</code>, used to control Variant building, such as globally modifying some Variant properties. From this Snippet we might not see the specific changes in Variant, but behind these changes are standardized Variant state transitions, public APIs, etc.</p>
+<h3 id="simplification-of-some-custom-tasks" tabindex="-1">Simplification of Some Custom Tasks</h3>
+<p>This type of simplification refers to simplification of Task insertion points and Task parameter acquisition (injection). APIs providing such features are also called Artifact APIs. In the classic pattern: for insertion points, we generally manually find the Task's dependency relationships and use Gradle APIs to reorganize dependencies (you might even need to customize some new lifecycle anchor Tasks to assist); for Task parameters, various tricks are employed to find the data we need from existing Task parameters/intermediate products/private objects, then inject them into custom Tasks. Now Artifact APIs standardize a set of operations, enabling us to easily interact with existing data and intermediate products. From a practical perspective, we can divide into two patterns:</p>
+<p>Complex Transform/Append/Create operations: one-stop service for inserting Tasks at specific nodes and Task parameter injection, generally suitable for needing to define a specific insertion point;</p>
+<pre class="language-kotlin"><code class="language-kotlin">androidComponents <span class="token punctuation">{</span><br>    <span class="token keyword">val</span> gitVersionProvider <span class="token operator">=</span> tasks<span class="token punctuation">.</span>register<span class="token operator">&lt;</span>GitVersionTask<span class="token operator">></span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"gitVersionProvider"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        gitVersionOutputFile<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><br>            <span class="token function">File</span><span class="token punctuation">(</span>project<span class="token punctuation">.</span>buildDir<span class="token punctuation">,</span> <span class="token string-literal singleline"><span class="token string">"intermediates/gitVersionProvider/output"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        outputs<span class="token punctuation">.</span><span class="token function">upToDateWhen</span> <span class="token punctuation">{</span> <span class="token boolean">false</span> <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br>    onVariants <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>        <span class="token keyword">val</span> manifestProducer <span class="token operator">=</span> tasks<span class="token punctuation">.</span>register<span class="token operator">&lt;</span>ManifestProducerTask<span class="token operator">></span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">variant<span class="token punctuation">.</span>name</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">ManifestProducer"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            gitInfoFile<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>gitVersionProvider<span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>GitVersionTask<span class="token operator">::</span>gitVersionOutputFile<span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        variant<span class="token punctuation">.</span>artifacts<span class="token punctuation">.</span><span class="token function">use</span><span class="token punctuation">(</span>manifestProducer<span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">wiredWith</span><span class="token punctuation">(</span>ManifestProducerTask<span class="token operator">::</span>outputManifest<span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">toCreate</span><span class="token punctuation">(</span>SingleArtifact<span class="token punctuation">.</span>MERGED_MANIFEST<span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>Pure Get: actively obtaining intermediates, generally suitable for relatively independent Tasks without strict insertion position requirements (but there are implicit Task dependencies through Provider passing), without replacement operations needed:</p>
+<pre class="language-kotlin"><code class="language-kotlin">androidComponents <span class="token punctuation">{</span><br>    onVariants <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>        project<span class="token punctuation">.</span>tasks<span class="token punctuation">.</span>register<span class="token operator">&lt;</span>DisplayApksTask<span class="token operator">></span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span><span class="token expression">variant<span class="token punctuation">.</span>name</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token string">DisplayApks"</span></span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            apkFolder<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>variant<span class="token punctuation">.</span>artifacts<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>SingleArtifact<span class="token punctuation">.</span>APK<span class="token punctuation">)</span><span class="token punctuation">)</span><br>            builtArtifactsLoader<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>variant<span class="token punctuation">.</span>artifacts<span class="token punctuation">.</span><span class="token function">getBuiltArtifactsLoader</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h3 id="more" tabindex="-1">More</h3>
+<p>From a practical perspective, the new Variant interface and Extension interface have fewer public APIs than before, but they're more standardized. Artifacts as a supplement to manually obtaining Task input/output currently has relatively few public APIs. I hope plugin developers will submit more issues to the AGP team when encountering reasonable APIs that should be public but aren't yet :).</p>
+<p>Additionally, due to space limitations, I cannot introduce all Variant API updates here, including the introduction of new <code>Provider&lt;T&gt;</code> API (Lazy Configuration), Variant state transitions, more types of Artifacts API usage, how to learn from its design to solve those interfaces that haven't been encapsulated/exposed yet, etc. You can get more inspiration from these materials:</p>
+<ul>
+<li><a href="https://www.youtube.com/watch?v=OTANozHzgPc">From Gradle properties to AGP APIs - Android Dev Summit '19</a>: Explains the cornerstone of Variant API — <code>Provider&lt;T&gt;</code> API and its multiple derived subclasses, Variant state transitions and multiple usage patterns of its API;</li>
+<li><a href="https://medium.com/androiddevelopers/new-apis-in-the-android-gradle-plugin-f5325742e614">New APIs in the Android Gradle Plugin - Android Developers Blog</a>: Introduces the origin of Variant API design ideas and use of new APIs;</li>
+<li><a href="https://github.com/android/gradle-recipes/tree/agp-7.1">android/gradle-recipes</a>: Provides Groovy/Kotlin DSL sample code for common Variant API usage;</li>
+<li><a href="https://developer.android.com/studio/releases/gradle-plugin-roadmap">Android Gradle Plugin DSL/API migration timeline</a>: Milestones for New DSL and Variant API over the next three years;</li>
+<li><a href="https://docs.gradle.org/current/userguide/lazy_configuration.html">Lazy Configuration</a>: Task configuration lazy acquisition, <code>Provider&lt;T&gt;</code> and its various subclasses, Task implicit dependencies, etc.</li>
+</ul>
+<h2 id="new-asm-api" tabindex="-1">New ASM API</h2>
+<p><img src="https://2bab-images.lastmayday.com/blog/io-2021-asm-api.png?imageslim" alt=""></p>
+<p>ASM API is a replacement for the previous Transform API, aimed at providing a lower-cost insertion point between Class -&gt; Dex for modifying bytecode. It no longer has the flexibility of the previous Transform API - for example, it currently appears to be bound to the ASM bytecode tool and doesn't support Javassist or Aspect. However, at the same time, it has better performance, lower usage cost (referring to implementing the transform itself, because ASM is actually a lower-level API compared to Javassist and Aspect - more flexible but with higher learning cost), and easier adaptation to new Gradle features. It's currently just starting incubation. From the API Doc perspective, developers are not yet recommended to use it to build production environment plugins.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">abstract</span> <span class="token keyword">class</span> ExamplePlugin <span class="token operator">:</span> Plugin<span class="token operator">&lt;</span>Project<span class="token operator">></span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">apply</span><span class="token punctuation">(</span>project<span class="token operator">:</span> Project<span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>        <span class="token keyword">val</span> androidComponents <span class="token operator">=</span> project<span class="token punctuation">.</span>extensions<span class="token punctuation">.</span><span class="token function">getByType</span><span class="token punctuation">(</span>AndroidComponentsExtension<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">.</span>java<span class="token punctuation">)</span><br><br>        androidComponents<span class="token punctuation">.</span><span class="token function">onVariants</span> <span class="token punctuation">{</span> variant <span class="token operator">-></span><br>            variant<span class="token punctuation">.</span><span class="token function">transformClassesWith</span><span class="token punctuation">(</span>ExampleClassVisitorFactory<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">.</span>java<span class="token punctuation">,</span><br>                                 InstrumentationScope<span class="token punctuation">.</span>ALL<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                it<span class="token punctuation">.</span>writeToStdout<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token boolean">true</span><span class="token punctuation">)</span><br>            <span class="token punctuation">}</span><br>            variant<span class="token punctuation">.</span><span class="token function">setAsmFramesComputationMode</span><span class="token punctuation">(</span>FramesComputationMode<span class="token punctuation">.</span>COPY_FRAMES<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">interface</span> ExampleParams <span class="token operator">:</span> InstrumentationParameters <span class="token punctuation">{</span><br>        <span class="token annotation builtin">@get:Input</span><br>        <span class="token keyword">val</span> writeToStdout<span class="token operator">:</span> Property<span class="token operator">&lt;</span>Boolean<span class="token operator">></span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">abstract</span> <span class="token keyword">class</span> ExampleClassVisitorFactory <span class="token operator">:</span><br>        AsmClassVisitorFactory<span class="token operator">&lt;</span>ExampleParams<span class="token operator">></span> <span class="token punctuation">{</span><br><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">createClassVisitor</span><span class="token punctuation">(</span><br>            classContext<span class="token operator">:</span> ClassContext<span class="token punctuation">,</span><br>            nextClassVisitor<span class="token operator">:</span> ClassVisitor<br>        <span class="token punctuation">)</span><span class="token operator">:</span> ClassVisitor <span class="token punctuation">{</span><br>            <span class="token keyword">return</span> <span class="token keyword">if</span> <span class="token punctuation">(</span>parameters<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>writeToStdout<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                <span class="token function">TraceClassVisitor</span><span class="token punctuation">(</span>nextClassVisitor<span class="token punctuation">,</span> <span class="token function">PrintWriter</span><span class="token punctuation">(</span>System<span class="token punctuation">.</span>out<span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>                <span class="token function">TraceClassVisitor</span><span class="token punctuation">(</span>nextClassVisitor<span class="token punctuation">,</span> <span class="token function">PrintWriter</span><span class="token punctuation">(</span><span class="token function">File</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"trace_out"</span></span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">isInstrumentable</span><span class="token punctuation">(</span>classData<span class="token operator">:</span> ClassData<span class="token punctuation">)</span><span class="token operator">:</span> Boolean <span class="token punctuation">{</span><br>            <span class="token keyword">return</span> classData<span class="token punctuation">.</span>className<span class="token punctuation">.</span><span class="token function">startsWith</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"com.example"</span></span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>The APIs used in the code above can be referenced in these documents:</p>
+<ul>
+<li><a href="https://developer.android.com/reference/tools/gradle-api/7.1/com/android/build/api/component/Component.html#transformClassesWith(java.lang.Class,%20com.android.build.api.instrumentation.InstrumentationScope,%20kotlin.Function1)">Component#transformClassesWith(...)</a></li>
+<li><a href="https://developer.android.com/reference/tools/gradle-api/7.1/com/android/build/api/instrumentation/InstrumentationParameters">InstrumentationParameters</a></li>
+</ul>
+<p>For friends unfamiliar with classic Transform, you can check out several well-known Transform library encapsulations (coincidentally all from Chinese companies' open-source projects):</p>
+<ul>
+<li><a href="https://github.com/bytedance/ByteX">ByteX</a> (active)</li>
+<li><a href="https://github.com/didi/booster">Booster</a> (active, partially used)</li>
+<li><a href="https://github.com/eleme/lancet">Lancet</a> (inactive)</li>
+</ul>
+<h2 id="summary" tabindex="-1">Summary</h2>
+<p>From a developer's perspective, the Android Tools team is paying more attention to Engineering Experience in AGP &amp; AS. While solving many legacy issues, this session also revealed long-term plans for building the AGP ecosystem. I hope to see these things truly accepted by more Android developers next year, and I'll definitely write another summary and outlook for 2022.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

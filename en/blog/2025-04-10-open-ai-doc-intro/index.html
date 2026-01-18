@@ -1,0 +1,84 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Automated AI Workflow - We Localized Popular Documentation for the Community" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2025-04-10-open-ai-doc-intro/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Automated AI Workflow - We Localized Popular Documentation for the Community | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Automated AI Workflow - We Localized Popular Documentation for the Community</h1>
+    <div class="italic text-gray-500">
+      2025/04/10
+    </div>
+    <div>
+      <p>Recently, together with community partners, I built a site called <a href="https://openaidoc.org">Open AIDoc</a>. It's a <strong>public welfare</strong> project powered by Gemini, aimed at <strong>tracking and translating popular open-source library documentation into Simplified/Traditional Chinese, Japanese, Korean, and multiple other languages</strong>. In today's v0.1.0 release, we've provided synchronized translations of the latest <strong>Kotlin</strong> and <strong>Koin</strong> documentation. Plans already include expanding to <strong>SqlDelight</strong>, <strong>Ktor</strong>, and other libraries we're familiar with, and continuously adding documentation translation sync services for <strong>different domains</strong> in the future.</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101349493.png?imageslim" alt=""></p>
+<p>The story began when I was helping <a href="https://insert-koin.io/">Koin</a> build a Chinese community recently, and found that some new members' first question was &quot;Is there Chinese documentation?&quot; This piqued my interest, and soon I found similar questions in some Kotlin community groups. I tried to understand the demand for localized documentation in the AI era, because I know quite a few browser plugins can already achieve high-quality translation. But digging deeper, I found this might still be a widespread problem, especially for novice engineers in East Asia. On one hand, East Asia overall has relatively strong language systems of their own. Although English learning has been added to compulsory education in most regions, there are numerous native language materials in the programming field, and many developers still prefer native language materials. On the other hand, just because browser plugins exist doesn't mean everyone uses them. AI development is still in its early stages. Documentation is a webpage that gets <strong>repeatedly viewed</strong>, and having to <strong>wait a few seconds for translation</strong> each time, plus <strong>repeatedly spending credits</strong> for this, is indeed not a great scenario.</p>
+<p>Since this is the case, why not solve the several documentation problems I've encountered around me at once using AI? The generated content is stored on a site for repeated reading, which is very <strong>eco-friendly</strong> :) So I found a like-minded partner, zhuoxuan, to start pushing forward. Of course, we soon discovered things were a bit more troublesome than expected — we needed to add some sync update and format conversion steps. So we built a workflow that roughly looks like:</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101142559.png?imageslim" alt=""></p>
+<p>The biggest advantage of choosing Gemini 2.0 Flash is that it's <strong>fast and affordable</strong>. Even with room for prompt optimization, it already shows good translation results. Following the principle of &quot;talk about completion before perfection,&quot; we <strong>went live</strong> with the v0.1.0 you see now in about a week.</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101351461.png?imageslim" alt=""></p>
+<p><img src="https://2bab-images.lastmayday.com/202504101351378.png?imageslim" alt=""></p>
+<p>Although it still has some issues, such as:</p>
+<ul>
+<li>A small number of very long files have the very last bit truncated, limited by gemini 2.0 flash --&gt; will switch to 2.5 pro later</li>
+<li>A small number of custom formats are difficult to make compatible with the docusaurus engine using regex replacement, currently manually fixed a few --&gt; will switch to vitepress/next.js which is more flexible and tolerant later</li>
+<li>All heading links (with # signs) are broken because names don't match at all after translation --&gt; still looking for solutions</li>
+<li>Regex replacement scripts can't guarantee that all parts work properly after replacement --&gt; need to optimize scripts or use other libraries to assist (via AST or similar)</li>
+</ul>
+<p>But overall we've achieved the goal we wanted from the start: first solve the problems around us, then slowly upgrade and iterate. At the same time, we're also collecting community feedback:</p>
+<ol>
+<li>Which documentation is English-only, or has outdated Chinese versions — we'll prioritize the high-demand ones;</li>
+<li>Which Prompts aren't well-written — organize contribution guidelines for everyone to submit PRs to help fix together;</li>
+</ol>
+<p>Additionally: Gemini costs are currently paid personally. Thanks here to the <a href="https://developers.google.com/program">Google Developer Program Premium Membership</a> (including GCP Credits) gifted by the Google Developer Expert program. It's natural to give back these Credits to the community. After the Credits expire, we'll consider other methods. Website deployment costs including domain, servers, and traffic will be sponsored by my personal consulting and solutions company <a href="https://binarytape.com">BinaryTape</a>.</p>
+<p>Since it's a public welfare project, we can't guarantee time to do too much documentation adaptation. We hope more like-minded partners will join to build together. Everyone is also welcome to <strong>share, like, and forward</strong> more, so more developers can <strong>enjoy the latest localized documentation services</strong> and get updates on documentation changes.</p>
+<p>(Click &quot;Read Original&quot; to view the website)</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

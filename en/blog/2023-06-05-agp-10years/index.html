@@ -1,0 +1,139 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="I/O 23 and AGP&#39;s 10th Anniversary: Why Can&#39;t I Still Learn Gradle?" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2023-06-05-agp-10years/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>I/O 23 and AGP&#39;s 10th Anniversary: Why Can&#39;t I Still Learn Gradle? | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>I/O 23 and AGP&#39;s 10th Anniversary: Why Can&#39;t I Still Learn Gradle?</h1>
+    <div class="italic text-gray-500">
+      2023/06/06
+    </div>
+    <div>
+      <p>It's been ten years since Google first released Android Gradle Plugin (AGP) 0.1 at I/O 2013. However, even experienced Android developers may feel confused about using and deeply mastering Gradle and AGP. I've written many Gradle/AGP related articles, done online sharing, and even written a book and a booklet. But through daily communication, I find it's still hard for most people to find a learning path, and even after investing time, there's no obvious progress. So on AGP's tenth anniversary, I decided to record some observations about &quot;why I still can't learn Gradle/AGP&quot; in brief words.</p>
+<p>This article will review Gradle's evolution, especially past difficulties and recent improvements over the past two to three years. Finally, I'll provide some learning strategies to help beginners and experienced engineers better master this build system.</p>
+<p>Disclaimer: Everything covered in this article is publicly available material, mainly from official public sharing or community voices.</p>
+<p>Gradle itself has many difficulties, including but not limited to changing DSL, lifecycle details, many compatibility issues, and difficulties in debugging, locating, and optimizing. Overall, implementing an extension plugin requires mastering many concepts at once.</p>
+<p><img src="https://2bab-images.lastmayday.com/202306031646569.png?imageslim" alt=""></p>
+<p>(Why not ask the magic conch)</p>
+<p>But having many concepts and difficulties isn't the problem. Frameworks like React.js and Jetpack Compose are also quite complex conceptually, so why is getting started not that hard for people?</p>
+<p><img src="https://2bab-images.lastmayday.com/202306031712664.png?imageslim" alt=""></p>
+<p>In fact, many common frameworks and tools can help developers quickly find applicable scenarios in the early stages of learning, while learning Gradle and AGP requires investing a lot of time before seeing results. For most beginners, even if your English is good and you can understand Gradle's official User Guide, you can't quickly find the right usage scenarios, let alone combine related components for best practices. And from another angle, we may have forgotten that as Android developers, this tool fundamentally needs to work in the Android App build process to maximize its value, and learning AGP is neglected by many people.</p>
+<p>The above observations lead to two thoughts in this article:</p>
+<ol>
+<li>Gradle's official documentation consists of scattered knowledge points, lacking practical tutorials oriented toward beginners, i.e., Tutorial-type documentation.</li>
+<li>AGP's public APIs and extensibility have certain limitations. AGP's goals are long-term, with its primary purpose being to promote the overall development of the Android build ecosystem, but to balance maintenance costs, it's impossible to open all APIs.</li>
+</ol>
+<h2 id="gradle's-documentation-problem" tabindex="-1">Gradle's Documentation Problem</h2>
+<p>First point, the documentation problem. &quot;Scattered&quot; refers to two aspects:</p>
+<ol>
+<li>Many necessary knowledge points lack guidance documentation: For example, everyone has used the <code>android.buildTypes{...}</code> definition, which is essentially basic use of the <code>NamedDomainObjectContainer</code> class and its series of parent classes. What you can find is API annotation documentation, but you can't find guidance on the User Guide, such as comparison of multiple similar APIs, CRUD in Groovy DSL, CRUD in Kotlin, how to migrate and use between the two DSLs, etc. The earliest reference material from Google searches on this is Mr.HAKi's <a href="https://blog.mrhaki.com/2016/02/gradle-goodness-create-objects-with-dsl.html"><code>Gradle Goodness</code> series articles</a>, which also has many other API use cases in the blog series.</li>
+<li>The documentation has some 0-to-1 content, such as lifecycle and task basics. But a lot of other common components, API techniques, and how to combine and apply multiple tools are not detailed enough, or may be placed in obscure corners. The comprehensive reading experience is somewhat lacking: you clearly seem to have seen it somewhere, but can't remember, and even keyword searching is somewhat difficult. Users lack a learning roadmap of their own.</li>
+</ol>
+<p>From this perspective, some well-known Gradle video series follow the design approach of official documentation and are not conducive to beginners getting started quickly. Of course, in terms of knowledge coverage, they remain a powerful supplement to official documentation.</p>
+<p>But here we must insert a turning point: most framework/tool documentation, even with sufficient knowledge points, still has problems of being scattered and without priority, with specific reasons behind it. For many excellent framework developers, writing good API comments in each file, plus a lot of testing, constitutes a rigorous documentation that other developers can learn from on their own. And the exported API documentation is the core &quot;documentation&quot; — it doesn't require a lot of cases and guidance materials to be called &quot;documentation&quot;; that's the icing on the cake, which is Tutorials.</p>
+<p>This is also why many tech companies and tech products hire special developer advocates, technical writers, etc. Guidance documentation and open-source Sample repositories are mostly released through their hands. A typical example is <a href="https://github.com/android/nowinandroid">Now-In-Android</a>.</p>
+<p>Without certain complete guidance documentation, what remains most in Gradle documentation are Script Plugin examples. Due to DSL API reasons, although the documentation looks neat, once you need to write your own binary plugin (i.e., a plugin published after compilation, containing one or more <code>Plugin</code> implementations internally — libraries we reference are usually published as binary plugins), you often need native APIs. And in the previous seven or eight years due to the Groovy-dominated script ecosystem, finding corresponding native APIs from some DSLs was somewhat difficult — <code>NamedDomainObjectContainer</code> again becomes a typical case of this problem. The find-and-add integrated API implemented through Groovy's dynamic features means users actually don't know whether they're using <code>create()</code> or <code>getByName()</code> or <code>named()</code> etc. behind the scenes. This is an advantage when writing <code>build.gradle</code> configuration, but a disadvantage when really writing binary plugins. In my observation, Groovy amplified the difficulty for ordinary people wanting to master this tool; but for many industry pioneers, proficient Groovy skills made them feel Gradle was flexible and easy to use, and until K2 was released, Groovy kept configuration phase script compilation faster.</p>
+<p>Finally, because of Gradle's product stance, it won't give too many Android ecosystem examples. For AGP, refer to the next issue's discussion. Unfortunately, due to some special reasons, many monitoring APIs haven't been released either. We've even seen some third-party plugins already calling private APIs, yet there's still no explanation for this part of the issue. This includes the deprecation of most public lifecycle hooks (due to Configuration Cache), and there's no complete explanation for alternatives to these public APIs. Some official best practices can only be seen from Gradle forums or Slack discussion groups.</p>
+<h2 id="agp's-openness-problem" tabindex="-1">AGP's Openness Problem</h2>
+<p>Gradle has a steep learning curve, but &quot;learning a lot of basics&quot; yet not being able to produce things is more because of lack of understanding of the ecosystem. Gradle as an underlying foundation supports not just Android, but also Java, Kotlin, Scala and other language ecosystems, as well as the nearly largest JVM backend framework ecosystem including Spring, etc. It's not hard to imagine that for Android developers, understanding the various details of Android Gradle Plugin (AGP) and related compilation tools is a core part of the packaging process.</p>
+<p>In the first five or six years, AGP rarely publicized its development plans and community development support, and it was hard to find related technical documentation. In 2018 and 2019, it gradually spoke up at some important official conferences, understood third-party plugin developers' pain points and synchronized its progress on public API construction, and fully released major changes related to AGP 7.0 at the I/O conference in 2021, including <a href="https://developer.android.com/build/extend-agp">documentation</a> and <a href="https://github.com/android/gradle-recipes">Sample</a> support.</p>
+<p>From the issue tracker situation, although P1/S1 issues have been resolved, there are still many &quot;secondary&quot; issues to be improved. I personally found some problems while trying to help promote new APIs, such as:</p>
+<ol>
+<li>Currently only a dozen or so public Artifact APIs, while private APIs have over 200 types.</li>
+<li>Public bytecode modification Artifact API differs from private implementation, causing <a href="https://issuetracker.google.com/issues/276431893">cache invalidation</a> when there are multiple transformation tasks.</li>
+</ol>
+<p>Based on the above objective content, developers have no intuitive path to learning AGP. Many articles directly list its task list and analyze one by one when introducing AGP, which is also a helpless choice. But the learning effect of this approach may... not be too good. Since there's no documentation and architecture design, systematic learning requires reading source code and understanding overall design paradigms. The reading process needs to be accompanied by thinking about multiple single-point problems encountered in practice, such as what paradigm AGP's task registration process has, how the chain structure behind the new Artifact API helps data transmission and final API exposure, etc. And the prerequisite for having these questions is that you, as an efficiency-focused developer, or putting yourself in that position, write one plugin after another that may not conform to Gradle and AGP &quot;specifications,&quot; see problems from them, read source code, solve problems, and eventually grow. I call the plugins written this way &quot;Android ecosystem cooperative plugins,&quot; which are worlds apart from some platform-independent plugins (like plugins that analyze Gradle dependencies).</p>
+<p>Most people can't or don't get the opportunity to go through the above process, so the market only has two types of people: beginners and experts. And the middle levels have obvious gaps. This is also reflected in the distribution of topic exposure — over the past ten years, AGP topic sharing has often been mixed in with AS or Android development tool updates. It wasn't until recently that AGP finally has its own <a href="https://developer.android.com/build">sub-tab</a> in the documentation area (independent navigation).</p>
+<p><img src="https://2bab-images.lastmayday.com/202306032220148.png?imageslim" alt=""></p>
+<h2 id="recent-improvements-and-recommended-learning-strategies" tabindex="-1">Recent Improvements and Recommended Learning Strategies</h2>
+<p>Although the various problems mentioned above once made learning and applying Gradle difficult, there have been some major improvements in the past two to three years:</p>
+<ol>
+<li>
+<p><strong>Kotlin became the default scripting language</strong>: Kotlin is now Gradle's default scripting language. For Android developers, this is good news because they can use the same language for both app development and build script development. Compared to Groovy, Kotlin is easier to get started with.</p>
+</li>
+<li>
+<p><strong>New features in AGP</strong>: AGP has followed Gradle's Lazy Property, Configuration Cache, Work Executor and other features; provided truly public APIs, including a complete developer-facing Variant lifecycle, Artifact exposure mechanism, and related Sample documentation. Developers can more easily extend AGP's functionality.</p>
+</li>
+<li>
+<p><strong>Compilation speed improvements</strong>: Collaboration between Google, JetBrains, and Gradle, for example:</p>
+<ol>
+<li>Various caching mechanisms, parallel execution mechanisms, and lazy registration mechanisms have been introduced to AGP.</li>
+<li>Kotlin's compilation speed continues to improve.</li>
+<li>KSP symbol processing tool developed by Google has been introduced to various Android and Kotlin development tools, greatly improving symbol processor efficiency.</li>
+<li>Android Studio's various Gradle peripheral function support, including AGP API migration, performance analysis tools, etc.</li>
+<li>Future new Kotlin compiler K2 and complete compiler plugin ecosystem toolchain will bring more extreme performance improvements.</li>
+</ol>
+</li>
+</ol>
+<p>Based on the above improvements, if I were to give some learning advice to beginners and intermediate-advanced engineers, I believe it would be:</p>
+<ol>
+<li>
+<p>Strategies for <strong>beginners</strong>:</p>
+<ul>
+<li>1.1 First learn basic concepts of Kotlin and Gradle, such as DSL, project organization structure, task mechanism, etc.</li>
+<li>1.2 Then learn common plugins and their Extension usage, such as Android, Java, Kotlin, Maven publishing, etc.</li>
+<li>1.3 Finally gradually delve into some advanced topics, such as simple script modifications, simple task writing, basic compilation problem locating, etc.</li>
+<li>1.4 <a href="https://koge.2bab.me/#/">KOGE</a>, an open-source booklet I organized, covers most of the above basic concepts. Welcome to read &amp; provide suggestions &amp; participate in writing.</li>
+</ul>
+</li>
+<li>
+<p>Strategies for <strong>intermediate-advanced engineers</strong>:</p>
+<ul>
+<li>2.1 Centered around &quot;enhancing Android Gradle Plugin functionality,&quot; learn to write plugins that cooperate with the Android ecosystem. This is an important threshold for improving all-around compilation and build quality that must be firmly crossed. Driven by goals, discover problems, read source code, solve problems, repeat this cycle, and continuously improve understanding of ecosystem cooperative plugins.</li>
+<li>2.2 Apply plugin technology to all aspects of production, such as resource modification, source code modification, bytecode modification, etc. Not only learn related compilation toolchains, but also think about problems from multiple angles, combining compile-time and runtime solutions to complement each other's advantages.</li>
+<li>2.3 Learn more about AGP's core ideas and architecture design, optimize the above various plugin solutions, and bring excellent architectural ideas into the App's efficiency architecture, bringing the team a development experience of &quot;low cost, low compilation time, high performance, high maintainability.&quot;</li>
+<li>For friends who want to accelerate learning, you can also get my new book &quot;Extending Android Builds&quot; to systematically learn Gradle plugin development and AGP core design.</li>
+</ul>
+</li>
+</ol>
+<p>In summary, although the early learning process of Gradle and AGP may seem daunting, with recent improvements and the right learning strategies, developers can better master this powerful build tool to improve productivity and code quality.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
