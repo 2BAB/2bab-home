@@ -12,7 +12,7 @@ In Mandarin / Google Devfest Taipei&Shenzhen / GDG Taipei&Shenzhen / Nov 2025 / 
 
 ### [Google's On-device AI Roadmap: From Ecosystem to Personal Assistant](https://www.bilibili.com/video/BV12yWuz2Exw)
 
-Google I/O Connect - Creator Studio / Google / 2025-08
+Google I/O Connect - Creator Studio / Google / Aug 2025
 
 
 ### [Multi-language Translation for Tech Documents with Gemini 2.5](https://www.bilibili.com/video/BV1WZ7QzjEA3/)
@@ -21,21 +21,21 @@ In Mandarin / CTalk (GDG Community Talk) / Gemini Special Event / May 2025 / [Ev
 
 ### Expanding Android Development Perspectives - Agents on Android
 
-Singapore Institute of Technology / April 2025 / [Slides](https://docs.google.com/presentation/d/1N2kP9wHu8pq95jBQQV8fDs3AkotwvzKTjoNSxCI_Ez4/edit?slide=id.g34679ed1cf9_0_32#slide=id.g34679ed1cf9_0_32)
+Singapore Institute of Technology / Apr 2025 / [Slides](https://docs.google.com/presentation/d/1N2kP9wHu8pq95jBQQV8fDs3AkotwvzKTjoNSxCI_Ez4/edit?slide=id.g34679ed1cf9_0_32#slide=id.g34679ed1cf9_0_32)
 
 ### Agents on Android: On-device LLMs and Intelligent Agents
 
-In Mandarin / Google - Build with AI Guangzhou / GDG Guangzhou / March 2025/ [Event Intro](https://gdg.community.dev/events/details/google-gdg-guangzhou-presents-build-with-ai-ji-da-wan-qu-ai-meetup/) / [Slides](https://docs.google.com/presentation/d/1W2MImL_v1jLKxZs_GCr-Selk1oBwvKkcz7qGqRNcqZM/edit?usp=sharing)  / No replay provided
+In Mandarin / Google - Build with AI Guangzhou / GDG Guangzhou / Mar 2025 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-guangzhou-presents-build-with-ai-ji-da-wan-qu-ai-meetup/) / [Slides](https://docs.google.com/presentation/d/1W2MImL_v1jLKxZs_GCr-Selk1oBwvKkcz7qGqRNcqZM/edit?usp=sharing)  / No replay provided
 
 ### Adapting the MediaPipe Demos for Kotlin Multiplatform
 
-In Mandarin / Google DevFest Taipei / GDG Taipei / 2024-11 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP)  / No replay provided
+In Mandarin / Google DevFest Taipei / GDG Taipei / Nov 2024 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-taipei-presents-devfest-taipei-2024/) / [Slides](ediaPipe-Demos-For-KMP)  / No replay provided
 
 ### On-device Model Integration (KMP) and Use Cases
 
-In Mandarin / Google I/O Extended Guangzhou / GDG Guangzhou / July 2024 / [Event Intro](https://mp.weixin.qq.com/s/AvB3KhQeLCYY_KzB9_6pdQ) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / No replay provided
+In Mandarin / Google I/O Extended Guangzhou / GDG Guangzhou / Jul 2024 / [Event Intro](https://mp.weixin.qq.com/s/AvB3KhQeLCYY_KzB9_6pdQ) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / No replay provided
 
-In Mandarin / Google I/O Extended Xiamen / GDG Xiamen / June 2024 / [Event Intro](https://mp.weixin.qq.com/s/3EcRMbgmjXx8QdVrwzN49g) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / No replay provided
+In Mandarin / Google I/O Extended Xiamen / GDG Xiamen / Jun 2024 / [Event Intro](https://mp.weixin.qq.com/s/3EcRMbgmjXx8QdVrwzN49g) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2024-07-On-Device-Model-Integration) / No replay provided
 
 
 ### [10 Years into Android Gradle Plugin: Unraveling the Mysteries of Gradle](https://mp.weixin.qq.com/s/JOQEqglG7pv1JlI71dKS-g)
