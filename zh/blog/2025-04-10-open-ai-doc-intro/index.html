@@ -1,0 +1,89 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="自动化 AI 工作流 - 我们为社区本地化了热门文档" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2025-04-10-open-ai-doc-intro/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>自动化 AI 工作流 - 我们为社区本地化了热门文档 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>自动化 AI 工作流 - 我们为社区本地化了热门文档</h1>
+    <div class="italic text-gray-500">
+      2025/04/10
+    </div>
+    <div>
+      <p>最近我和社区的小伙伴一起做了个站点叫做 <a href="https://openaidoc.org">Open AIDoc</a>，它是由 Gemini 提供技术支持的<strong>公益</strong>项目，旨在<strong>追踪并翻译流行的开源库文档成简体/繁体中文、日语、韩语等多种语言</strong>。今天上线的 0.1.0 版本里，我们已提供了 <strong>Kotlin</strong> 和 <strong>Koin</strong> 的最新文档同步翻译，已有的计划里还打算扩展 <strong>SqlDelight</strong>、<strong>Ktor</strong> 等等其他的一些我们熟悉的库，并在未来持续增加<strong>不同领域</strong>的文档翻译同步服务。</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101349493.png?imageslim" alt=""></p>
+<p>故事的开始源于前不久我在帮助 <a href="https://insert-koin.io/">Koin</a> 搭建中文社区，然后发现有些新加入的成员。第一句问的就是“有中文文档了吗”？这引起了我的兴趣，并且很快我在一些 Kotlin 的社群里也找到了相关的发问。我尝试理解在 AI 时代下，大家对本地化文档的需求，因为我了解有蛮多浏览器插件已经可以达到高质量的翻译了；但深挖一下发现，在东亚，特别是对新手工程师来说，这可能还是一个普遍的问题。一方面，东亚整体上有比较强的自己的语言语系，虽然大部分地区义务教育都已经加入了英语的学习，但是编程领域母语资料众多，大量开发者还是倾向于母语资料；另一方面，并非有浏览器插件大家就都去使用了，AI 的发展还在早期，文档又是会<strong>重复查看</strong>的网页，每次进去要<strong>等几秒翻译</strong>，还得<strong>重复花费 credits</strong> 来做这件事，确实不是一个很好的场景。</p>
+<p>既然如此，何不把我周遭碰到的几个文档问题用 AI 的方式一次性解决了，生成的内容储存在一个站点上可以重复被阅读，非常<strong>节能环保</strong> :) 于是就找到了一位志同道合的伙伴 zhuoxuan，一起开始推进。当然，很快我们发现事情比预想的麻烦一点，我们需要加入一些同步更新、格式转换的步骤。所以我们搭建了一个工作流，大致是：</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101142559.png?imageslim" alt=""></p>
+<p>其中，选择 Gemini 2.0 Flash 最大的优点就是<strong>快而且实惠</strong>，在提示词还有优化空间的情况下就已经展示出不错的翻译结果。秉着“不谈完美先谈完成”，我们在一周左右就<strong>上线了</strong>你现在所看到的 0.1.0 版本。</p>
+<p><img src="https://2bab-images.lastmayday.com/202504101351461.png?imageslim" alt=""></p>
+<p><img src="https://2bab-images.lastmayday.com/202504101351378.png?imageslim" alt=""></p>
+<p>尽管它还有一些问题，例如：</p>
+<ul>
+<li>少量太长的文件，最后一点点被截断，受限于 gemini 2.0 flash --&gt; 后续会换 2.5 pro</li>
+<li>少量自定义格式难以使用正则替换使其兼容 docusaurus 引擎，目前手动修正了几个 --&gt; 后续换 vitepress/next.js 灵活并且宽容一些</li>
+<li>所有标题链接 (带#号的）失效，因为翻译后名字完全对不上 --&gt; 还在找办法</li>
+<li>正则替换脚本无法保证所以部分替换后格式正常 --&gt; 需要优化脚本或者利用其他库辅助（通过AST之类）</li>
+</ul>
+<p>但总体上我们已经达到了一开始想要达到的目标：先解决周边的几个问题，然后慢慢升级迭代。于此同时也一边收集社区的意见：</p>
+<ol>
+<li>哪些文档只有英语的、或中文部分已经年久失修的，呼声高的我们就优先安排；</li>
+<li>哪些 Prompts 写的不够好，整理好 contribution guideline，让大家来提 PR 一起修补；</li>
+</ol>
+<p>此外：Gemini 的费用目前是个人垫付，这里感谢 Google Developer Expert 项目赠与的 <a href="https://developers.google.com/program">Google Developer Program Premium Membership</a> （含 GCP 的 Credits），把这些 Credits 反馈给社区是理所应当，Credits 到期后会再考虑其他方式；网站部署包括域名、服务器和流量方面后续产生的费用则由我个人的咨询和解决方案公司 <a href="https://binarytape.com">BinaryTape</a> 进行赞助。</p>
+<p>由于是公益项目，我们无法保证时间去做太多的文档适配，希望有更多志同道合的伙伴加入，聚石成塔。也欢迎大家多多<strong>转发分享点赞</strong>，关注本公众号，让更多开发者<strong>享受到最新的本地化文档服务</strong>并获得文档更新的资讯。</p>
+<p>网站地址：<a href="https://openaidoc.org">openaidoc.org</a></p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
