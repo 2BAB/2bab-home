@@ -2,9 +2,13 @@
 layout: page
 ---
 
+### Open AIDoc - 使用 Gemini 维护 4000+ 文档翻译
+
+Kotlin Online Conf 2025 / JetBrains / 2025-12 / [活动介绍](https://blog.jetbrains.com/zh-hans/kotlin/2025/11/kotlin-online-conference-2025/) / [Slides](https://docs.google.com/presentation/d/1Gk_m8Y6AVV6JYqsH9sKD30jO0ha4OQH0S8DB0DfvWHk/edit?usp=sharing) / 无回放
+
 ### Agents on Mobile 2025
 
-Google Devfest Shenzhen / GDG 深圳 / 2025-11 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / 无回放
+Google Devfest Taipei&Shenzhen / GDG 台北&深圳 / 2025-11 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / 无回放
 
 ### [Google On-device AI 演进路线图: 从技术生态到个人助理](https://www.bilibili.com/video/BV12yWuz2Exw)
 

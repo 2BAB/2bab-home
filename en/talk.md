@@ -2,9 +2,13 @@
 layout: page
 ---
 
+### Open AIDoc - Maintaining 4000+ doc translations using Gemini
+
+In Mandarin / Kotlin Online Conf 2025 / JetBrains / Dec 2025 / [Event Intro](https://blog.jetbrains.com/zh-hans/kotlin/2025/11/kotlin-online-conference-2025/) / [Slides](https://docs.google.com/presentation/d/1Gk_m8Y6AVV6JYqsH9sKD30jO0ha4OQH0S8DB0DfvWHk/edit?usp=sharing) / No replay provided
+
 ### Agents on Mobile 2025
 
-In Mandarin / Google Devfest Shenzhen / GDG Shenzhen / Nov 2025 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / No replay provided
+In Mandarin / Google Devfest Taipei&Shenzhen / GDG Taipei&Shenzhen / Nov 2025 / [Event Intro](https://gdg.community.dev/events/details/google-gdg-shenzhen-presents-shenzhen-gdg-devfest-2025-building-with-google-ai-and-cloud/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2025-11-Agents-on-Mobile-2025)  / No replay provided
 
 ### [Google's On-device AI Roadmap: From Ecosystem to Personal Assistant](https://www.bilibili.com/video/BV12yWuz2Exw)
 
