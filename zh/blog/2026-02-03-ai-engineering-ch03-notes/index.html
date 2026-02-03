@@ -1,0 +1,590 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="《AI Engineering》笔记 CH03 Evaluation Methodology" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2026-02-03-ai-engineering-ch03-notes/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>《AI Engineering》笔记 CH03 Evaluation Methodology | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>《AI Engineering》笔记 CH03 Evaluation Methodology</h1>
+    <div class="italic text-gray-500">
+      2026/02/03
+    </div>
+    <div>
+      <h2 id="cross-entropy-%E5%92%8C-perplexity" tabindex="-1">Cross Entropy 和 Perplexity</h2>
+<p>这两个概念是机器学习（特别是 NLP）中最基础、最核心的**“跑分指标”**。</p>
+<p>作为 Android 工程师，你可以把它们理解为**“衡量模型预测准不准的 Unit Test 报错信息”**。</p>
+<p>它们俩其实说的是同一件事，只是单位不同。我们一个一个来看：</p>
+<hr>
+<h3 id="1.-cross-entropy-(%E4%BA%A4%E5%8F%89%E7%86%B5)-%E2%80%94%E2%80%94-%E2%80%9C%E9%94%99%E8%AF%AF%E6%83%A9%E7%BD%9A%E5%88%86%E2%80%9D" tabindex="-1">1. Cross Entropy (交叉熵) —— “错误惩罚分”</h3>
+<p><strong>一句话解释</strong>：模型预测的概率分布，跟真实答案的概率分布，差距有多大？</p>
+<ul>
+<li>
+<p><strong>场景模拟</strong>：
+假设你在写一个智能代码补全插件。
+你输入了 <code>System.out.</code>，真实答案（Ground Truth）应该是 <code>println</code>。</p>
+<ul>
+<li>
+<p><strong>模型 A (学霸)</strong>：</p>
+<ul>
+<li>预测 <code>println</code> 的概率：<strong>0.9</strong></li>
+<li>预测 <code>print</code> 的概率：0.09</li>
+<li>预测 <code>error</code> 的概率：0.01</li>
+<li><strong>Cross Entropy</strong>：<strong>很低</strong>（因为它很自信且猜对了）。</li>
+</ul>
+</li>
+<li>
+<p><strong>模型 B (学渣)</strong>：</p>
+<ul>
+<li>预测 <code>println</code> 的概率：<strong>0.3</strong> (它觉得也可能是别的)</li>
+<li>预测 <code>print</code> 的概率：0.3</li>
+<li>预测 <code>error</code> 的概率：0.4</li>
+<li><strong>Cross Entropy</strong>：<strong>较高</strong>（虽然猜对了，但它犹豫不决）。</li>
+</ul>
+</li>
+<li>
+<p><strong>模型 C (爆渣)</strong>：</p>
+<ul>
+<li>预测 <code>error</code> 的概率：<strong>0.9</strong> (它非常自信地猜错了)</li>
+<li>预测 <code>println</code> 的概率：<strong>0.01</strong></li>
+<li><strong>Cross Entropy</strong>：<strong>爆炸高</strong>（交叉熵会严厉惩罚“自信地胡说八道”）。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Android 类比</strong>：
+你可以把它看作是 <strong><code>DiffUtil</code> 计算出的差异值</strong>。</p>
+<ul>
+<li>真实列表（Reality）和预测列表（Prediction）之间的差异越大，这个值就越大。</li>
+<li>在训练模型时，我们的目标就是通过“梯度下降”算法，把这个 <strong>Loss (损失值)</strong> 降到最低。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2.-perplexity-(%E5%9B%B0%E6%83%91%E5%BA%A6-%2F-ppl)-%E2%80%94%E2%80%94-%E2%80%9C%E5%80%99%E9%80%89%E6%95%B0%E9%87%8F%E2%80%9D" tabindex="-1">2. Perplexity (困惑度 / PPL) —— “候选数量”</h3>
+<p><strong>一句话解释</strong>：模型在预测下一个词时，平均有多少个“候选”让它感到纠结？</p>
+<p>Perplexity 是 Cross Entropy 的指数形式（$e^{\text{Cross Entropy}}$），它更直观，更像人话。</p>
+<ul>
+<li>
+<p><strong>场景模拟</strong>：
+还是代码补全 <code>System.out.</code>。</p>
+<ul>
+<li>
+<p><strong>Perplexity = 1</strong>：</p>
+<ul>
+<li>模型心里想：“这题我会！下一个词<strong>绝对</strong>是 <code>println</code>，没有其他可能！”</li>
+<li>这是完美状态，完全不困惑。</li>
+</ul>
+</li>
+<li>
+<p><strong>Perplexity = 10</strong>：</p>
+<ul>
+<li>模型心里想：“额……下一个词可能是 <code>println</code>，也可能是 <code>print</code>，或者是 <code>printf</code>……大概有 <strong>10 个</strong> 词我觉得都有可能，我得像掷骰子（10面骰）一样选一个。”</li>
+<li>这就比较困惑了。</li>
+</ul>
+</li>
+<li>
+<p><strong>Perplexity = 10000</strong>：</p>
+<ul>
+<li>模型心里想：“我完全看不懂你在写啥，字典里这 10000 个词我觉得都有可能。”</li>
+<li>这就是人工智障。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Android 类比</strong>：
+想象 Android Studio 的 <strong>代码提示弹窗 (Code Completion Popup)</strong>。</p>
+<ul>
+<li>当你打代码时，弹窗里列出了 <strong>5 个</strong> 候选词，说明 IDE 的 <strong>Perplexity $\approx$ 5</strong>。</li>
+<li>如果弹窗里列出了 <strong>100 个</strong> 候选词，说明 IDE 很困惑，<strong>Perplexity $\approx$ 100</strong>。</li>
+<li><strong>指标越低越好</strong>，说明模型越确定，弹窗越精准。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="%E6%80%BB%E7%BB%93" tabindex="-1">总结</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">指标</th>
+<th style="text-align:left">Cross Entropy (交叉熵)</th>
+<th style="text-align:left">Perplexity (困惑度)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>本质</strong></td>
+<td style="text-align:left"><strong>Loss Function (损失函数)</strong></td>
+<td style="text-align:left"><strong>Branching Factor (分支系数)</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>数学关系</strong></td>
+<td style="text-align:left">对数刻度 (Log scale)</td>
+<td style="text-align:left">线性刻度 (Linear scale)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>直观含义</strong></td>
+<td style="text-align:left">预测概率与真实答案的<strong>距离</strong></td>
+<td style="text-align:left">模型做选择时的<strong>纠结程度</strong> (备选数量)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Android 类比</strong></td>
+<td style="text-align:left"><code>DiffUtil</code> 的差异分数</td>
+<td style="text-align:left">代码补全弹窗里的<strong>候选词数量</strong></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>目标</strong></td>
+<td style="text-align:left"><strong>越低越好</strong> (接近 0)</td>
+<td style="text-align:left"><strong>越低越好</strong> (接近 1)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>为什么书里说它们很重要？</strong>
+因为在训练大模型（Pre-training）时，我们没法让人类去盯着每一个字看对不对。我们只能用这两个数学指标来监控训练进度：</p>
+<ul>
+<li>如果 <strong>Loss (Cross Entropy)</strong> 一直在降，说明模型正在“开窍”。</li>
+<li>如果 <strong>PPL (Perplexity)</strong> 降到了 10 以下，说明它已经能写出非常通顺的人话了。</li>
+</ul>
+<p>详细拆解：<strong>衡量大模型“基本功”的数学指标</strong>。</p>
+<p>作为 Android 工程师，你可以把这部分理解为：<strong>“在没有 QA 测试介入之前，如何通过 Log 和 单元测试 来判断底层的代码逻辑是否健壮。”</strong></p>
+<p>我为你拆解为三个核心模块：</p>
+<h3 id="1.-%E4%BF%A1%E6%81%AF%E8%AE%BA%E5%9F%BA%E7%A1%80%EF%BC%9Aentropy-(%E7%86%B5)-%E2%80%94%E2%80%94-%22%E5%8E%8B%E7%BC%A9%E7%8E%87%E4%B8%8E%E4%BF%A1%E6%81%AF%E9%87%8F%22" tabindex="-1">1. 信息论基础：Entropy (熵) —— &quot;压缩率与信息量&quot;</h3>
+<p><strong>第二页 (Figure 3-4)</strong> 用一个正方形的例子解释了什么是熵。</p>
+<ul>
+<li><strong>概念</strong>：熵衡量的是**“不确定性”<strong>或者</strong>“信息量”**。
+<ul>
+<li>如果一个语言只有 2 个词（图 a），你只需要 1 bit ($2^1=2$) 就能区分它们。</li>
+<li>如果一个语言有 4 个词（图 b），你需要 2 bits ($2^2=4$) 就能区分它们。</li>
+</ul>
+</li>
+<li><strong>结论</strong>：<strong>可能性越多，熵越高，预测下一个词就越难。</strong></li>
+<li><strong>Android 类比</strong>：<strong>APK 压缩</strong>。
+<ul>
+<li>如果你的代码全是重复的 <code>00000</code>（低熵），Zip 压缩率极高，体积很小。</li>
+<li>如果你的代码全是随机乱码（高熵），Zip 根本压不动，体积很大。</li>
+<li>模型训练的目标，就是试图找到数据背后的规律，把“高熵”的乱码变成“低熵”的可预测数据。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E6%A0%B8%E5%BF%83%E6%8C%87%E6%A0%87%EF%BC%9Across-entropy-(%E4%BA%A4%E5%8F%89%E7%86%B5)-%26-bpc%2Fbpb" tabindex="-1">2. 核心指标：Cross Entropy (交叉熵) &amp; BPC/BPB</h3>
+<p><strong>第三页</strong> 介绍了训练模型时最常用的 Loss Function。</p>
+<ul>
+<li>
+<p><strong>Cross Entropy (交叉熵)</strong>：</p>
+<ul>
+<li><strong>定义</strong>：衡量“模型预测的概率分布”与“真实数据的概率分布”之间的距离。</li>
+<li><strong>公式</strong>：$H(P, Q)$。$P$ 是真理，$Q$ 是模型的猜测。</li>
+<li><strong>Android 类比</strong>：<strong><code>assertEquals(expected, actual)</code></strong>。
+<ul>
+<li>训练过程就是不断运行这个 Assert，如果 <code>actual</code> 和 <code>expected</code> 差得远，就狠狠惩罚模型（反向传播），逼它改参数。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>BPC (Bits-per-Character) / BPB (Bits-per-Byte)</strong>：</p>
+<ul>
+<li><strong>痛点</strong>：不同的模型切词（Tokenization）方式不一样。有的模型一个 Token 是一个单词，有的是一个字母。直接比 Loss 不公平。</li>
+<li><strong>解决</strong>：大家统一换算成“每个字符/每个字节”包含多少 bit 信息。</li>
+<li><strong>Android 类比</strong>：<strong><code>dp</code> (Density-independent Pixels)</strong>。
+<ul>
+<li>不同手机屏幕密度（Tokenization）不一样，不能直接用 <code>px</code> (Loss) 对比。</li>
+<li>必须换算成 <code>dp</code> (BPC/BPB)，才能在不同设备间公平比较 UI 大小。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="3.-%E7%9B%B4%E8%A7%82%E6%8C%87%E6%A0%87%EF%BC%9Aperplexity-(%E5%9B%B0%E6%83%91%E5%BA%A6-%2F-ppl)" tabindex="-1">3. 直观指标：Perplexity (困惑度 / PPL)</h3>
+<p><strong>第四、五页</strong> 讲了这个最著名的指标。</p>
+<ul>
+<li>
+<p><strong>定义</strong>：熵的指数形式 ($e^{\text{entropy}}$)。</p>
+</li>
+<li>
+<p><strong>直观理解</strong>：<strong>“加权后的备胎数量”</strong>。</p>
+<ul>
+<li><strong>PPL = 1</strong>：模型极其自信，它觉得下一个词只有 <strong>1种</strong> 可能。</li>
+<li><strong>PPL = 100</strong>：模型很困惑，它觉得下一个词有 <strong>100种</strong> 可能，它得从中瞎蒙一个。</li>
+</ul>
+</li>
+<li>
+<p><strong>规律</strong>：</p>
+<ul>
+<li><strong>上下文越长，PPL 越低</strong>：读了上半句，猜下半句就容易了。</li>
+<li><strong>模型越大，PPL 越低</strong>（Table 3-1）：脑容量大的模型（1.5B）比小的（117M）猜得更准。</li>
+</ul>
+</li>
+<li>
+<p><strong>Android 类比</strong>：<strong>代码补全的候选列表</strong>。</p>
+<ul>
+<li>你在 Android Studio 里打 <code>Re</code>。</li>
+<li>如果 IDE 极其聪明，直接补全 <code>RecyclerView</code>，此时 <strong>PPL $\approx$ 1</strong>。</li>
+<li>如果 IDE 很笨，弹出一个列表列了 50 个以 Re 开头的类让你选，此时 <strong>PPL $\approx$ 50</strong>。</li>
+</ul>
+</li>
+</ul>
+<h3 id="4.-%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%9A%84%E9%99%B7%E9%98%B1%EF%BC%9Appl-%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7%EF%BC%88%E7%AC%AC%E4%BA%94%E9%A1%B5-warning%EF%BC%89" tabindex="-1">4. 工程师的陷阱：PPL 的局限性（第五页 Warning）</h3>
+<p>这一段非常关键，解释了为什么我们不能只看 PPL。</p>
+<ul>
+<li><strong>陷阱</strong>：<strong>PPL 低 $\neq$ 聊天能力强</strong>。</li>
+<li><strong>现象</strong>：
+<ul>
+<li>经过 <strong>SFT (指令微调)</strong> 和 <strong>RLHF (人类反馈)</strong> 的模型（如 ChatGPT），其 PPL 通常比原始基座模型（Base Model）<strong>更高（更差）</strong>。</li>
+</ul>
+</li>
+<li><strong>原因</strong>：
+<ul>
+<li>原始模型读的是互联网上的“自然语言”，它预测得很准。</li>
+<li>ChatGPT 被强行教导要“说话像个客服”，这种说话方式在互联网原始数据里并不常见（分布偏移）。</li>
+<li>所以从统计学角度看，ChatGPT 对“下一个词”的预测能力反而下降了，但它对“人类指令”的理解能力上升了。</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：
+<ul>
+<li><strong>Base Model</strong> 就像一个<strong>追求极致性能的 C++ 算法工程师</strong>，代码写得极快（PPL 低），但界面丑陋，用户没法用。</li>
+<li><strong>ChatGPT</strong> 就像一个<strong>注重体验的产品经理</strong>，虽然写代码慢一点（PPL 高），但他做出来的 App 界面友好，用户爱用。</li>
+<li><strong>结论</strong>：PPL 适合用来评估**预训练（Pre-training）<strong>阶段的质量，但不适合评估</strong>最终产品（Chatbot）**的好坏。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E6%80%BB%E7%BB%93-1" tabindex="-1">总结</h3>
+<p>这几页书是在教你如何看懂模型的“体检报告”：</p>
+<ol>
+<li><strong>Entropy</strong> 是基础理论。</li>
+<li><strong>Cross Entropy</strong> 是训练时的“鞭子”（Loss）。</li>
+<li><strong>Perplexity</strong> 是预训练时的“分数”（越低越好）。</li>
+<li><strong>但是</strong>，到了应用层（SFT/RLHF），别太迷信 PPL，要看实际疗效。</li>
+</ol>
+<h2 id="%E5%B8%B8%E7%94%A8%E7%9A%84-evaluation-%E6%96%B9%E6%B3%95" tabindex="-1">常用的 Evaluation 方法</h2>
+<p>它们从**“代码能不能跑”<strong>讲到了</strong>“意思对不对”**，涵盖了评估 AI 模型的几种硬核方法。</p>
+<p>作为 Android 工程师，你可以把这部分理解为：<strong>“从 Unit Test（单元测试）到 UI Screenshot Test（截图对比），再到 AI 辅助的语义断言。”</strong></p>
+<p>我为你拆解为三个核心层级：</p>
+<hr>
+<h3 id="1.-%E5%8A%9F%E8%83%BD%E6%AD%A3%E7%A1%AE%E6%80%A7-(functional-correctness)-%E2%80%94%E2%80%94-%22%E8%83%BD%E8%B7%91%E9%80%9A-unit-test-%E5%90%97%EF%BC%9F%22" tabindex="-1">1. 功能正确性 (Functional Correctness) —— &quot;能跑通 Unit Test 吗？&quot;</h3>
+<p><strong>第二、三页</strong> 讲的是最客观、最硬核的评估标准，主要用于<strong>代码生成 (Code Generation)</strong> 任务。</p>
+<ul>
+<li><strong>核心逻辑</strong>：
+<ul>
+<li>别管 AI 生成的代码长得漂不漂亮，缩进对不对。</li>
+<li><strong>直接跑一下！</strong> (Execution Accuracy)</li>
+<li>如果 AI 写了一个 <code>gcd(a, b)</code> 函数，我们就输入 <code>(15, 20)</code>，看它返不返回 <code>5</code>。</li>
+</ul>
+</li>
+<li><strong>Pass@k 指标</strong>：
+<ul>
+<li><strong>背景</strong>：AI 是有随机性的。有时候第一次写错了，第二次就写对了。</li>
+<li><strong>定义</strong>：让 AI 对同一个问题生成 $k$ 个不同的代码版本（比如 10 个）。只要这 10 个里<strong>有 1 个</strong>能通过单元测试，就算它通过。</li>
+<li><strong>Android 类比</strong>：<strong>Flaky Test 的重试机制</strong>。
+<ul>
+<li>CI 上跑测试挂了？不要紧，Retry 3 次，只要有一次绿了，就当它过了。</li>
+<li><code>pass@1</code> = 一次过。</li>
+<li><code>pass@10</code> = 允许试错 10 次。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2.-%E6%9C%BA%E6%A2%B0%E5%8C%B9%E9%85%8D%EF%BC%9Aexact-match-%26-lexical-similarity-%E2%80%94%E2%80%94-%22string.equals()-%E4%B8%8E-diff%22" tabindex="-1">2. 机械匹配：Exact Match &amp; Lexical Similarity —— &quot;String.equals() 与 Diff&quot;</h3>
+<p><strong>第四、五、六页</strong> 开始讨论非代码类的文本评估（比如翻译、摘要）。</p>
+<h4 id="a.-exact-match-(%E7%B2%BE%E7%A1%AE%E5%8C%B9%E9%85%8D)" tabindex="-1">A. Exact Match (精确匹配)</h4>
+<ul>
+<li><strong>定义</strong>：AI 输出的字符串必须和标准答案（Reference）<strong>一模一样</strong>。</li>
+<li><strong>场景</strong>：数学题（答案是 &quot;5&quot;）、多选题（答案是 &quot;C&quot;）。</li>
+<li><strong>Android 类比</strong>：<strong><code>Assert.assertEquals(expected, actual)</code></strong>。
+<ul>
+<li>差一个标点符号，或者多一个空格，测试直接 Fail。</li>
+<li>这对于开放式对话（Open-ended text）来说太严苛了。</li>
+</ul>
+</li>
+</ul>
+<h4 id="b.-lexical-similarity-(%E8%AF%8D%E6%B3%95%E7%9B%B8%E4%BC%BC%E5%BA%A6)" tabindex="-1">B. Lexical Similarity (词法相似度)</h4>
+<ul>
+<li><strong>定义</strong>：计算 AI 输出的句子和标准答案有多少<strong>重叠的单词</strong>。</li>
+<li><strong>指标</strong>：
+<ul>
+<li><strong>BLEU / ROUGE</strong>：这些是 NLP 界的经典指标。它们计算 <strong>n-gram</strong>（连续的 n 个词）的重合率。</li>
+<li><strong>Edit Distance (编辑距离)</strong>：把 AI 的句子改成标准答案需要几步（增删改）。</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：<strong><code>git diff</code></strong> 或者 <strong>Lint 检查</strong>。
+<ul>
+<li>它只在乎“字”一不一样，不在乎“意思”对不对。</li>
+</ul>
+</li>
+<li><strong>致命缺陷（图 3-5 Big Ben 案例）</strong>：
+<ul>
+<li><strong>标准答案</strong>：“繁忙街道上的车流，背景是钟楼。”</li>
+<li><strong>AI 回答</strong>：“大本钟和议会大厦的夜景。”</li>
+<li><strong>结果</strong>：虽然 AI 说得很对（语义正确），但因为用的词跟标准答案完全不一样（Lexical 不同），BLEU 分数会非常低。</li>
+<li><strong>反例</strong>：&quot;Let's eat, grandma&quot;（吃饭）和 &quot;Let's eat grandma&quot;（吃人）。词法相似度 99%，但意思完全相反。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3.-%E8%AF%AD%E4%B9%89%E5%8C%B9%E9%85%8D%EF%BC%9Asemantic-similarity-%E2%80%94%E2%80%94-%22%E5%90%91%E9%87%8F%E5%8C%96%E5%AF%B9%E6%AF%94%22" tabindex="-1">3. 语义匹配：Semantic Similarity —— &quot;向量化对比&quot;</h3>
+<p><strong>第七页</strong> 提出了终极解决方案。</p>
+<ul>
+<li><strong>定义</strong>：不看字面，看<strong>意思</strong>（Semantics）。</li>
+<li><strong>技术实现：Embedding (嵌入)</strong>。
+<ul>
+<li>把 AI 的回答转成一个向量（Vector A）。</li>
+<li>把标准答案转成一个向量（Vector B）。</li>
+<li>计算这两个向量的 <strong>Cosine Similarity (余弦相似度)</strong>。</li>
+</ul>
+</li>
+<li><strong>优势</strong>：
+<ul>
+<li>&quot;The cat sits on the mat&quot; 和 &quot;A feline is resting on the rug&quot;。</li>
+<li>这两个句子单词完全不同（Lexical Similarity $\approx$ 0），但向量距离非常近（Semantic Similarity $\approx$ 1）。</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：<strong>图片相似度对比</strong>。
+<ul>
+<li>你不能逐个像素对比（Exact Match），因为压缩算法会导致像素值微变。</li>
+<li>你需要提取图片的<strong>特征指纹</strong>（Embedding），然后对比指纹的相似度。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E6%80%BB%E7%BB%93-2" tabindex="-1">总结</h3>
+<p>这几页书展示了 AI 评估方法的进化史：</p>
+<ol>
+<li><strong>Functional Correctness</strong>：<strong>Unit Test</strong>。最准，但只能测代码。</li>
+<li><strong>Exact Match</strong>：<strong>String.equals()</strong>。太死板，只能测选择题。</li>
+<li><strong>Lexical Similarity (BLEU/ROUGE)</strong>：<strong>Diff</strong>。只看字面，容易误判（吃奶奶 vs 吃饭）。</li>
+<li><strong>Semantic Similarity (Embedding)</strong>：<strong>AI 裁判</strong>。看懂意思，是目前最主流的评估非结构化文本的方法。</li>
+</ol>
+<h2 id="ai-as-a-judge" tabindex="-1">AI as a Judge</h2>
+<p>这 10 页书是目前 AI 工程化中最热门、最实用的领域：<strong>AI as a Judge（用 AI 当裁判）</strong>。</p>
+<p>作为 Android 工程师，你肯定熟悉 <strong>CI/CD（持续集成）</strong>。
+以前，代码写完了，要靠 QA 人工点点点（Human Evaluation）。
+后来，我们写了 Unit Test 和 UI Test，让机器自动跑测试（Code-based Evaluation）。
+现在，对于“写诗”、“聊天”这种没有标准答案的功能，我们<strong>用 GPT-4 来给 Llama-2 写的诗打分</strong>。这就是 <strong>AI as a Judge</strong>。</p>
+<p>我为你拆解为四个核心模块：</p>
+<hr>
+<h3 id="1.-%E6%A0%B8%E5%BF%83%E6%A8%A1%E5%BC%8F%EF%BC%9A%E4%B8%89%E7%A7%8D%E8%A3%81%E5%88%A4%E6%89%93%E5%88%86%E6%B3%95%EF%BC%88%E5%9B%BE-3%EF%BC%89" tabindex="-1">1. 核心模式：三种裁判打分法（图 3）</h3>
+<p>书中列举了三种让 AI 裁判干活的方式，这跟 Android 测试非常像：</p>
+<ul>
+<li><strong>模式 A：单点评分 (Single-point Grading)</strong>
+<ul>
+<li><strong>Prompt</strong>：“请给这段回复打分（1-5分），标准是是否有礼貌。”</li>
+<li><strong>Android 类比</strong>：<strong>Lint 检查 / SonarQube</strong>。代码提交上去，系统自动扫描代码质量，给出一个“健康度分数”。</li>
+</ul>
+</li>
+<li><strong>模式 B：参考对比 (Reference-based)</strong>
+<ul>
+<li><strong>Prompt</strong>：“标准答案是 A，AI 生成的是 B，请问 B 的意思和 A 一样吗？（True/False）”</li>
+<li><strong>Android 类比</strong>：<strong>Snapshot Testing (截图对比测试)</strong>。UI 跑出来的截图（B）和设计稿/基准图（A）对比，看像素差异大不大。</li>
+</ul>
+</li>
+<li><strong>模式 C：成对比较 (Pairwise Comparison)</strong>
+<ul>
+<li><strong>Prompt</strong>：“针对这个问题，回答 A 和回答 B，哪个更好？”</li>
+<li><strong>Android 类比</strong>：<strong>A/B Testing</strong>。你不知道哪个 UI 更好，所以你把两个版本都发出去，看哪个转化率高。这里只是把“用户”换成了“GPT-4”。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2.-%E8%A3%81%E5%88%A4%E7%9A%84%E5%81%8F%E8%A7%81-(biases)-%E2%80%94%E2%80%94-%22%E6%9C%BA%E5%99%A8%E4%B9%9F%E6%9C%89%E7%A7%81%E5%BF%83%22%EF%BC%88%E5%9B%BE-7%EF%BC%89" tabindex="-1">2. 裁判的偏见 (Biases) —— &quot;机器也有私心&quot;（图 7）</h3>
+<p>这是这一章最精彩的部分。你以为 AI 是客观的？错，AI 裁判有很多**“人类的臭毛病”**。</p>
+<ul>
+<li><strong>Verbosity Bias (话痨偏见)</strong>：
+<ul>
+<li><strong>现象</strong>：AI 裁判倾向于给<strong>更长</strong>的回答打高分，哪怕它是废话连篇。</li>
+<li><strong>Android 类比</strong>：<strong>KPI 考核代码行数</strong>。有些公司觉得写 1000 行代码的程序员比写 100 行的厉害，实际上可能 100 行的那个重构能力更强。</li>
+</ul>
+</li>
+<li><strong>Self-bias (自恋偏见)</strong>：
+<ul>
+<li><strong>现象</strong>：GPT-4 往往觉得 GPT-4 生成的答案最好，Claude 觉得 Claude 最好。</li>
+<li><strong>Android 类比</strong>：<strong>&quot;Not Invented Here&quot; (非我所创综合症)</strong>。程序员总觉得别人的代码写得烂，只有自己写的才是最优雅的。</li>
+</ul>
+</li>
+<li><strong>Position Bias (位置偏见)</strong>：
+<ul>
+<li><strong>现象</strong>：在成对比较中，AI 往往倾向于选<strong>第一个</strong>出现的答案（或者最后一个）。</li>
+<li><strong>Android 类比</strong>：<strong>列表的点击率</strong>。用户总是习惯性点击 RecyclerView 的第一个 Item。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="3.-%E8%A3%81%E5%88%A4%E7%9A%84%E8%B5%84%E6%A0%BC%EF%BC%9A%E8%B0%81%E8%83%BD%E5%BD%93%E8%A3%81%E5%88%A4%EF%BC%9F%EF%BC%88%E5%9B%BE-8-%26-9%EF%BC%89" tabindex="-1">3. 裁判的资格：谁能当裁判？（图 8 &amp; 9）</h3>
+<ul>
+<li><strong>强带弱 (Stronger Judge)</strong>：
+<ul>
+<li>用 GPT-4 去评测 Llama-7B。这是最稳的。</li>
+<li><em>类比</em>：<strong>Senior 工程师 Review Junior 的代码</strong>。</li>
+</ul>
+</li>
+<li><strong>弱带强 (Weaker Judge)</strong>：
+<ul>
+<li>用一个小模型去评测 GPT-4。这很难，但在特定领域（比如只看有没有脏话）是可行的。</li>
+<li><em>类比</em>：<strong>实习生检查代码格式</strong>。虽然实习生不懂架构，但他能检查你有没有写注释。</li>
+</ul>
+</li>
+<li><strong>自我反思 (Self-Critique)</strong>：
+<ul>
+<li>让模型自己评价自己：“我刚才算的对吗？”</li>
+<li><em>类比</em>：<strong>Double Check</strong>。写完代码自己再读一遍。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="4.-%E4%B8%93%E7%94%A8%E8%A3%81%E5%88%A4%E6%A8%A1%E5%9E%8B-(specialized-judges)" tabindex="-1">4. 专用裁判模型 (Specialized Judges)</h3>
+<p>为了省钱（GPT-4 太贵了），业界训练了一些<strong>专门用来打分的小模型</strong>（图 9 &amp; 10）。</p>
+<ul>
+<li><strong>PandaLM / JudgeLM</strong>：
+<ul>
+<li>这些模型不会写诗，也不会写代码，但它们<strong>特别擅长挑刺</strong>。</li>
+<li>它们就像是<strong>专业的 QA 团队</strong>，虽然不会写代码，但找 Bug 一找一个准。</li>
+</ul>
+</li>
+<li><strong>Reward Model (奖励模型)</strong>：
+<ul>
+<li>比如 Google 的 <strong>Cappy</strong>。它只输出一个 0-1 的分数。</li>
+<li><em>类比</em>：<strong>CI 流水线上的脚本</strong>。它只告诉你 Build Success 还是 Fail，不负责帮你改代码。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E6%80%BB%E7%BB%93-3" tabindex="-1">总结</h3>
+<p><strong>AI as a Judge</strong> 是目前解决“大模型不好测”这个问题的最佳方案。</p>
+<p>对于 Android 工程师，这意味着：</p>
+<ol>
+<li>你不需要雇佣 100 个人来测试你的 AI App。</li>
+<li>你可以写一个脚本，调用 GPT-4 API，让它充当“虚拟用户”或“虚拟质检员”。</li>
+<li><strong>警惕</strong>：这个虚拟质检员可能喜欢听废话（话痨偏见），而且收费很贵（Token 成本），你需要像优化代码一样优化你的评测流水线。</li>
+</ol>
+<h2 id="comparative-evaluation" tabindex="-1">Comparative Evaluation</h2>
+<p>这最后 10 页书是本章的<strong>压轴大戏</strong>，也是目前 AI 圈最火的“打擂台”机制——<strong>Comparative Evaluation (比较评估)</strong>。</p>
+<p>作为 Android 工程师，你可以把这部分理解为：<strong>“从单纯的 Unit Test（跑分），进化到了 Multiplayer Ranked Match（多人排位赛/天梯系统）。”</strong></p>
+<p>我为你拆解为三个核心模块：</p>
+<h3 id="1.-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E2%80%9C%E6%89%93%E6%93%82%E5%8F%B0%E2%80%9D%EF%BC%9F(pointwise-vs.-comparative)" tabindex="-1">1. 为什么要“打擂台”？(Pointwise vs. Comparative)</h3>
+<p><strong>第一页 (Figure 3-9)</strong> 和 <strong>第二页</strong> 解释了两种评估哲学的区别。</p>
+<ul>
+<li>
+<p><strong>Pointwise Evaluation (单点评估)</strong>：</p>
+<ul>
+<li><strong>做法</strong>：给每个模型打分（1-100分）。</li>
+<li><strong>缺点</strong>：很难标准化。评委 A 的 80 分可能等于评委 B 的 60 分。</li>
+<li><strong>Android 类比</strong>：<strong>Google Play 的星级评分</strong>。有的用户觉得 4 星是好评，有的觉得 4 星是差评，标准不统一。</li>
+</ul>
+</li>
+<li>
+<p><strong>Comparative Evaluation (比较评估)</strong>：</p>
+<ul>
+<li><strong>做法</strong>：不打分，只让两个模型 PK。问评委：“A 和 B 谁更好？”</li>
+<li><strong>优点</strong>：人（或 AI）非常擅长做“二选一”，这比打分容易得多，也准确得多。</li>
+<li><strong>Android 类比</strong>：<strong>A/B Testing</strong>。你不需要问用户“你给新 UI 打几分”，你只需要看“新 UI 的点击率是不是比旧 UI 高”。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E5%A4%A9%E6%A2%AF%E7%AE%97%E6%B3%95%EF%BC%9Aelo-rating-%26-win-rate" tabindex="-1">2. 天梯算法：Elo Rating &amp; Win Rate</h3>
+<p><strong>第四、五页</strong> 展示了如何把“PK 结果”变成“排行榜”。</p>
+<ul>
+<li><strong>Win Rate (胜率矩阵)</strong>：
+<ul>
+<li>看 <strong>Table 3-6</strong>。它统计了 Model 1 和 Model 2 打了 1000 场，赢了 900 场，胜率 90%。</li>
+</ul>
+</li>
+<li><strong>Elo Rating / Bradley-Terry 模型</strong>：
+<ul>
+<li>这是从<strong>国际象棋</strong>和<strong>电子竞技</strong>里借来的算法。</li>
+<li>如果一个弱队（Llama-7B）赢了一个强队（GPT-4），它的积分会暴涨。</li>
+<li><strong>LMSYS Chatbot Arena</strong>：这是目前全球公认最权威的大模型排行榜，用的就是这套逻辑。</li>
+<li><strong>Android 类比</strong>：<strong>王者荣耀/LOL 的排位分 (MMR)</strong>。你不需要知道每个玩家的具体“战斗力数值”，你只需要通过他们互相 PK 的输赢，就能算出谁是王者，谁是青铜。</li>
+</ul>
+</li>
+</ul>
+<h3 id="3.-%E6%AF%94%E8%BE%83%E8%AF%84%E4%BC%B0%E7%9A%84%E5%9B%9B%E5%A4%A7%E5%9D%91-(challenges)" tabindex="-1">3. 比较评估的四大坑 (Challenges)</h3>
+<p>虽然“打擂台”很爽，但书中（第六至九页）列出了它的致命弱点：</p>
+<h4 id="a.-%E4%BC%A0%E9%80%92%E6%80%A7%E5%A4%B1%E6%95%88-(non-transitivity)-%E2%80%94%E2%80%94-%22%E5%89%AA%E5%88%80%E7%9F%B3%E5%A4%B4%E5%B8%83%22" tabindex="-1">A. 传递性失效 (Non-transitivity) —— &quot;剪刀石头布&quot;</h4>
+<ul>
+<li><strong>理论</strong>：如果 A &gt; B，B &gt; C，那么理应 A &gt; C。</li>
+<li><strong>现实</strong>：AI 模型可能会出现 <strong>A 赢 B，B 赢 C，但 C 赢 A</strong> 的情况。</li>
+<li><strong>原因</strong>：不同的模型擅长不同的领域（有的擅长写代码，有的擅长写小说）。</li>
+<li><strong>Android 类比</strong>：<strong>兼容性测试</strong>。App 在 Pixel 上跑得比三星好，在三星上比小米好，但这不代表在 Pixel 上一定比小米好（可能小米魔改了某个底层机制恰好兼容了）。</li>
+</ul>
+<h4 id="b.-%E7%BB%9D%E5%AF%B9%E6%80%A7%E8%83%BD%E7%9B%B2%E5%8C%BA-(absolute-performance)" tabindex="-1">B. 绝对性能盲区 (Absolute Performance)</h4>
+<ul>
+<li><strong>问题</strong>：比较评估只能告诉你 <strong>B 比 A 好</strong>，但没告诉你 <strong>B 到底好不好</strong>。</li>
+<li><strong>场景</strong>：
+<ul>
+<li>情况 1：A 是垃圾，B 稍微好一点的垃圾。</li>
+<li>情况 2：A 是大神，B 是超级大神。</li>
+<li>在排行榜上，B 都在 A 上面，但你不知道它们是垃圾还是大神。</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：<strong>矮子里拔将军</strong>。你有两个 crash 率很高的版本，V2 比 V1 稍微稳定一点点，但这不代表 V2 就是一个合格的 Release 版本。</li>
+</ul>
+<h4 id="c.-%E6%8F%90%E7%A4%BA%E8%AF%8D%E6%B1%A1%E6%9F%93-(prompt-quality)" tabindex="-1">C. 提示词污染 (Prompt Quality)</h4>
+<ul>
+<li><strong>问题</strong>：LMSYS 这种公开竞技场，很多用户输入的 Prompt 都是 &quot;Hi&quot;, &quot;Hello&quot; 这种没营养的词。</li>
+<li><strong>结果</strong>：导致排行榜反映的是“谁闲聊能力强”，而不是“谁解决复杂问题能力强”。</li>
+</ul>
+<h3 id="4.-%E5%85%A8%E7%AB%A0%E6%80%BB%E7%BB%93-(summary)-%26-%E5%BD%A9%E8%9B%8B" tabindex="-1">4. 全章总结 (Summary) &amp; 彩蛋</h3>
+<p><strong>最后一页</strong> 总结了 Chapter 3 的核心路径，也是你学习 AI 评估的<strong>最佳路线图</strong>：</p>
+<ol>
+<li><strong>基础指标</strong>：看 <strong>Perplexity (困惑度)</strong>，但这只是参考。</li>
+<li><strong>硬指标</strong>：看 <strong>Functional Correctness (单元测试)</strong>，能不能跑通代码。</li>
+<li><strong>软指标</strong>：用 <strong>Embedding</strong> 算语义相似度，或者用 <strong>AI as a Judge</strong>（让 GPT-4 当裁判）。</li>
+<li><strong>终极指标</strong>：<strong>Human Evaluation (人类评估)</strong> 还是金标准，但太贵太慢，所以我们用 <strong>Comparative Evaluation (打擂台)</strong> 来逼近人类的偏好。</li>
+</ol>
+<p><strong>彩蛋 (Footnote 4)</strong>：
+书中提到了 <strong>OpenAI o1 (September 2024)</strong> 和数学家 <strong>Terrence Tao (陶哲轩)</strong> 的评价。
+这说明这本书<strong>极度得新</strong>！它甚至覆盖到了 2024 年 9 月发布的最新模型（o1），这在出版物中是非常罕见的。这也印证了书中关于“Test Time Compute”的内容是目前最前沿的工程实践。</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
