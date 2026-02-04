@@ -2,7 +2,7 @@
 layout: post
 date: 2026-02-03
 title: "《AI Engineering》笔记 CH02 Foundation Models"
-tags: [kotlin, koin, sqldelight, ktor, coil, doc, ai, translation, post]
+tags: [ai, ai-engineering, post]
 ---
 
 ## Seq2Seq vs Transformer

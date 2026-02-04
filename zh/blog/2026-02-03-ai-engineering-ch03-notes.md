@@ -2,7 +2,7 @@
 layout: post
 date: 2026-02-03
 title: "《AI Engineering》笔记 CH03 Evaluation Methodology"
-tags: [kotlin, koin, sqldelight, ktor, coil, doc, ai, translation, post]
+tags: [ai, ai-engineering, post]
 ---
 
 ## Cross Entropy 和 Perplexity
