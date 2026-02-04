@@ -1,0 +1,543 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="《AI Engineering》笔记 CH06 RAG" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2026-02-03-ai-engineering-ch06-notes/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>《AI Engineering》笔记 CH06 RAG | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>《AI Engineering》笔记 CH06 RAG</h1>
+    <div class="italic text-gray-500">
+      2026/02/03
+    </div>
+    <div>
+      <h2 id="rag-%E7%9A%84%E5%9F%BA%E7%A1%80" tabindex="-1">RAG 的基础</h2>
+<h3 id="1.-%E4%BB%80%E4%B9%88%E6%98%AF-rag%EF%BC%9F%EF%BC%88%E7%AC%AC%E4%B8%80%E3%80%81%E4%BA%8C%E9%A1%B5%EF%BC%89" tabindex="-1">1. 什么是 RAG？（第一、二页）</h3>
+<ul>
+<li><strong>定义</strong>：<strong>检索增强生成</strong>。
+<ul>
+<li><strong>Retrieve (检索)</strong>：先去数据库里找相关文档。</li>
+<li><strong>Augment (增强)</strong>：把找到的文档塞进 Prompt 里。</li>
+<li><strong>Generate (生成)</strong>：让模型根据这些文档回答问题。</li>
+</ul>
+</li>
+<li><strong>为什么需要 RAG？</strong>
+<ol>
+<li><strong>知识更新</strong>：模型训练完就定型了（比如只知道 2023 年前的事），RAG 可以让它知道今天的新闻。</li>
+<li><strong>私有数据</strong>：模型不知道你们公司的内部文档，RAG 可以把文档喂给它。</li>
+<li><strong>减少幻觉</strong>：强迫模型“基于提供的上下文回答”，而不是瞎编。</li>
+</ol>
+</li>
+<li><strong>Android 类比</strong>：<strong>WebView vs Native</strong>。
+<ul>
+<li><strong>纯模型</strong> = <strong>Native App</strong>。发布后很难更新内容，包体积大。</li>
+<li><strong>RAG</strong> = <strong>WebView</strong>。内容在服务器上（数据库），随时更新，App 只是一个展示壳。</li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2.-%E6%A3%80%E7%B4%A2%E7%AE%97%E6%B3%95%E5%A4%A7%E6%AF%94%E6%8B%BC%EF%BC%9A%E5%85%B3%E9%94%AE%E8%AF%8D-vs-%E5%90%91%E9%87%8F%EF%BC%88%E7%AC%AC%E4%B8%89%E8%87%B3%E5%85%AD%E9%A1%B5%EF%BC%89" tabindex="-1">2. 检索算法大比拼：关键词 vs 向量（第三至六页）</h3>
+<p>这是 RAG 的核心引擎。作者对比了两种检索方式。</p>
+<h4 id="a.-term-based-retrieval-(%E5%85%B3%E9%94%AE%E8%AF%8D%E6%A3%80%E7%B4%A2)-%E2%80%94%E2%80%94-%22sql-like-%E6%9F%A5%E8%AF%A2%22" tabindex="-1">A. Term-based Retrieval (关键词检索) —— &quot;SQL LIKE 查询&quot;</h4>
+<ul>
+<li><strong>代表算法</strong>：<strong>TF-IDF, BM25</strong>。</li>
+<li><strong>原理</strong>：数单词。
+<ul>
+<li>用户搜 &quot;AI Engineering&quot;。</li>
+<li>系统找包含 &quot;AI&quot; 和 &quot;Engineering&quot; 这两个词最多的文档。</li>
+</ul>
+</li>
+<li><strong>优点</strong>：<strong>精准匹配</strong>。搜人名、型号（如 &quot;Pixel 8 Pro&quot;）非常准。</li>
+<li><strong>缺点</strong>：<strong>不懂同义词</strong>。搜 &quot;小狗&quot;，找不到包含 &quot;汪星人&quot; 的文档。</li>
+<li><strong>Android 类比</strong>：<strong><code>String.contains()</code></strong> 或 <strong>FTS (Full Text Search)</strong>。</li>
+</ul>
+<h4 id="b.-embedding-based-retrieval-(%E5%90%91%E9%87%8F%E6%A3%80%E7%B4%A2)-%E2%80%94%E2%80%94-%22%E8%AF%AD%E4%B9%89%E6%90%9C%E7%B4%A2%22" tabindex="-1">B. Embedding-based Retrieval (向量检索) —— &quot;语义搜索&quot;</h4>
+<ul>
+<li><strong>代表算法</strong>：<strong>Dense Retrieval (HNSW, FAISS)</strong>。</li>
+<li><strong>原理</strong>：算距离。
+<ul>
+<li>把 &quot;小狗&quot; 转成向量 <code>[0.1, 0.9]</code>。</li>
+<li>把 &quot;汪星人&quot; 转成向量 <code>[0.12, 0.88]</code>。</li>
+<li>算出它俩距离很近，所以能搜出来。</li>
+</ul>
+</li>
+<li><strong>优点</strong>：<strong>懂语义</strong>。搜 &quot;怎么做披萨&quot;，能找到 &quot;意大利面食烹饪指南&quot;。</li>
+<li><strong>缺点</strong>：<strong>不精确</strong>。搜 &quot;Python 3.8&quot;，可能会给你 &quot;Python 3.9&quot; 的文档，因为它觉得这俩很像。</li>
+<li><strong>Android 类比</strong>：<strong>图片相似度搜索</strong>。</li>
+</ul>
+<hr>
+<h3 id="3.-%E6%B7%B7%E5%90%88%E6%A3%80%E7%B4%A2-(hybrid-search)-%E2%80%94%E2%80%94-%22%E6%9C%80%E4%BD%B3%E5%AE%9E%E8%B7%B5%22" tabindex="-1">3. 混合检索 (Hybrid Search) —— &quot;最佳实践&quot;</h3>
+<p><strong>第七、八页</strong> 提出了终极方案。</p>
+<ul>
+<li><strong>问题</strong>：
+<ul>
+<li>关键词检索不懂语义。</li>
+<li>向量检索不懂专有名词（比如错误码 <code>EADDRNOTAVAIL</code>）。</li>
+</ul>
+</li>
+<li><strong>解决</strong>：<strong>Hybrid Search (混合检索)</strong>。
+<ul>
+<li>同时跑一遍 BM25（关键词）和 FAISS（向量）。</li>
+<li>把两边的结果加权合并（Rerank）。</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：<strong>多级缓存策略</strong>。
+<ul>
+<li>先查内存缓存（快但少），再查磁盘缓存（慢但多），最后查网络。把所有结果整合后展示给用户。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E6%80%BB%E7%BB%93" tabindex="-1">总结</h3>
+<p>这一节给 Android 工程师的启示：</p>
+<ol>
+<li><strong>RAG 是必修课</strong>：如果你想做“基于文档的问答”或“企业知识库”，RAG 是唯一解。</li>
+<li><strong>不要迷信向量数据库</strong>：向量搜索（Vector Search）很火，但它不是万能的。对于精确匹配（搜名字、ID），老派的关键词搜索（BM25/Elasticsearch）反而更好用。</li>
+<li><strong>架构图 (Figure 6-2)</strong>：
+<ul>
+<li><strong>Retriever</strong> = <code>ContentProvider</code> / <code>Dao</code>。</li>
+<li><strong>Generator</strong> = <code>ViewModel</code> 处理逻辑。</li>
+<li><strong>Prompt</strong> = <code>UI State</code>。</li>
+</ul>
+</li>
+</ol>
+<h2 id="%E5%B7%A5%E7%A8%8B%E6%B5%81%E7%A8%8B%E5%92%8C%E4%BC%98%E5%8C%96" tabindex="-1">工程流程和优化</h2>
+<p>纯粹从**AI 工程化（AI Engineering）<strong>和</strong>信息检索（Information Retrieval）**的技术角度，详细解析这四块核心内容。</p>
+<p>这几页书主要讲述了如何构建一个高性能、高准确率的 RAG（检索增强生成）系统。</p>
+<h3 id="%E7%AC%AC%E4%B8%80%E5%9D%97%EF%BC%9A%E5%90%91%E9%87%8F%E6%95%B0%E6%8D%AE%E5%BA%93%E4%B8%8E%E7%B4%A2%E5%BC%95-(vector-database-%26-indexing)" tabindex="-1">第一块：向量数据库与索引 (Vector Database &amp; Indexing)</h3>
+<p>这一部分解决的是**“在大规模数据中如何快速找到相似向量”**的问题。</p>
+<p>当数据量达到百万或亿级时，暴力计算（逐一计算查询向量与库中所有向量的距离）是不可行的。因此，我们需要引入 <strong>ANN（Approximate Nearest Neighbor，近似最近邻）</strong> 算法，通过牺牲极小精度的代价换取检索速度的数量级提升。</p>
+<p>书中重点介绍了以下几种核心索引技术：</p>
+<ol>
+<li>
+<p><strong>HNSW (Hierarchical Navigable Small World)</strong></p>
+<ul>
+<li><strong>机制</strong>：基于图（Graph）的算法。它构建了一个多层的图结构（类似跳表）。最上层是稀疏的节点，用于快速定位大概区域；越往下层节点越密集，用于精确定位。</li>
+<li><strong>特点</strong>：这是目前<strong>性能最强、最主流</strong>的算法。它的查询速度极快，召回率（Recall）很高。</li>
+<li><strong>代价</strong>：构建索引慢，且内存占用较高。</li>
+</ul>
+</li>
+<li>
+<p><strong>IVF (Inverted File Index，倒排文件索引)</strong></p>
+<ul>
+<li><strong>机制</strong>：基于聚类（Clustering）的算法。它使用 K-Means 将向量空间划分为多个“簇”（Voronoi Cells）。</li>
+<li><strong>查询流程</strong>：查询时，先判断查询向量落在哪一个（或哪几个）簇附近，然后只扫描这几个簇里的向量，忽略其他所有数据。</li>
+<li><strong>特点</strong>：内存占用比 HNSW 低，构建速度快。</li>
+</ul>
+</li>
+<li>
+<p><strong>量化 (Quantization)</strong></p>
+<ul>
+<li><strong>目的</strong>：压缩向量体积，减少内存占用并加速计算。</li>
+<li><strong>Product Quantization (PQ)</strong>：将高维向量切分成多个低维子向量，分别进行聚类压缩。</li>
+<li><strong>Scalar Quantization (SQ)</strong>：将 32 位浮点数（float32）压缩为 8 位整数（int8）。这通常能将内存占用减少 4 倍，且精度损失在可接受范围内。</li>
+</ul>
+</li>
+</ol>
+<h3 id="%E7%AC%AC%E4%BA%8C%E5%9D%97%EF%BC%9A%E6%A3%80%E7%B4%A2%E4%BC%98%E5%8C%96%E4%B8%89%E6%9D%BF%E6%96%A7-(retrieval-optimization)" tabindex="-1">第二块：检索优化三板斧 (Retrieval Optimization)</h3>
+<p>仅仅有了向量数据库是不够的，为了让检索结果更准确，工程上通常采用以下三种策略：</p>
+<h4 id="1.-chunking-(%E5%88%87%E7%89%87%E7%AD%96%E7%95%A5)" tabindex="-1">1. Chunking (切片策略)</h4>
+<p>大模型无法一次性处理整本书，且长文本会导致检索精度下降（向量被稀释）。因此需要将文档切分为小块（Chunks）。</p>
+<ul>
+<li><strong>Fixed-size Chunking</strong>：按固定 Token 数（如 512 tokens）切分。简单但容易切断语义。</li>
+<li><strong>Overlap (重叠)</strong>：在切片之间保留重叠部分（如 50 tokens），防止一句话被切成两半导致语义丢失。</li>
+<li><strong>Recursive Chunking</strong>：按文档结构（段落 -&gt; 句子 -&gt; 词）递归切分，尽可能保持语义完整性。</li>
+<li><strong>权衡</strong>：
+<ul>
+<li><strong>块太小</strong>：检索精准，但缺乏上下文（模型不知道这句话的前因后果）。</li>
+<li><strong>块太大</strong>：包含太多无关噪音，导致检索准确率下降。</li>
+</ul>
+</li>
+</ul>
+<h4 id="2.-query-rewriting-(%E6%9F%A5%E8%AF%A2%E9%87%8D%E5%86%99)" tabindex="-1">2. Query Rewriting (查询重写)</h4>
+<p>用户的原始提问往往是不完整的或指代不明的。</p>
+<ul>
+<li><strong>问题</strong>：在多轮对话中，用户可能会问“它多少钱？”。如果直接拿“它多少钱”去检索，搜不到任何有用信息。</li>
+<li><strong>解决</strong>：利用 LLM 将用户的最新提问 + 历史对话上下文，重写为一个<strong>独立、完整</strong>的查询语句。
+<ul>
+<li><em>重写后</em>：“iPhone 15 Pro Max 256GB 版本多少钱？”</li>
+</ul>
+</li>
+<li><strong>HyDE (Hypothetical Document Embeddings)</strong>：一种高级重写技术。先让 LLM 生成一个“假设的答案”，然后用这个假设答案去检索文档。这通常比直接用问题检索效果更好。</li>
+</ul>
+<h4 id="3.-reranking-(%E9%87%8D%E6%8E%92%E5%BA%8F)" tabindex="-1">3. Reranking (重排序)</h4>
+<p>这是提升 RAG 效果最立竿见影的手段。</p>
+<ul>
+<li><strong>两阶段检索架构</strong>：
+<ol>
+<li><strong>召回 (Retrieval)</strong>：使用向量搜索（Bi-Encoder）快速从海量数据中捞出 Top 100 个相关文档。这一步速度快但精度一般。</li>
+<li><strong>重排 (Reranking)</strong>：使用 <strong>Cross-Encoder</strong> 模型对这 100 个文档与查询进行逐一精细比对打分，重新排序，只取 Top 5 给大模型。</li>
+</ol>
+</li>
+<li><strong>优势</strong>：Cross-Encoder 能理解复杂的语义关系，极大地提升了最终喂给大模型的信息质量。</li>
+</ul>
+<h3 id="%E7%AC%AC%E4%B8%89%E5%9D%97%EF%BC%9Acontextual-retrieval-(%E4%B8%8A%E4%B8%8B%E6%96%87%E6%A3%80%E7%B4%A2)" tabindex="-1">第三块：Contextual Retrieval (上下文检索)</h3>
+<p>这是 Anthropic 在 2024 年提出的解决“切片导致上下文丢失”的高级技术。</p>
+<ul>
+<li><strong>痛点</strong>：
+当文档被切成小块后，很多块失去了独立存在的意义。
+<ul>
+<li><em>例子</em>：一个切片内容是“公司营收增长了 50%”。</li>
+<li><em>检索失效</em>：如果用户搜“苹果公司 2023 年财报”，这个切片可能因为没有“苹果”和“2023”这两个关键词而被漏掉。</li>
+</ul>
+</li>
+<li><strong>解决方案</strong>：
+在建立索引阶段（Indexing），利用 LLM 为<strong>每一个切片</strong>生成一段简短的上下文说明，并将其拼接到切片内容的前面。
+<ul>
+<li><em>处理后的切片</em>：<strong>“【背景：这是苹果公司 2023 年 Q4 财务报告的营收部分】</strong> 公司营收增长了 50%。”</li>
+</ul>
+</li>
+<li><strong>结果</strong>：
+这个切片现在包含了关键的元数据（Metadata），无论用户搜细节还是搜背景，都能被精准命中。这显著提升了检索的召回率（Recall）。</li>
+</ul>
+<h3 id="%E7%AC%AC%E5%9B%9B%E5%9D%97%EF%BC%9A%E5%A4%9A%E6%A8%A1%E6%80%81-rag-(multimodal-rag)" tabindex="-1">第四块：多模态 RAG (Multimodal RAG)</h3>
+<p>RAG 不仅仅局限于文本，它正在向图像、音频扩展。</p>
+<ul>
+<li><strong>核心技术：CLIP (Contrastive Language-Image Pre-training)</strong>
+<ul>
+<li>CLIP 是一个能将<strong>文本</strong>和<strong>图像</strong>映射到<strong>同一个向量空间</strong>的模型。</li>
+<li>在这个空间里，“一只狗的照片”的向量和“a dog”这个单词的向量距离非常近。</li>
+</ul>
+</li>
+<li><strong>工作流程</strong>：
+<ol>
+<li><strong>索引</strong>：将知识库里的图片和文本都通过 CLIP 转化为向量存入数据库。</li>
+<li><strong>检索</strong>：
+<ul>
+<li>用户输入文本（如“飞屋环游记里的房子”），系统将其转为向量。</li>
+<li>在数据库中搜索与该文本向量距离最近的<strong>图片向量</strong>。</li>
+</ul>
+</li>
+<li><strong>生成</strong>：将检索到的图片和用户的文本问题，一起喂给多模态大模型（如 GPT-4V 或 Gemini），让模型看着图片回答问题。</li>
+</ol>
+</li>
+<li><strong>应用</strong>：电商搜图、图表分析、视频内容检索。</li>
+</ul>
+<h2 id="text-to-sql-(%E7%BB%93%E6%9E%84%E5%8C%96%E6%95%B0%E6%8D%AE%E6%A3%80%E7%B4%A2)" tabindex="-1">Text-to-SQL (结构化数据检索)</h2>
+<p>我为你拆解为两个核心模块：</p>
+<h3 id="1.-%E7%BB%93%E6%9E%84%E5%8C%96%E6%95%B0%E6%8D%AE-rag-(tabular-rag)-%E2%80%94%E2%80%94-%22ai-dba%22" tabindex="-1">1. 结构化数据 RAG (Tabular RAG) —— &quot;AI DBA&quot;</h3>
+<p><strong>第一页 (Table 6-3)</strong> 展示了一个典型的电商订单表。</p>
+<ul>
+<li><strong>问题</strong>：
+<ul>
+<li>用户问：“过去 7 天卖了多少个 Fruity Fedora？”</li>
+<li>如果你用传统的 RAG（向量搜索），你会把整个表格切成文本块。</li>
+<li>模型可能会读到：“订单1卖了1个，订单3卖了1个...”。</li>
+<li><strong>痛点</strong>：大模型<strong>极不擅长做算术</strong>（加减乘除）。让它自己去数数，大概率会数错。</li>
+</ul>
+</li>
+<li><strong>解决</strong>：<strong>Text-to-SQL</strong>。
+<ul>
+<li>不要让模型去读数据，让模型<strong>写 SQL</strong>。</li>
+<li>模型输出：<code>SELECT SUM(units) FROM Sales WHERE product_name = 'Fruity Fedora' AND timestamp &gt;= DATE_SUB(CURDATE(), INTERVAL 7 DAY);</code></li>
+<li>数据库执行 SQL，返回结果 <code>19</code>。</li>
+<li>模型回答：“卖了 19 个。”</li>
+</ul>
+</li>
+<li><strong>Android 类比</strong>：<strong>Room @Query</strong>。
+<ul>
+<li>你不会把数据库里所有 User 对象读到内存里，然后用 <code>for</code> 循环去过滤。</li>
+<li>你会写一个 <code>@Query(&quot;SELECT * FROM users WHERE age &gt; 18&quot;)</code>，让 SQLite 引擎去处理数据，因为数据库引擎比 Java 代码（或 AI 模型）处理数据快得多、准得多。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E6%9E%B6%E6%9E%84%E5%9B%BE-(figure-6-7)-%E2%80%94%E2%80%94-%22tool-use-%E7%9A%84%E9%9B%8F%E5%BD%A2%22" tabindex="-1">2. 架构图 (Figure 6-7) —— &quot;Tool Use 的雏形&quot;</h3>
+<p><strong>第二页</strong> 的流程图非常关键，它标志着从 RAG 向 <strong>Agent (智能体)</strong> 的进化。</p>
+<ul>
+<li><strong>流程</strong>：
+<ol>
+<li><strong>User Query</strong>: &quot;卖了多少个？&quot;</li>
+<li><strong>Text-to-SQL</strong>: 模型生成 SQL 语句。</li>
+<li><strong>SQL Execution</strong>: 执行 SQL（这是关键！模型开始调用外部工具了）。</li>
+<li><strong>SQL Result</strong>: 拿到结果 <code>19</code>。</li>
+<li><strong>Generative Model</strong>: 把 <code>19</code> 包装成一句人话：“过去 7 天共售出 19 个。”</li>
+</ol>
+</li>
+<li><strong>难点 (Schema Selection)</strong>：
+<ul>
+<li>如果你的数据库有 1000 张表，Schema 太大，塞不进 Prompt。</li>
+<li>你需要先做一个**“表检索”**步骤：先判断用户问的是哪个业务（订单？库存？用户？），只把相关的 3 张表的 Schema 喂给模型。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E5%85%A8%E7%AB%A0%E6%80%BB%E7%BB%93-(summary)" tabindex="-1">全章总结 (Summary)</h3>
+<p>Chapter 6 结束了。这一章的核心逻辑是：</p>
+<ol>
+<li><strong>RAG 是外挂大脑</strong>：解决知识更新和幻觉问题。</li>
+<li><strong>检索是关键</strong>：
+<ul>
+<li><strong>非结构化数据（文档）</strong>：用 <strong>Hybrid Search</strong> (关键词 + 向量) + <strong>Reranking</strong>。</li>
+<li><strong>结构化数据（表格）</strong>：用 <strong>Text-to-SQL</strong>。</li>
+</ul>
+</li>
+<li><strong>未来方向</strong>：
+<ul>
+<li>RAG 不仅仅是“读”数据，它开始“执行”查询（SQL）。</li>
+<li>这为下一章 <strong>Chapter 7: Agents (智能体)</strong> 埋下了伏笔——如果模型能执行 SQL，那它能不能执行 Python 代码？能不能调用 API 发邮件？</li>
+</ul>
+</li>
+</ol>
+<h2 id="reranking-%E6%8A%80%E6%9C%AF%E7%BB%86%E8%8A%82" tabindex="-1">Reranking 技术细节</h2>
+<p>这是一个非常关键的概念。为了让你彻底理解 <strong>Reranking（重排序）</strong>，我们用一个生活中的场景和一个 Android 开发的场景来类比。</p>
+<h3 id="1.-%E7%94%9F%E6%B4%BB%E7%B1%BB%E6%AF%94%EF%BC%9A%E6%B5%B7%E9%80%89-vs-%E9%9D%A2%E8%AF%95" tabindex="-1">1. 生活类比：海选 vs 面试</h3>
+<p>想象一下，你们公司要招一名 <strong>Android 高级工程师</strong>，收到了 <strong>10,000 份简历</strong>。</p>
+<ul>
+<li>
+<p><strong>第一步：召回 (Retrieval) —— &quot;HR 关键词海选&quot;</strong></p>
+<ul>
+<li><strong>做法</strong>：HR 不懂技术，她只会在系统里搜关键词：“Android”, “Kotlin”, “5年经验”。</li>
+<li><strong>结果</strong>：系统瞬间甩出来 <strong>100 份</strong> 简历。</li>
+<li><strong>特点</strong>：<strong>速度极快</strong>，但<strong>精度一般</strong>。这 100 个人里，可能混进去了很多“关键词堆砌”的水货，或者其实是做 Java 后端的。</li>
+<li><em>这就是 Bi-Encoder（向量搜索）做的事。</em></li>
+</ul>
+</li>
+<li>
+<p><strong>第二步：重排序 (Reranking) —— &quot;技术总监面试&quot;</strong></p>
+<ul>
+<li><strong>做法</strong>：你（技术总监）没时间看 10,000 份简历，但你有时间仔细读这 <strong>100 份</strong>。你会逐字逐句看项目经验、GitHub 链接、技术深度。</li>
+<li><strong>结果</strong>：你给这 100 个人重新打分，挑出了 <strong>Top 5</strong> 最牛的人来面试。</li>
+<li><strong>特点</strong>：<strong>速度慢</strong>（你要动脑子读），但<strong>精度极高</strong>。你排除了那些“只是提到 Kotlin 但其实不会”的人。</li>
+<li><em>这就是 Cross-Encoder（重排序模型）做的事。</em></li>
+</ul>
+</li>
+</ul>
+<hr>
+<h3 id="2.-%E6%8A%80%E6%9C%AF%E5%8E%9F%E7%90%86%E8%A7%A3%E6%9E%90" tabindex="-1">2. 技术原理解析</h3>
+<p>为什么需要分两步？为什么不直接用第二步的方法去搜那 10,000 份简历？</p>
+<h4 id="%E7%AC%AC%E4%B8%80%E6%AD%A5%EF%BC%9A%E5%8F%AC%E5%9B%9E-(retrieval)---bi-encoder" tabindex="-1">第一步：召回 (Retrieval) - Bi-Encoder</h4>
+<ul>
+<li><strong>原理</strong>：<strong>“各算各的”</strong>。
+<ul>
+<li>文档的向量是<strong>提前算好</strong>存数据库的。</li>
+<li>用户的搜索词向量是<strong>当场算</strong>的。</li>
+<li>计算相似度时，只是两个向量做个简单的点积（Dot Product），速度飞快（毫秒级）。</li>
+</ul>
+</li>
+<li><strong>缺点</strong>：向量是对信息的“有损压缩”。很多细腻的语义（比如“我把猫咬了”和“猫把我咬了”）在压缩成向量后，区别可能变得很模糊。</li>
+</ul>
+<h4 id="%E7%AC%AC%E4%BA%8C%E6%AD%A5%EF%BC%9A%E9%87%8D%E6%8E%92-(reranking)---cross-encoder" tabindex="-1">第二步：重排 (Reranking) - Cross-Encoder</h4>
+<ul>
+<li><strong>原理</strong>：<strong>“以此为准，重新审视”</strong>。
+<ul>
+<li>它把 <strong>“用户的问题”</strong> 和 <strong>“文档的内容”</strong> 拼在一起，作为一个整体喂给模型。</li>
+<li>模型会通过 <strong>Attention（注意力机制）</strong> 逐字逐句地分析：“这个文档里的这句话，是不是真的在回答那个问题？”</li>
+</ul>
+</li>
+<li><strong>缺点</strong>：<strong>计算量大，慢</strong>。它不能提前算好，必须实时算。所以你不能对 10,000 个文档都跑一遍这个，只能对前 100 个跑。</li>
+</ul>
+<hr>
+<h3 id="3.-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E8%BF%99%E4%B9%88%E5%81%9A%EF%BC%9F%EF%BC%88%E7%BB%99-llm-%E7%9C%81%E8%84%91%E5%AD%90%EF%BC%89" tabindex="-1">3. 为什么要这么做？（给 LLM 省脑子）</h3>
+<p>这就好比你做 Android App 的 <strong>Feed 流</strong>：</p>
+<ol>
+<li><strong>召回</strong>：先从数据库里 <code>SELECT * FROM posts LIMIT 100</code>（快速捞一堆）。</li>
+<li><strong>重排</strong>：然后在内存里用一套复杂的推荐算法（考虑用户画像、点击率预测）给这 100 条排序。</li>
+<li><strong>展示</strong>：最后只把 <strong>Top 5</strong> 显示在屏幕首屏。</li>
+</ol>
+<p><strong>对于 RAG 系统来说：</strong></p>
+<ul>
+<li>大模型（LLM）的窗口有限（比如只能看 4000 字）。</li>
+<li>如果你直接把第一步捞出来的 Top 5 给它，可能里面有 3 个是错的（因为第一步不够准）。</li>
+<li>加上 <strong>Reranking</strong>，就是为了确保喂给大模型的这 4000 字，是<strong>含金量最高、最相关</strong>的精华。</li>
+</ul>
+<p><strong>总结：</strong>
+<strong>Reranking 就是在“海量粗搜”之后，加了一个“精细筛选”的环节，用少量的计算时间，换取最终结果准确率的大幅提升。</strong></p>
+<p><strong>Cross-Encoder 通常不是像 GPT-4 那样巨大的生成式大模型（LLM），而是一个专门用于“打分”的中小型模型（BERT 类模型）。</strong></p>
+<p>为了让你彻底搞懂，我们从<strong>大小、功能、工作方式</strong>三个维度来拆解。</p>
+<h3 id="1.-%E5%AE%83%E6%9C%89%E5%A4%9A%E5%A4%A7%EF%BC%9F%EF%BC%88size%EF%BC%89" tabindex="-1">1. 它有多大？（Size）</h3>
+<ul>
+<li><strong>LLM (GPT-4, Llama-3)</strong>：通常是 <strong>70亿 (7B)</strong> 到 <strong>万亿</strong> 参数。它们像是一个博学的教授，能写诗、写代码、聊天。</li>
+<li><strong>Cross-Encoder (Reranker)</strong>：通常只有 <strong>3亿 (300M)</strong> 到 <strong>5亿</strong> 参数（比如 <code>bge-reranker-base</code> 或 <code>ms-marco-MiniLM</code>）。
+<ul>
+<li><strong>Android 类比</strong>：它就像是一个 <strong>TFLite 模型</strong>，甚至可以在高端手机上跑，比云端大模型轻量得多。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E5%AE%83%E6%98%AF%E5%B9%B2%E5%98%9B%E7%9A%84%EF%BC%9F%EF%BC%88function%EF%BC%89" tabindex="-1">2. 它是干嘛的？（Function）</h3>
+<p>它<strong>不会说话</strong>，也不会生成文本。它只会做一件事：<strong>打分</strong>。</p>
+<ul>
+<li><strong>输入</strong>：一对文本 <code>(Query, Document)</code>。
+<ul>
+<li><em>Query</em>: &quot;Android 怎么防止内存泄漏？&quot;</li>
+<li><em>Document</em>: &quot;使用 WeakReference 可以避免...&quot;</li>
+</ul>
+</li>
+<li><strong>输出</strong>：一个 <code>0</code> 到 <code>1</code> 之间的分数（相似度/相关性）。
+<ul>
+<li><em>Score</em>: <code>0.98</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="3.-%E5%AE%83%E6%98%AF%E6%80%8E%E4%B9%88%E5%B7%A5%E4%BD%9C%E7%9A%84%EF%BC%9F%EF%BC%88mechanism%EF%BC%89" tabindex="-1">3. 它是怎么工作的？（Mechanism）</h3>
+<p>名字里的 <strong>&quot;Cross&quot; (交叉)</strong> 是关键。</p>
+<ul>
+<li>
+<p><strong>Bi-Encoder (双塔模型 - 用于第一步召回)</strong>：</p>
+<ul>
+<li>Query 和 Document 是<strong>不见面</strong>的。</li>
+<li>Query 进左边的塔算个向量，Document 进右边的塔算个向量。最后算距离。</li>
+<li><em>缺点</em>：缺乏深度的交互。</li>
+</ul>
+</li>
+<li>
+<p><strong>Cross-Encoder (交叉编码器 - 用于第二步重排)</strong>：</p>
+<ul>
+<li>它把 Query 和 Document <strong>拼接</strong>在一起：<code>[CLS] Query [SEP] Document</code>。</li>
+<li>然后喂给 BERT 模型。</li>
+<li>在模型内部，Query 的每一个字都能和 Document 的每一个字进行 <strong>Self-Attention (注意力交互)</strong>。</li>
+<li><em>优点</em>：它能理解非常微妙的逻辑关系（比如否定词、因果关系）。</li>
+<li><em>缺点</em>：因为要两两拼接计算，所以慢。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E6%80%BB%E7%BB%93-1" tabindex="-1">总结</h3>
+<p>你可以把 <strong>Cross-Encoder</strong> 想象成一个**“专职阅卷老师”**：</p>
+<ul>
+<li>他不会写作文（不能生成）。</li>
+<li>但他读过很多书，专门负责给考生的作文（Document）和题目（Query）的匹配度<strong>打分</strong>。</li>
+<li>因为他只负责打分，不需要像 GPT 那样掌握天文地理，所以他的<strong>脑容量（模型参数）比较小</strong>，跑起来比较快（相对于 GPT 来说）。</li>
+</ul>
+<p>目前市面上主流的 <strong>Cross-Encoder (Reranker)</strong> 模型主要分为<strong>开源</strong>和<strong>闭源 API</strong> 两大类。</p>
+<p>如果你要自己搭建 RAG 系统，通常会从以下这些模型里选：</p>
+<h3 id="1.-%E5%BC%80%E6%BA%90%E6%A8%A1%E5%9E%8B-(open-source)-%E2%80%94%E2%80%94-%E5%8F%AF%E4%BB%A5%E7%A7%81%E6%9C%89%E5%8C%96%E9%83%A8%E7%BD%B2" tabindex="-1">1. 开源模型 (Open Source) —— 可以私有化部署</h3>
+<p>这些模型通常基于 BERT 或 RoBERTa 架构，你可以直接在 Hugging Face 上下载。</p>
+<ul>
+<li>
+<p><strong>BGE Reranker (智源 BAAI)</strong> —— <strong>目前最强、最流行</strong></p>
+<ul>
+<li><strong>型号</strong>：<code>BAAI/bge-reranker-v2-m3</code>, <code>BAAI/bge-reranker-large</code></li>
+<li><strong>特点</strong>：中文和英文效果都极好，支持多语言，长文本处理能力强。是目前 RAG 系统的首选。</li>
+<li><strong>大小</strong>：Large 版本约 560M 参数（显存占用很小）。</li>
+</ul>
+</li>
+<li>
+<p><strong>Jina Reranker (Jina AI)</strong></p>
+<ul>
+<li><strong>型号</strong>：<code>jina-reranker-v1-base-en</code></li>
+<li><strong>特点</strong>：针对长上下文（8K）做了优化，适合处理很长的文档。</li>
+</ul>
+</li>
+<li>
+<p><strong>Cohere Rerank (虽有 API，但也有开源竞品)</strong></p>
+<ul>
+<li>Cohere 是这个领域的领头羊，很多开源模型（如 BGE）都是以打败 Cohere 为目标的。</li>
+</ul>
+</li>
+<li>
+<p><strong>MS MARCO Cross-Encoders</strong></p>
+<ul>
+<li><strong>型号</strong>：<code>cross-encoder/ms-marco-MiniLM-L-6-v2</code></li>
+<li><strong>特点</strong>：非常老牌，体积极小（只有 20M 参数），速度飞快，但精度不如 BGE。适合对延迟要求极高的场景。</li>
+</ul>
+</li>
+</ul>
+<h3 id="2.-%E9%97%AD%E6%BA%90-api-(commercial-api)-%E2%80%94%E2%80%94-%E4%BB%98%E8%B4%B9%E8%B0%83%E7%94%A8" tabindex="-1">2. 闭源 API (Commercial API) —— 付费调用</h3>
+<p>如果你不想自己维护模型服务器，可以直接调 API。</p>
+<ul>
+<li>
+<p><strong>Cohere Rerank API</strong></p>
+<ul>
+<li><strong>地位</strong>：<strong>行业标准</strong>。几乎是 Rerank 界的 GPT-4。</li>
+<li><strong>特点</strong>：效果极好，支持多语言，很多企业级 RAG 都在用。</li>
+<li><strong>代码</strong>：<code>cohere.rerank(query=..., documents=...)</code></li>
+</ul>
+</li>
+<li>
+<p><strong>Jina Rerank API</strong></p>
+<ul>
+<li><strong>特点</strong>：性价比高，对开发者友好。</li>
+</ul>
+</li>
+</ul>
+<h3 id="%E9%80%89%E5%9E%8B%E5%BB%BA%E8%AE%AE-(android-%E5%B7%A5%E7%A8%8B%E5%B8%88%E8%A7%86%E8%A7%92)" tabindex="-1">选型建议 (Android 工程师视角)</h3>
+<ol>
+<li><strong>想省事、效果好</strong>：直接调 <strong>Cohere Rerank API</strong>。不用管运维，几行代码搞定。</li>
+<li><strong>数据隐私敏感 / 想要免费</strong>：部署 <strong>BGE-Reranker-v2-m3</strong>。
+<ul>
+<li>你可以把它部署在一个小的 Docker 容器里（甚至 CPU 都能跑，虽然慢点）。</li>
+<li>它能精准理解中文语义，比如“小米手机”和“红米手机”的区别。</li>
+</ul>
+</li>
+</ol>
+<h3 id="%E6%80%BB%E7%BB%93%E8%A1%A8" tabindex="-1">总结表</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">模型名称</th>
+<th style="text-align:left">类型</th>
+<th style="text-align:left">优势</th>
+<th style="text-align:left">适用场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Cohere Rerank</strong></td>
+<td style="text-align:left">API</td>
+<td style="text-align:left">效果天花板，省心</td>
+<td style="text-align:left">企业级应用，不差钱</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>BGE Reranker</strong></td>
+<td style="text-align:left">开源</td>
+<td style="text-align:left">效果接近 Cohere，免费，中文强</td>
+<td style="text-align:left">私有化部署，中文 RAG</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>MS MARCO MiniLM</strong></td>
+<td style="text-align:left">开源</td>
+<td style="text-align:left">极快，极小</td>
+<td style="text-align:left">边缘设备，对延迟极敏感</td>
+</tr>
+</tbody>
+</table>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
