@@ -1,7 +1,7 @@
 ---
 layout: post
 date: 2026-03-15
-title: "一个有偏见的 Metro DI 入门"
+title: "Metro DI 的一些个人体验"
 tags: [kotlin, android, kmp, metro, di, post]
 ---
 

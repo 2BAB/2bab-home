@@ -1,7 +1,7 @@
 ---
 layout: post
 date: 2026-03-15
-title: "An Opinionated Introduction to Metro DI"
+title: "Some Personal Takes on Metro DI"
 tags: [kotlin, android, kmp, metro, di, enpost]
 ---
 
