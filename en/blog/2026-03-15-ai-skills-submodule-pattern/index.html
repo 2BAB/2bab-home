@@ -1,0 +1,105 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Teaching AI Coding Agents with Submodules" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2026-03-15-ai-skills-submodule-pattern/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>Teaching AI Coding Agents with Submodules | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>Teaching AI Coding Agents with Submodules</h1>
+    <div class="italic text-gray-500">
+      2026/03/15
+    </div>
+    <div>
+      <p>Coding agents have knowledge cutoff dates — they tend to hallucinate when dealing with new frameworks or newer API versions. Even Context 7's documentation knowledge is roughly a month-old snapshot, which can already be outdated for fast-moving frameworks. So &quot;how to feed AI the correct framework knowledge&quot; is a practical problem.</p>
+<p>I recently came across antfu's <a href="https://github.com/antfu/skills">skills</a> repo. The idea is to process official documentation into AI-consumable skill files and load them into Claude Code as context. It's still at the proof-of-concept stage, but the architecture is worth learning from. I tested a similar approach in a KMP project.</p>
+<h2 id="antfu's-approach" tabindex="-1">antfu's Approach</h2>
+<p>He categorizes skills by source into three types:</p>
+<p><strong>Hand-maintained</strong>: Personal coding preferences — Composition API, TypeScript, pnpm workspace, etc. Pure taste files, no automation involved.</p>
+<p><strong>Generated from official docs</strong>: vue, nuxt, vite, vitest, etc. Official documentation repos are pulled in as submodules, then scripts extract and distill them into <a href="http://SKILL.md">SKILL.md</a> files. This is the main focus.</p>
+<p><strong>Vendored from external projects</strong>: Projects like slidev and vueuse maintain their own <code>skills/</code> directories, which are synced over directly. This is essentially pushing an ecosystem norm — encouraging framework authors to maintain AI-facing documentation themselves. vueuse has already set up a dedicated <code>vueuse/skills</code> repo for this.</p>
+<p>The core mechanism is submodules. <code>.gitmodules</code> has two categories of references:</p>
+<pre class="language-ini"><code class="language-ini"><span class="token comment"># sources — official doc repos, used to generate skills</span><br><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">submodule "sources/vue"</span><span class="token punctuation">]</span></span><br>    <span class="token key attr-name">path</span> <span class="token punctuation">=</span> <span class="token value attr-value">sources/vue</span><br>    <span class="token key attr-name">url</span> <span class="token punctuation">=</span> <span class="token value attr-value">https://github.com/vuejs/docs</span><br><br><span class="token comment"># vendor — skills maintained by external projects, synced directly</span><br><span class="token section"><span class="token punctuation">[</span><span class="token section-name selector">submodule "vendor/slidev"</span><span class="token punctuation">]</span></span><br>    <span class="token key attr-name">path</span> <span class="token punctuation">=</span> <span class="token value attr-value">vendor/slidev</span><br>    <span class="token key attr-name">url</span> <span class="token punctuation">=</span> <span class="token value attr-value">https://github.com/slidevjs/slidev</span></code></pre>
+<p>The output directory structure:</p>
+<pre><code>skills/vue/
+├── SKILL.md              # distilled framework knowledge, the main file for AI
+├── GENERATION.md         # metadata: source commit SHA, generation date
+└── references/           # supplementary details
+    ├── advanced-patterns.md
+    └── core-new-apis.md
+</code></pre>
+<p>Generated skills have <code>GENERATION.md</code>, vendored ones have <code>SYNC.md</code> — both for version tracking with exact commit SHAs. You can tell at a glance which version of the official docs the current skill corresponds to, and whether it's outdated.</p>
+<h2 id="putting-it-into-practice" tabindex="-1">Putting It into Practice</h2>
+<p>As an example, I have a project using <a href="https://github.com/ZacSweers/metro">Metro</a> (a compile-time DI framework for KMP — more details in my <a href="/en/blog/2026-03-15-metro-di-intro">previous post</a>). AI knows almost nothing about it. Following the approach above, I set up something similar:</p>
+<pre><code>skills/
+├── sources/
+│   └── metro/                   # git submodule → ZacSweers/metro
+├── metro/
+│   ├── metro-core.md            # @DependencyGraph, @Provides, createGraph...
+│   ├── metro-injection.md       # @Inject, @AssistedInject...
+│   ├── metro-aggregation.md     # @ContributesTo, @ContributesBinding...
+│   ├── metro-scopes.md          # @Scope, @SingleIn, AppScope...
+│   ├── metro-multiplatform.md   # KMP graph patterns...
+│   └── metro-viewmodels.md      # ViewModelKey, MetroViewModelFactory...
+├── update-skills.sh
+└── README.md
+</code></pre>
+<p>The submodule is pinned to the tag matching the Metro version declared in <code>libs.versions.toml</code>. The skill files are then referenced in <code>AGENTS.md</code> (Claude Code's project instruction file), giving the AI correct API references when working with DI code.</p>
+<p>Two additional things worth mentioning:</p>
+<p><strong>A Gradle version-check plugin</strong>. A convention plugin that compares the Metro version in <code>libs.versions.toml</code> against the submodule's git tag, and warns on mismatch. It's hooked to the debug build's package task, so it naturally triggers during daily development.</p>
+<p><strong>An update script</strong>. <code>update-skills.sh</code> reads the version from the toml file, checks out the submodule to the corresponding tag, diffs the documentation changes, and invokes Claude CLI to update the skill files.</p>
+<h2 id="why-this-works-well" tabindex="-1">Why This Works Well</h2>
+<p><strong>Docs as data source</strong>. Instead of manually copying documentation into prompts, you reference the official repo directly. Submodules ensure you're working with first-party content, no second-hand drift.</p>
+<p><strong>Traceable</strong>. You can verify exactly which version a skill file corresponds to. When it's outdated, run the script to update — no need to manually review changelogs.</p>
+<p><strong>Extensible</strong>. Adding skills for another framework is straightforward: add a submodule, write a few markdown files, reference them in <a href="http://AGENTS.md">AGENTS.md</a>.</p>
+<h2 id="limitations" tabindex="-1">Limitations</h2>
+<p>antfu's approach is centered around the frontend ecosystem (Vue/Vite/Nuxt), with skill installation via pnpm — not directly applicable to other tech stacks. My adapted version is simpler — submodule + hand-written skill files + shell script, without the meta.ts and vendor sync machinery. But for the scenario of &quot;a project using two or three frameworks that AI doesn't know well,&quot; it gets the job done.</p>
+<p>Skill file quality matters a lot. Too long and the AI may not read it all; too short and you miss critical APIs. I currently keep each file under 200 lines, split by topic (core / injection / aggregation / scopes / multiplatform / viewmodels). In practice, Claude Code has been able to find and reference the right files on demand.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

@@ -81,6 +81,58 @@ feature-b-domain/   ← 实现 RepoBImpl，依赖 feature-a-export
   </entry>
   
   <entry>
+    <title>用 Submodule 给 AI 编码助手补课</title>
+    <link href="https://2bab.me/zh/blog/2026-03-15-ai-skills-submodule-pattern/"/>
+    <updated>2026-03-15T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2026-03-15-ai-skills-submodule-pattern/</id>
+    <content type="html">&lt;p&gt;Coding Agent 有知识截止日期，碰到新框架或者框架的新版本 API 就容易瞎编。即便是 Context 7 的文档知识，也大概是一个月前的快照，对于迭代快的框架来说已经可能过时了。所以&amp;quot;怎么给 AI 喂正确的框架知识&amp;quot;是个比较实际问题。&lt;/p&gt;
+&lt;p&gt;最近看到 antfu 搞了个 &lt;a href=&quot;https://github.com/antfu/skills&quot;&gt;skills&lt;/a&gt; 仓库，思路是把官方文档加工成 AI 能直接消费的 skill 文件，挂到 Claude Code 里当上下文。目前还是 proof-of-concept 阶段，但架构设计本身挺值得借鉴的，我在一个 KMP 项目里测试了类似的做法。&lt;/p&gt;
+&lt;h2 id=&quot;antfu-%E7%9A%84%E5%81%9A%E6%B3%95&quot; tabindex=&quot;-1&quot;&gt;antfu 的做法&lt;/h2&gt;
+&lt;p&gt;他把 skill 按来源分成三类：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;手写的&lt;/strong&gt;：个人编码偏好，比如用 Composition API、TypeScript、pnpm workspace。纯口味文件，没什么自动化。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;从官方文档生成的&lt;/strong&gt;：vue、nuxt、vite、vitest 这些。把官方文档仓库作为 submodule 拉下来，用脚本提取精炼成 &lt;a href=&quot;http://skill.md/&quot;&gt;SKILL.md&lt;/a&gt;。这类是重点。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;外部项目自带的&lt;/strong&gt;：slidev、vueuse 这些项目自己在 repo 里维护了 &lt;code&gt;skills/&lt;/code&gt; 目录，直接同步过来用。这其实是在推动一种生态 —— 让框架作者自己维护给 AI 看的文档。vueuse 已经单独建了个 &lt;code&gt;vueuse/skills&lt;/code&gt; 仓库来做这事了。&lt;/p&gt;
+&lt;p&gt;核心机制是 submodule，&lt;code&gt;.gitmodules&lt;/code&gt; 里分两类引用：&lt;/p&gt;
+&lt;pre class=&quot;language-ini&quot;&gt;&lt;code class=&quot;language-ini&quot;&gt;&lt;span class=&quot;token comment&quot;&gt;# sources —— 官方文档仓库，用来生成 skill&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token section&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token section-name selector&quot;&gt;submodule &quot;sources/vue&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token key attr-name&quot;&gt;path&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token value attr-value&quot;&gt;sources/vue&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token key attr-name&quot;&gt;url&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token value attr-value&quot;&gt;https://github.com/vuejs/docs&lt;/span&gt;&lt;br /&gt;&lt;br /&gt;&lt;span class=&quot;token comment&quot;&gt;# vendor —— 外部项目自带的 skill，直接搬过来&lt;/span&gt;&lt;br /&gt;&lt;span class=&quot;token section&quot;&gt;&lt;span class=&quot;token punctuation&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;token section-name selector&quot;&gt;submodule &quot;vendor/slidev&quot;&lt;/span&gt;&lt;span class=&quot;token punctuation&quot;&gt;]&lt;/span&gt;&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token key attr-name&quot;&gt;path&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token value attr-value&quot;&gt;vendor/slidev&lt;/span&gt;&lt;br /&gt;    &lt;span class=&quot;token key attr-name&quot;&gt;url&lt;/span&gt; &lt;span class=&quot;token punctuation&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;token value attr-value&quot;&gt;https://github.com/slidevjs/slidev&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;产出的目录结构：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;skills/vue/
+├── SKILL.md              # 精炼后的框架知识，给 AI 看的主文件
+├── GENERATION.md         # 记录：来源 commit SHA，生成日期
+└── references/           # 补充细节
+    ├── advanced-patterns.md
+    └── core-new-apis.md
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;generated 的有 &lt;code&gt;GENERATION.md&lt;/code&gt;，vendored 的有 &lt;code&gt;SYNC.md&lt;/code&gt;，都是追踪版本用的，里面有精确的 commit SHA。当前 skill 对应官方文档的哪个版本，过期了没有，一目了然。&lt;/p&gt;
+&lt;h2 id=&quot;%E9%A1%B9%E7%9B%AE%E5%AE%9E%E8%B7%B5&quot; tabindex=&quot;-1&quot;&gt;项目实践&lt;/h2&gt;
+&lt;p&gt;举个例子，我这有个项目用了 &lt;a href=&quot;https://github.com/ZacSweers/metro&quot;&gt;Metro&lt;/a&gt;（一个 KMP 的编译期 DI 框架，详见&lt;a href=&quot;https://2bab.me/zh/blog/2026-03-15-metro-di-intro&quot;&gt;上一篇&lt;/a&gt;），AI 对它基本不了解。参考上面的思路，做了类似的事情：&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;skills/
+├── sources/
+│   └── metro/                   # git submodule → ZacSweers/metro
+├── metro/
+│   ├── metro-core.md            # @DependencyGraph, @Provides, createGraph...
+│   ├── metro-injection.md       # @Inject, @AssistedInject...
+│   ├── metro-aggregation.md     # @ContributesTo, @ContributesBinding...
+│   ├── metro-scopes.md          # @Scope, @SingleIn, AppScope...
+│   ├── metro-multiplatform.md   # KMP graph patterns...
+│   └── metro-viewmodels.md      # ViewModelKey, MetroViewModelFactory...
+├── update-skills.sh
+└── README.md
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;submodule 钉在 &lt;code&gt;libs.versions.toml&lt;/code&gt; 里声明的 Metro 版本对应的 tag 上，然后在 &lt;code&gt;AGENTS.md&lt;/code&gt;（Claude Code 的项目指令文件）里引用这些 skill 文件。AI 处理 DI 相关代码时，就有了正确的 API 参考。&lt;/p&gt;
+&lt;p&gt;额外做了两件事情：&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;版本检查的 Gradle 插件&lt;/strong&gt;。一个 convention plugin，比较 &lt;code&gt;libs.versions.toml&lt;/code&gt; 里的 Metro 版本和 submodule 的 git tag，不一致就 warn。挂在 debug 构建的 package task 后面，日常开发自然会触发提醒。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;更新脚本&lt;/strong&gt;。&lt;code&gt;update-skills.sh&lt;/code&gt; 读取 toml 里的版本号，checkout submodule 到对应 tag，diff 出文档变化，然后调用 Claude CLI 来更新 skill 文件。&lt;/p&gt;
+&lt;h2 id=&quot;%E8%BF%99%E4%B8%AA%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%87%A0%E4%B8%AA%E4%BC%98%E7%82%B9&quot; tabindex=&quot;-1&quot;&gt;这个模式的几个优点&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;文档即数据源&lt;/strong&gt;。不是手动摘抄文档写到 prompt 里，而是直接引用官方仓库。submodule 保证拿到的就是官方内容，没有二手信息的偏差。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;可追溯&lt;/strong&gt;。skill 文件对应哪个版本有据可查，过期了跑一下脚本就能更新，不用人肉翻 changelog。&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;可扩展&lt;/strong&gt;。要给另一个框架加 skill，加个 submodule、写几个 md、在 &lt;a href=&quot;http://agents.md/&quot;&gt;AGENTS.md&lt;/a&gt; 里引用就完事了。&lt;/p&gt;
+&lt;h2 id=&quot;%E5%B1%80%E9%99%90&quot; tabindex=&quot;-1&quot;&gt;局限&lt;/h2&gt;
+&lt;p&gt;antfu 的方案围绕前端生态（Vue/Vite/Nuxt），skill 的安装走的是 pnpm，对其他技术栈不直接适用。而这个改版方案简单点 —— submodule + 手写 skill 文件 + shell 脚本，没有那套 meta.ts 和 vendor 同步机制。不过对于&amp;quot;项目里用了两三个 AI 不熟的框架&amp;quot;这个场景，够用了。&lt;/p&gt;
+&lt;p&gt;另外 skill 文件的质量很关键。太长 AI 不一定全读，太短覆盖不了关键 API。目前每个文件控制在 200 行以内，按主题拆分（core / injection / aggregation / scopes / multiplatform / viewmodels），实测下来还不错。&lt;/p&gt;
+</content>
+  </entry>
+  
+  <entry>
     <title>在 AI 公司做技术管理的一点体验</title>
     <link href="https://2bab.me/zh/blog/2026-02-23-knowing-and-doing/"/>
     <updated>2026-02-23T00:00:00Z</updated>
