@@ -1,0 +1,128 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="一个有偏见的 Metro DI 入门" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2026-03-15-metro-di-intro/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>一个有偏见的 Metro DI 入门 | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>一个有偏见的 Metro DI 入门</h1>
+    <div class="italic text-gray-500">
+      2026/03/15
+    </div>
+    <div>
+      <p>Metro 是 Zac Sweers（前 Slack Android Infra）做的 KMP DI 框架，编译期方案，目前 Cash App 和 Vinted 已在生产环境使用。这是一篇写给 DI 用的不多的人，或者从其他框架迁移过来的人的介绍文章（而不是给完全没用过的人），不求全，只是做一些自己探索的对比记录。</p>
+<h2 id="%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5%EF%BC%9Abinding" tabindex="-1">核心概念：Binding</h2>
+<p>DI 框架的本质就是维护一张绑定表：<strong>当有人要类型 A 时，给他实例 B</strong>。Metro 也不例外，所有注解本质上都是在往这张表里添加条目。</p>
+<pre><code>RepoA        → RepoAImpl
+RepoB        → RepoBImpl
+HttpClient   → HttpClient(CIO) { ... }
+Json         → Json { ignoreUnknownKeys = true }
+</code></pre>
+<p>理解了这一点，后面的注解就笔记不会觉得多了。好吧，我还是觉得多。</p>
+<h2 id="%E6%9C%80%E7%AE%80%E5%8D%95%E7%9A%84%E6%83%85%E5%86%B5%EF%BC%9A%40inject" tabindex="-1">最简单的情况：@Inject</h2>
+<p>在自己写的类上加 <code>@Inject</code>，Metro 就知道怎么创建它。参数列表里的依赖会自动被解析和注入：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> httpClient<span class="token operator">:</span> HttpClient<span class="token punctuation">,</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> json<span class="token operator">:</span> Json<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p>一个注解搞定&quot;我可以被创建&quot;和&quot;我需要这些依赖&quot;两件事。跟 Koin 对比一下：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// Koin 需要分开写</span><br>module <span class="token punctuation">{</span><br>    factory <span class="token punctuation">{</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>默认情况下 <code>@Inject</code> 创建的是 factory —— 每次注入都 new 一个新实例。加上 <code>@SingleIn</code> 就变成 singleton：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p>这里没有 Koin 的 <code>single {}</code> 和 <code>factory {}</code> 两个不同函数，区别就是有没有 <code>@SingleIn</code>，我觉得这个设计挺干净的。</p>
+<h2 id="aggregation" tabindex="-1">Aggregation</h2>
+<p>这是 Metro 相对 Dagger 最大的改进。</p>
+<p>传统 Dagger 你需要手动把 Module 塞进 Component，维护一个巨大的模块列表。Koin 也一样，你要在某个地方 <code>startKoin { modules(a, b, c, ...) }</code> 把所有 module 串起来，或者接入它的 KCP 插件（自己写个小工具也行，我就做过一个 <a href="https://github.com/2BAB/Koncat">Koncat</a>)。有人觉得项目大了之后这个列表会变成几百行的怪物，每加一个类都要去那边登记一下；而我认为这基本上只是模块没拆好的问题 =。= 导致单一模块太大。</p>
+<p>Metro 的编译器自动收集大概是：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// 在 feature-article-domain 模块里</span><br><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@ContributesBinding</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> httpClient<span class="token operator">:</span> HttpClient<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p><code>@ContributesBinding(AppScope::class)</code> 的意思是：把 <code>ArticleRepositoryImpl → ArticleRepository</code> 这条绑定，贡献到 <code>AppScope</code> 的 graph 里。编译器在编译 graph 所在的模块时，会自动扫描所有依赖模块里标记了 <code>@ContributesTo</code> 或 <code>@ContributesBinding</code> 的类，把它们全部塞进去。</p>
+<p><strong>声明即注册，不需要手动汇总。</strong> 这对多模块项目是巨大的效率提升 —— 你在 feature 模块里写完类加上注解就完事了，不用跑去另一个文件里登记。对 AI 编程也更友好：AI 加一个类时只需要改一个文件，而不是改完类还要记得去某个 module 列表里注册，少一步就少一个出错的机会。</p>
+<h2 id="graph-%E5%92%8C-scope" tabindex="-1">Graph 和 Scope</h2>
+<p>Metro 的 scope 本身不绑定任何生命周期，它只是个 tag。一个 scope 对应一个 graph（DI 容器），相当于 Koin 的一个 <code>Koin</code> 实例。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// 声明 scope</span><br><span class="token annotation builtin">@Scope</span><br><span class="token keyword">annotation</span> <span class="token keyword">class</span> AppScope<br><br><span class="token comment">// 声明 graph</span><br><span class="token annotation builtin">@DependencyGraph</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">interface</span> AppGraph</code></pre>
+<p>生命周期完全取决于你什么时候创建和销毁这个 graph 实例：放在 <code>Application</code> 里就跟 app 同生命周期，放在登录 session 里就跟用户会话同生命周期。Metro 不像 Hilt 那样预定义 <code>@ActivityScoped</code>、<code>@ViewModelScoped</code> 帮你自动绑定 Android 组件，自由度更高，但也意味着你得自己管理。</p>
+<p>Graph 之间可以有父子关系，通过 <code>GraphExtension</code> 实现：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@DependencyGraph</span><span class="token punctuation">(</span>UserScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">interface</span> UserGraph <span class="token operator">:</span> GraphExtension<span class="token operator">&lt;</span>AppGraph<span class="token operator">></span></code></pre>
+<p>子 graph 能访问父 graph 的绑定，父看不到子。这就是实现 App → User → Feature 嵌套 scope 的方式。</p>
+<h2 id="%E8%B7%A8%E6%A8%A1%E5%9D%97%E4%BE%9D%E8%B5%96%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%89-export-%E6%A8%A1%E5%9D%97" tabindex="-1">跨模块依赖：为什么有 export 模块</h2>
+<p>假设 feature-a 需要 feature-b 的数据，反过来也是。直接依赖会循环，所以把接口抽出来：</p>
+<pre><code>feature-a-export/   ← 只有接口 RepoA
+feature-a-domain/   ← 实现 RepoAImpl，依赖 feature-b-export
+feature-b-export/   ← 只有接口 RepoB
+feature-b-domain/   ← 实现 RepoBImpl，依赖 feature-a-export
+</code></pre>
+<p>各 feature 模块编译时完全不知道彼此的实现。比如用 KMP，这个拼装就发生在 <code>shared</code> 模块编译阶段 —— 因为 <code>shared</code> 依赖了所有 feature 模块，Metro 编译器插件在那里能看到完整的依赖图，自动把所有贡献的绑定塞进 <code>AppScope</code> 的 graph。普通 Android App 基本就是 App 模块了。</p>
+<h2 id="%E4%B8%80%E4%BA%9B%E4%B8%8D%E7%88%BD%E7%9A%84%E9%83%A8%E5%88%86" tabindex="-1">一些不爽的部分</h2>
+<h3 id="bindingcontainer-%E5%92%8C-%40provides" tabindex="-1">BindingContainer 和 @Provides</h3>
+<p>自己的类用 <code>@Inject</code> + <code>@ContributesBinding</code> 一行搞定，很爽。但第三方类你没法在上面加注解，只能用 <code>@Provides</code>：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@ContributesTo</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@BindingContainer</span><br><span class="token keyword">interface</span> NetworkBindings <span class="token punctuation">{</span><br>    <span class="token annotation builtin">@Provides</span> <span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br>    <span class="token keyword">fun</span> <span class="token function">httpClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> HttpClient <span class="token operator">=</span> <span class="token function">HttpClient</span><span class="token punctuation">(</span>CIO<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token function">install</span><span class="token punctuation">(</span>ContentNegotiation<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation builtin">@Provides</span> <span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br>    <span class="token keyword">fun</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> Json <span class="token operator">=</span> Json <span class="token punctuation">{</span> ignoreUnknownKeys <span class="token operator">=</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>你需要新建一个 interface，标记 <code>@BindingContainer</code>，标记 <code>@ContributesTo</code>，然后在里面写 <code>@Provides</code> 函数。</p>
+<p>来对比下 Koin：</p>
+<pre class="language-kotlin"><code class="language-kotlin">module <span class="token punctuation">{</span><br>    single <span class="token punctuation">{</span> <span class="token function">HttpClient</span><span class="token punctuation">(</span>CIO<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">install</span><span class="token punctuation">(</span>ContentNegotiation<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span><br>    single <span class="token punctuation">{</span> Json <span class="token punctuation">{</span> ignoreUnknownKeys <span class="token operator">=</span> <span class="token boolean">true</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>说实话，Koin 在这个场景下更直觉。Metro 的 <code>@BindingContainer</code> 这个名字也不如 Dagger 的 <code>@Module</code> 好理解 —— 虽然叫 Module 也不是就很直观，这部分就是得硬记的样板代码名。</p>
+<h3 id="assistedinject" tabindex="-1">AssistedInject</h3>
+<p>当 ViewModel 需要外部传入的参数（比如一个 ID）时，你需要 assisted injection：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@AssistedInject</span><br><span class="token keyword">class</span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span><br>    <span class="token annotation builtin">@Assisted</span> <span class="token keyword">val</span> id<span class="token operator">:</span> String<span class="token punctuation">,</span>           <span class="token comment">// 外部传入</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> repo<span class="token operator">:</span> DetailRepository<span class="token punctuation">,</span> <span class="token comment">// DI 提供</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token annotation builtin">@AssistedFactory</span><br>    <span class="token keyword">interface</span> Factory <span class="token punctuation">{</span><br>        <span class="token keyword">fun</span> <span class="token function">create</span><span class="token punctuation">(</span>id<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> DetailViewModel<br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>对比 Koin：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">class</span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span><br>    <span class="token keyword">val</span> id<span class="token operator">:</span> String<span class="token punctuation">,</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> repo<span class="token operator">:</span> DetailRepository<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br><span class="token comment">// 注册</span><br>module <span class="token punctuation">{</span><br>    viewModel <span class="token punctuation">{</span> params <span class="token operator">-></span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span>params<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br><span class="token comment">// 使用</span><br><span class="token keyword">val</span> vm <span class="token operator">=</span> koinViewModel<span class="token operator">&lt;</span>DetailViewModel<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token function">parametersOf</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"some-id"</span></span><span class="token punctuation">)</span> <span class="token punctuation">}</span></code></pre>
+<p>Metro 多了 <code>@AssistedInject</code>、<code>@Assisted</code>、<code>@AssistedFactory</code> 三个注解加一个 Factory 接口。你得先从&quot;我怎么写个带参数的 ViewModel&quot;这个简单问题里转到&quot;我需要声明一个工厂接口&quot;这个概念，心智负担明显更高。当然，Metro 的好处是类型安全 —— <code>create(id: String)</code> 是具名参数，Koin 的 <code>parametersOf(...)</code> 是位置传参，多个参数时顺序错了编译不会报错。</p>
+<p>如果是以前，是不是值得为了类型安全多写这些样板，见仁见智；现在有 AI，多写几行也无所谓，可能 Metro 更好点；因为 AI 也不是 100% 能确保类型。</p>
+<h3 id="%40viewmodelkey-%E7%9A%84%E5%86%97%E4%BD%99" tabindex="-1">@ViewModelKey 的冗余</h3>
+<p>注册 ViewModel 到 DI 的 map 时需要写：</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@ViewModelKey</span><span class="token punctuation">(</span>ArticleListViewModel<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@ContributesIntoMap</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleListViewModel</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p><code>@ViewModelKey(ArticleListViewModel::class)</code> 放在 <code>class ArticleListViewModel</code> 上面 —— key 就是类本身，但你必须显式写出来。我给 Zac 提了 <a href="https://github.com/ZacSweers/metro/issues/1994">issue</a> 建议做默认推导，被拒绝了，理由是不想为 ViewModel 开特例。理解他的考虑，但每个 ViewModel 都要重复写这一行，二十个就是二十行废话。</p>
+<h2 id="%E6%95%B4%E4%BD%93%E6%84%9F%E5%8F%97" tabindex="-1">整体感受</h2>
+<p>Aggregation 和 <code>@Inject</code> + <code>@ContributesBinding</code> 的组合是 Metro 最舒服的部分，多模块项目里省掉大量手动注册，编译期就能发现缺失的绑定。</p>
+<p>但 <code>@Provides</code> + <code>@BindingContainer</code> 和 <code>@AssistedInject</code> 的样板代码确实烦人。注解数量整体上继承了 Dagger 体系的复杂度，从 Koin DSL 过来的人会觉得一下子多了很多概念要记。Zac Sweers 从 Dagger/Anvil 那个世界过来，这套东西对他来说是自然演化，对很多 DI 不熟的来说是依旧是额外学习曲线。</p>
+<p>最后就是，Metro 目前还在 0.11.x 没到 1.0，他虽然离职了但维护更积极了。</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

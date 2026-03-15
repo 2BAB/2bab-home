@@ -1,0 +1,123 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="An Opinionated Introduction to Metro DI" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2026-03-15-metro-di-intro/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>An Opinionated Introduction to Metro DI | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>An Opinionated Introduction to Metro DI</h1>
+    <div class="italic text-gray-500">
+      2026/03/15
+    </div>
+    <div>
+      <p>Metro is a compile-time DI framework for Kotlin Multiplatform, created by Zac Sweers (formerly Android Infra at Slack). Cash App and Vinted are already using it in production. This post is aimed at developers who have some DI experience or are coming from other frameworks — not a comprehensive guide, just notes from my own exploration with some comparisons along the way.</p>
+<h2 id="core-concept%3A-binding" tabindex="-1">Core Concept: Binding</h2>
+<p>At its core, any DI framework maintains a binding table: <strong>when someone asks for type A, give them instance B</strong>. Metro is no different — all its annotations are essentially adding entries to this table.</p>
+<pre><code>RepoA        → RepoAImpl
+RepoB        → RepoBImpl
+HttpClient   → HttpClient(CIO) { ... }
+Json         → Json { ignoreUnknownKeys = true }
+</code></pre>
+<p>Once you internalize this, the number of annotations starts to feel more manageable. Starts to.</p>
+<h2 id="the-simplest-case%3A-%40inject" tabindex="-1">The Simplest Case: @Inject</h2>
+<p>Add <code>@Inject</code> to your own class, and Metro knows how to create it. Dependencies in the constructor are automatically resolved and injected:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> httpClient<span class="token operator">:</span> HttpClient<span class="token punctuation">,</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> json<span class="token operator">:</span> Json<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p>One annotation covers both &quot;I can be created&quot; and &quot;I need these dependencies.&quot; Compare this with Koin:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// Koin requires a separate registration</span><br>module <span class="token punctuation">{</span><br>    factory <span class="token punctuation">{</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>By default, <code>@Inject</code> creates a factory — a new instance every time. Add <code>@SingleIn</code> to make it a singleton:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p>Unlike Koin's separate <code>single {}</code> and <code>factory {}</code> functions, the only difference here is whether <code>@SingleIn</code> is present. A clean design choice.</p>
+<h2 id="aggregation" tabindex="-1">Aggregation</h2>
+<p>This is arguably Metro's biggest improvement over Dagger.</p>
+<p>With traditional Dagger, you manually wire Modules into Components and maintain a large module list. Koin is similar — you need <code>startKoin { modules(a, b, c, ...) }</code> somewhere to chain everything together, or use its KCP plugin (or roll your own tool — I made one called <a href="https://github.com/2BAB/Koncat">Koncat</a>). Some argue that this list becomes unwieldy in large projects; I'd say that's mostly a symptom of poorly structured modules =.= leading to oversized individual modules.</p>
+<p>Metro's compiler-driven auto-collection looks like this:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// In the feature-article-domain module</span><br><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@ContributesBinding</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleRepositoryImpl</span><span class="token punctuation">(</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> httpClient<span class="token operator">:</span> HttpClient<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> ArticleRepository</code></pre>
+<p><code>@ContributesBinding(AppScope::class)</code> means: contribute the binding <code>ArticleRepositoryImpl → ArticleRepository</code> to the <code>AppScope</code> graph. When the compiler processes the module where the graph is defined, it automatically scans all dependent modules for classes annotated with <code>@ContributesTo</code> or <code>@ContributesBinding</code> and wires them in.</p>
+<p><strong>Declare and register in one place, no manual aggregation needed.</strong> This is a significant productivity gain for multi-module projects — you annotate the class and you're done, no need to update a registration file elsewhere. It's also more AI-coding friendly: an AI only needs to modify one file when adding a class, rather than remembering to register it in a separate module file.</p>
+<h2 id="graph-and-scope" tabindex="-1">Graph and Scope</h2>
+<p>Metro's scope doesn't bind to any lifecycle by itself — it's just a tag. One scope corresponds to one graph (DI container), roughly equivalent to a <code>Koin</code> instance.</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// Declare a scope</span><br><span class="token annotation builtin">@Scope</span><br><span class="token keyword">annotation</span> <span class="token keyword">class</span> AppScope<br><br><span class="token comment">// Declare a graph</span><br><span class="token annotation builtin">@DependencyGraph</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">interface</span> AppGraph</code></pre>
+<p>The lifecycle is entirely determined by when you create and destroy the graph instance: put it in <code>Application</code> and it lives with the app process; put it in a login session holder and it lives with the user session. Unlike Hilt, Metro doesn't provide predefined scopes like <code>@ActivityScoped</code> or <code>@ViewModelScoped</code> that automatically bind to Android components — more flexibility, but more responsibility.</p>
+<p>Graphs can have parent-child relationships via <code>GraphExtension</code>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@DependencyGraph</span><span class="token punctuation">(</span>UserScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">interface</span> UserGraph <span class="token operator">:</span> GraphExtension<span class="token operator">&lt;</span>AppGraph<span class="token operator">></span></code></pre>
+<p>Child graphs can access parent bindings, but not vice versa. This is how you implement nested scopes like App → User → Feature.</p>
+<h2 id="cross-module-dependencies%3A-why-export-modules-exist" tabindex="-1">Cross-Module Dependencies: Why Export Modules Exist</h2>
+<p>Say feature-a needs data from feature-b, and vice versa. Direct dependencies would create a cycle, so you extract the interfaces:</p>
+<pre><code>feature-a-export/   ← interfaces only: RepoA
+feature-a-domain/   ← implementation: RepoAImpl, depends on feature-b-export
+feature-b-export/   ← interfaces only: RepoB
+feature-b-domain/   ← implementation: RepoBImpl, depends on feature-a-export
+</code></pre>
+<p>Feature modules know nothing about each other's implementations at compile time. In a KMP setup, the assembly happens when the <code>shared</code> module compiles — since <code>shared</code> depends on all feature modules, Metro's compiler plugin can see the complete dependency graph there and wire all contributed bindings into the <code>AppScope</code> graph. For a standard Android app, this would typically be the app module.</p>
+<h2 id="trade-offs-worth-noting" tabindex="-1">Trade-offs Worth Noting</h2>
+<h3 id="bindingcontainer-and-%40provides" tabindex="-1">BindingContainer and @Provides</h3>
+<p>For your own classes, <code>@Inject</code> + <code>@ContributesBinding</code> is concise. But for third-party classes where you can't add annotations, you need <code>@Provides</code>:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@ContributesTo</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@BindingContainer</span><br><span class="token keyword">interface</span> NetworkBindings <span class="token punctuation">{</span><br>    <span class="token annotation builtin">@Provides</span> <span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br>    <span class="token keyword">fun</span> <span class="token function">httpClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> HttpClient <span class="token operator">=</span> <span class="token function">HttpClient</span><span class="token punctuation">(</span>CIO<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token function">install</span><span class="token punctuation">(</span>ContentNegotiation<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation builtin">@Provides</span> <span class="token annotation builtin">@SingleIn</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br>    <span class="token keyword">fun</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">:</span> Json <span class="token operator">=</span> Json <span class="token punctuation">{</span> ignoreUnknownKeys <span class="token operator">=</span> <span class="token boolean">true</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>You need to create an interface, annotate it with <code>@BindingContainer</code> and <code>@ContributesTo</code>, then write <code>@Provides</code> functions inside.</p>
+<p>Compare with Koin:</p>
+<pre class="language-kotlin"><code class="language-kotlin">module <span class="token punctuation">{</span><br>    single <span class="token punctuation">{</span> <span class="token function">HttpClient</span><span class="token punctuation">(</span>CIO<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">install</span><span class="token punctuation">(</span>ContentNegotiation<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token function">json</span><span class="token punctuation">(</span><span class="token function">json</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span><br>    single <span class="token punctuation">{</span> Json <span class="token punctuation">{</span> ignoreUnknownKeys <span class="token operator">=</span> <span class="token boolean">true</span> <span class="token punctuation">}</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>Koin feels more intuitive for this particular scenario. The name <code>@BindingContainer</code> is also less immediately obvious than Dagger's <code>@Module</code> — though <code>@Module</code> isn't exactly self-explanatory either. This is boilerplate you'll need to memorize.</p>
+<h3 id="assistedinject" tabindex="-1">AssistedInject</h3>
+<p>When a ViewModel needs runtime parameters (e.g., an ID), you use assisted injection:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@AssistedInject</span><br><span class="token keyword">class</span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span><br>    <span class="token annotation builtin">@Assisted</span> <span class="token keyword">val</span> id<span class="token operator">:</span> String<span class="token punctuation">,</span>           <span class="token comment">// provided at call site</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> repo<span class="token operator">:</span> DetailRepository<span class="token punctuation">,</span> <span class="token comment">// provided by DI</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token annotation builtin">@AssistedFactory</span><br>    <span class="token keyword">interface</span> Factory <span class="token punctuation">{</span><br>        <span class="token keyword">fun</span> <span class="token function">create</span><span class="token punctuation">(</span>id<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> DetailViewModel<br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>Compare with Koin:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">class</span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span><br>    <span class="token keyword">val</span> id<span class="token operator">:</span> String<span class="token punctuation">,</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> repo<span class="token operator">:</span> DetailRepository<span class="token punctuation">,</span><br><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br><span class="token comment">// Registration</span><br>module <span class="token punctuation">{</span><br>    viewModel <span class="token punctuation">{</span> params <span class="token operator">-></span> <span class="token function">DetailViewModel</span><span class="token punctuation">(</span>params<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br><span class="token comment">// Usage</span><br><span class="token keyword">val</span> vm <span class="token operator">=</span> koinViewModel<span class="token operator">&lt;</span>DetailViewModel<span class="token operator">></span> <span class="token punctuation">{</span> <span class="token function">parametersOf</span><span class="token punctuation">(</span><span class="token string-literal singleline"><span class="token string">"some-id"</span></span><span class="token punctuation">)</span> <span class="token punctuation">}</span></code></pre>
+<p>Metro requires <code>@AssistedInject</code>, <code>@Assisted</code>, <code>@AssistedFactory</code>, plus a Factory interface. The mental model shifts from &quot;how do I create a ViewModel with parameters&quot; to &quot;I need to declare a factory interface.&quot; On the other hand, Metro's approach is type-safe — <code>create(id: String)</code> uses named parameters, while Koin's <code>parametersOf(...)</code> relies on positional arguments where ordering mistakes won't be caught at compile time.</p>
+<p>In the age of AI-assisted coding, the extra boilerplate is less of a concern since AI handles it well — and type safety arguably matters more when AI is generating the code too.</p>
+<h3 id="%40viewmodelkey-redundancy" tabindex="-1">@ViewModelKey Redundancy</h3>
+<p>Registering a ViewModel into the DI map requires:</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token annotation builtin">@Inject</span><br><span class="token annotation builtin">@ViewModelKey</span><span class="token punctuation">(</span>ArticleListViewModel<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token annotation builtin">@ContributesIntoMap</span><span class="token punctuation">(</span>AppScope<span class="token operator">::</span><span class="token keyword">class</span><span class="token punctuation">)</span><br><span class="token keyword">class</span> <span class="token function">ArticleListViewModel</span><span class="token punctuation">(</span><span class="token operator">..</span><span class="token punctuation">.</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span></code></pre>
+<p><code>@ViewModelKey(ArticleListViewModel::class)</code> placed on <code>class ArticleListViewModel</code> — the key is the class itself, yet you must spell it out explicitly. I filed an <a href="https://github.com/ZacSweers/metro/issues/1994">issue</a> suggesting default inference, but it was declined — the rationale being that special-casing ViewModel keys would set a precedent for other map keys. A reasonable stance, though it does mean repeating this line for every ViewModel.</p>
+<h2 id="overall-impressions" tabindex="-1">Overall Impressions</h2>
+<p>Aggregation combined with <code>@Inject</code> + <code>@ContributesBinding</code> is where Metro shines — multi-module projects benefit from automatic registration, and missing bindings are caught at compile time.</p>
+<p>The <code>@Provides</code> + <code>@BindingContainer</code> and <code>@AssistedInject</code> patterns carry more ceremony. The annotation count inherits the complexity of the Dagger lineage, which can feel like a steep learning curve for developers less familiar with that ecosystem. Zac Sweers comes from the Dagger/Anvil world, so this is a natural evolution for him — for others, it's a new set of concepts to absorb.</p>
+<p>Metro is currently at 0.11.x, not yet 1.0, but development has been quite active.</p>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
