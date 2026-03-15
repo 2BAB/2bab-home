@@ -22,7 +22,7 @@ He categorizes skills by source into three types:
 
 The core mechanism is submodules. `.gitmodules` has two categories of references:
 
-```gitconfig
+```ini
 # sources — official doc repos, used to generate skills
 [submodule "sources/vue"]
     path = sources/vue

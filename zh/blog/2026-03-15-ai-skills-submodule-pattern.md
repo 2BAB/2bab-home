@@ -22,7 +22,7 @@ Coding Agent 有知识截止日期，碰到新框架或者框架的新版本 API
 
 核心机制是 submodule，`.gitmodules` 里分两类引用：
 
-```gitconfig
+```ini
 # sources —— 官方文档仓库，用来生成 skill
 [submodule "sources/vue"]
     path = sources/vue
