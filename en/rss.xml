@@ -4,11 +4,190 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/en/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2026-03-15T00:00:00Z</updated>
+  <updated>2026-03-16T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>Responsive Layout Fundamentals</title>
+    <link href="https://2bab.me/en/blog/2026-03-16-responsive-layout-fundamentals/"/>
+    <updated>2026-03-16T00:00:00Z</updated>
+    <id>https://2bab.me/en/blog/2026-03-16-responsive-layout-fundamentals/</id>
+    <content type="html">&lt;p&gt;Getting started with responsive design really comes down to two things: where to put the navigation, and how to arrange content. As screens get larger, each of these has a well-established set of patterns. Android&#39;s developer docs have the most thorough summary, complete with ready-made components. iOS and Web follow similar ideas but require more manual work.&lt;/p&gt;
+&lt;h2 id=&quot;1.-navigation&quot; tabindex=&quot;-1&quot;&gt;1. Navigation&lt;/h2&gt;
+&lt;p&gt;The core question: as the screen gets wider, where does the navigation go?&lt;/p&gt;
+&lt;h3 id=&quot;four-navigation-patterns&quot; tabindex=&quot;-1&quot;&gt;Four Navigation Patterns&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;Bottom Bar&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The most common mobile navigation. 3-5 icons lined up at the bottom of the screen, within thumb reach. The default choice for phones in portrait.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌───────────┐
+│           │
+│  Content  │
+│           │
+├──┬──┬──┬──┤
+│🏠│📋│🔍│⚙️│
+└──┴──┴──┴──┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;Top Bar&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The traditional Web approach. Logo on the left, nav items on the right. Works well when there aren&#39;t too many items and brand presence matters. Rarely used as the primary navigation on native mobile apps, but extremely common on the Web — marketing sites, docs, SaaS products.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌──────────────────────┐
+│ Logo  Home  About  ▾ │
+├──────────────────────┤
+│                      │
+│      Content         │
+│                      │
+└──────────────────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;On narrow screens, the Top Bar typically collapses into a hamburger menu that opens as a full or half-screen overlay. Web developers know this drill well.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Rail&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;A narrow sidebar with just icons and short labels, pinned to the left edge. The go-to choice for tablets and foldables — makes better use of horizontal space than a Bottom Bar, without eating as much area as a Drawer.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌──┬───────────┐
+│🏠│           │
+│📋│  Content  │
+│🔍│           │
+│⚙️│           │
+└──┴───────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;&lt;strong&gt;Drawer&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;A full sidebar with icons and complete labels. Can hold many items, supports grouping and nesting. The standard for large screens and desktops. Some implementations support expand/collapse.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;┌──────────┬─────────┐
+│ 🏠 Home   │         │
+│ 📋 Orders │ Content │
+│ 🔍 Search │         │
+│ ⚙️ Settings│         │
+└──────────┴─────────┘
+&lt;/code&gt;&lt;/pre&gt;
+&lt;h3 id=&quot;switching-logic&quot; tabindex=&quot;-1&quot;&gt;Switching Logic&lt;/h3&gt;
+&lt;p&gt;As screen width increases:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Phone        Tablet/Foldable    Desktop/Large
+Bottom Bar  →    Rail       →   Drawer
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Web has an additional path:&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Phone              Tablet          Desktop
+Hamburger(☰)  →  Top Bar    →  Top Bar (more items)
+  or               or              or
+Bottom Bar    →  Rail        →  Drawer
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Which path to take on the Web depends on the product type. Tool-oriented products (admin panels, email, docs) go the Rail/Drawer route. Content-oriented products (blogs, marketing sites, e-commerce) go the Top Bar route. Native apps almost always follow the Bottom Bar → Rail → Drawer path.&lt;/p&gt;
+&lt;h3 id=&quot;platform-support&quot; tabindex=&quot;-1&quot;&gt;Platform Support&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;/th&gt;
+&lt;th&gt;Android&lt;/th&gt;
+&lt;th&gt;iOS&lt;/th&gt;
+&lt;th&gt;Web&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Bottom Bar&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;NavigationBar&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;TabView&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;Roll your own&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Top Bar&lt;/td&gt;
+&lt;td&gt;Uncommon&lt;/td&gt;
+&lt;td&gt;Uncommon&lt;/td&gt;
+&lt;td&gt;Roll your own (trivial to find)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Rail&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;NavigationRail&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;No native component&lt;/td&gt;
+&lt;td&gt;Roll your own&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Drawer&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;NavigationDrawer&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;No native component&lt;/td&gt;
+&lt;td&gt;Roll your own&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Auto-switch&lt;/td&gt;
+&lt;td&gt;&lt;code&gt;NavigationSuiteScaffold&lt;/code&gt;&lt;/td&gt;
+&lt;td&gt;None, manually check Size Class&lt;/td&gt;
+&lt;td&gt;None, use CSS breakpoints&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;Android is probably the only platform with a turnkey solution. &lt;code&gt;NavigationSuiteScaffold&lt;/code&gt; takes your nav items and automatically switches between the three forms based on window size — one line of code. iOS and Web both require you to build this switching logic yourself, though Web often leverages Tailwind breakpoints and mature component libraries to get there.&lt;/p&gt;
+&lt;h2 id=&quot;2.-content-area-(canonical-layouts)&quot; tabindex=&quot;-1&quot;&gt;2. Content Area (Canonical Layouts)&lt;/h2&gt;
+&lt;p&gt;Once navigation is settled, the remaining question is how the content area adapts to different screen sizes. Google identified three canonical layouts that cover the vast majority of cases.&lt;/p&gt;
+&lt;h3 id=&quot;list-detail&quot; tabindex=&quot;-1&quot;&gt;List-Detail&lt;/h3&gt;
+&lt;p&gt;On small screens, the list and detail are separate pages — tap an item to navigate to its detail. On large screens, they sit side by side.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Small:                   Large:
+┌──────────┐            ┌─────┬────────┐
+│ Item A   │            │ A   │        │
+│ Item B   │    →       │ B ● │ Detail │
+│ Item C   │            │ C   │ of B   │
+└──────────┘            └─────┴────────┘
+  Tap → full-screen        Side by side
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;The most classic responsive pattern. Email clients, chat apps, settings pages, file managers — all List-Detail.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Platform implementations:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Android: &lt;code&gt;ListDetailPaneScaffold&lt;/code&gt;, works out of the box&lt;/li&gt;
+&lt;li&gt;iOS: &lt;code&gt;NavigationSplitView&lt;/code&gt;, functional but limited in customization&lt;/li&gt;
+&lt;li&gt;Web: CSS Grid/Flexbox + media queries, or simply &lt;code&gt;grid-template-columns: 300px 1fr&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;feed&quot; tabindex=&quot;-1&quot;&gt;Feed&lt;/h3&gt;
+&lt;p&gt;Content comes in cards. Single column on small screens, multi-column grid on large ones.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Small:             Large:
+┌────────┐        ┌────┬────┬────┐
+│ Card A │        │ A  │ B  │ C  │
+│ Card B │   →    │ D  │ E  │ F  │
+│ Card C │        │ G  │ H  │    │
+└────────┘        └────┴────┴────┘
+  Single col        Multi-col grid
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Social feeds, news, image galleries, product listings. The key is letting the column count adapt to screen width rather than hardcoding it.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Platform implementations:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Android: &lt;code&gt;LazyVerticalGrid&lt;/code&gt; + &lt;code&gt;GridCells.Adaptive(minSize)&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;iOS: &lt;code&gt;LazyVGrid&lt;/code&gt; + &lt;code&gt;GridItem(.adaptive(minimum:))&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Web: &lt;code&gt;grid-template-columns: repeat(auto-fill, minmax(280px, 1fr))&lt;/code&gt; — one line of CSS, and Web actually wins here in simplicity&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;supporting-pane&quot; tabindex=&quot;-1&quot;&gt;Supporting Pane&lt;/h3&gt;
+&lt;p&gt;The main content takes the majority of space, with supplementary info alongside. Unlike List-Detail, this isn&#39;t a master-detail relationship — it&#39;s main content plus auxiliary information.&lt;/p&gt;
+&lt;pre&gt;&lt;code&gt;Small:                   Large:
+┌──────────┐            ┌────────┬─────┐
+│          │            │        │     │
+│   Main   │    →       │  Main  │ SP  │
+│          │            │        │     │
+├──────────┤            └────────┴─────┘
+│ Support  │              Main + side panel
+└──────────┘
+ Below or in a sheet
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Maps + search results, video + comments, code editor + properties panel. On small screens, the supporting pane typically sits below, collapses into a bottom sheet, or becomes an expandable overlay.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Platform implementations:&lt;/strong&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Android: &lt;code&gt;SupportingPaneScaffold&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;iOS: No equivalent component, build with &lt;code&gt;HStack&lt;/code&gt; + &lt;code&gt;GeometryReader&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;Web: CSS Grid or Flexbox, straightforward&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&quot;combining-layouts&quot; tabindex=&quot;-1&quot;&gt;Combining Layouts&lt;/h3&gt;
+&lt;p&gt;In practice, these three often nest inside each other. Take an email client: the overall structure is List-Detail, the list itself is a Feed (email cards), and the detail view might have a Supporting Pane on the side showing attachments or contact info. Once you understand these three base patterns, every variation is just a combination.&lt;/p&gt;
+&lt;hr /&gt;
+&lt;h2 id=&quot;summary&quot; tabindex=&quot;-1&quot;&gt;Summary&lt;/h2&gt;
+&lt;pre&gt;&lt;code&gt;Responsive layout = Navigation adaptation + Content area adaptation
+
+Navigation:
+  Bottom Bar → Rail → Drawer (native apps)
+  Hamburger → Top Bar (Web content sites)
+
+Content area (Canonical Layouts):
+  List-Detail      List and detail, separate pages on small screens, side by side on large
+  Feed             Card stream, single column on small, multi-column on large
+  Supporting Pane  Main content + auxiliary panel
+&lt;/code&gt;&lt;/pre&gt;
+&lt;p&gt;Android has the most complete story here, with dedicated Material 3 components for each pattern. iOS only has &lt;code&gt;NavigationSplitView&lt;/code&gt; and &lt;code&gt;LazyVGrid&lt;/code&gt; roughly covering List-Detail and Feed — the rest is manual. Web has the most flexibility — CSS Grid was designed for exactly these scenarios — but lacks high-level turnkey components, so you assemble them yourself.&lt;/p&gt;
+&lt;p&gt;That&#39;s the full picture. When building a screen, first identify which Canonical Layout it falls into, then decide which navigation form to use. The rest is platform API details.&lt;/p&gt;
+</content>
+  </entry>
   
   <entry>
     <title>Some Personal Takes on Metro DI</title>
