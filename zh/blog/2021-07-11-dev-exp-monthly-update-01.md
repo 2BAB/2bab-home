@@ -109,7 +109,7 @@ A2：
 
 1. [Recipes - Coil](https://coil-kt.github.io/coil/recipes/#shared-element-transitions)，你大概率是碰到了：Shared element transitions are incompatible with hardware bitmaps；
 2. 除了上面那个，还有一些机型原生不支持，以及 OS 版本原生不支持的，库本身应该是处理好了：[https://github.com/coil-kt/coil/blob/main/coil-base/src/main/java/coil/memory/HardwareBitmapService.kt](https://github.com/coil-kt/coil/blob/main/coil-base/src/main/java/coil/memory/HardwareBitmapService.kt)
-3. 查看所有相关 issue，比如[这个](https://wx.zsxq.com/dweb2/index/group/51285415155554)，没有看到超出上述范围的讨论，所以我觉得应该就是这样啦。
+3. 查看所有相关 issue，没有看到超出上述范围的讨论，所以我觉得应该就是这样啦。
 
 
 *欢迎关注我的[ Github / 公众号 / 播客 / 微博 / Twitter](/about)。*
