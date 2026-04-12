@@ -4,11 +4,89 @@
   <subtitle>El is blogging about tech and life.</subtitle>
   <link href="https://2bab.me/zh/rss.xml" rel="self"/>
   <link href="https://2bab.me/"/>
-  <updated>2026-03-16T00:00:00Z</updated>
+  <updated>2026-04-12T00:00:00Z</updated>
   <id>https://2bab.me/</id>
   <author>
     <name>2BAB</name>
   </author>
+  
+  <entry>
+    <title>Harness Engineering 精要：驯服 AI 编码代理的九条实践</title>
+    <link href="https://2bab.me/zh/blog/2026-04-12-harness-engineering-best-practices/"/>
+    <updated>2026-04-12T00:00:00Z</updated>
+    <id>https://2bab.me/zh/blog/2026-04-12-harness-engineering-best-practices/</id>
+    <content type="html">&lt;p&gt;Anthropic 在 2025 年底发了一篇 &lt;a href=&quot;https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents&quot;&gt;Effective Harnesses for Long-Running Agents&lt;/a&gt;，提出了 harness 的概念——用架构手段把不稳定的模型约束成可持续运行的工程系统。后续又在 &lt;a href=&quot;https://www.anthropic.com/engineering/harness-design-long-running-apps&quot;&gt;Harness Design for Long-Running Application Development&lt;/a&gt; 里进一步展开了多代理分工和评估分离的实践。&lt;/p&gt;
+&lt;p&gt;&lt;a href=&quot;https://harness-books.agentway.dev/book1-claude-code/&quot;&gt;《Harness Engineering：Claude Code 设计指南》&lt;/a&gt;这本小册子把这套思路拉得更深，它通过分析 Claude Code 的源码，系统地拆解了 prompt 控制面、执行循环、工具权限、上下文治理、错误恢复、多代理验证和团队落地这些层面的工程设计。书中有大量 Claude Code 源码级的细节分析，本文把它精简掉，只保留可迁移的最佳实践要点。&lt;/p&gt;
+&lt;h2 id=&quot;%E4%B8%80%E3%80%81%E4%B8%BA%E4%BB%80%E4%B9%88%E9%9C%80%E8%A6%81-harness-engineering&quot; tabindex=&quot;-1&quot;&gt;一、为什么需要 Harness Engineering&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;模型不值得天然信任。&lt;/strong&gt; 一个会说话的概率分布，一旦能接触终端和文件，风险就从修辞层面升级到执行层面。只会输出文本的模型出错时增加的只是沟通成本，但能调工具的模型出错时留下的是实际后果——文件被删、进程被杀、Git 历史被改写。代理系统要进入真实工程环境，首先要承认自己的核心部件是不稳定的。忽视这一点，问题最后通常会在日志和事故记录里出现。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;约束执行是核心能力。&lt;/strong&gt; 模型会犯错，工具会扩大错误后果，上下文会膨胀，状态会污染下一轮，用户会打断你，失败会反复出现。系统不能靠&amp;quot;聪明&amp;quot;维持秩序，只能靠结构维持秩序。结构不像聪明那样显眼，但通常更可靠。一个真正可用的代理系统，不能依赖一段&amp;quot;万能提示词&amp;quot;解决所有问题，它必须把控制拆成层，把层次拆成职责。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Harness 是一整套控制平面。&lt;/strong&gt; 它包括 prompt 约束、执行循环、工具调度、权限审批、错误恢复等多个层次，共同指向一个目标：让模型在不可靠的前提下仍然输出可承受的行为。高风险能力必须配高密度约束——能力越强，控制越细，因为外部世界不会因为模型语气坚定就自动原谅一次错误执行。把这些放在一起看，Harness Engineering 并不神秘，它只是坚持几条常被忽视的工程常识。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E4%BA%8C%E3%80%81prompt-%E6%98%AF%E6%8E%A7%E5%88%B6%E5%B9%B3%E9%9D%A2%EF%BC%8C%E4%B8%8D%E6%98%AF%E4%BA%BA%E6%A0%BC%E8%AE%BE%E5%AE%9A&quot; tabindex=&quot;-1&quot;&gt;二、Prompt 是控制平面，不是人格设定&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;人设和控制不在同一层。&lt;/strong&gt; 人设描述解决的是&amp;quot;它像什么&amp;quot;，控制平面解决的是&amp;quot;它能做什么、什么时候做、做错了怎么办、谁来兜底&amp;quot;。一个系统可以有讨人喜欢的人设，同时在执行层面缺少规矩——那种系统出事时往往会显得很真诚，因为它很会道歉，但道歉并不能替代运行时设计。对于一个要读文件、调工具、动 shell、处理权限、跨轮执行的代理系统来说，prompt 更接近一套运行时协议，而不是一篇人物小传。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Prompt 要分层拼装，不是一段万能文本。&lt;/strong&gt; 成熟系统不会迷信唯一版本的 prompt，而会把它当成一个有层级的配置系统：身份说明、系统级规则、工程性约束、领域行为各自独立管理。新增提醒和禁令互相冲突时，系统行为就会变得难以预测，拆成层、拆成职责才是正经做法。一个会自动&amp;quot;顺手优化一切&amp;quot;的模型，从产品角度看也许很热情，从工程角度看则相当危险，所以工程性约束（不要越权、不要隐瞒验证失败、不要没必要地制造抽象）需要在 prompt 里被明确规定。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Prompt 必须有优先级机制。&lt;/strong&gt; 不同语境（协调者模式、agent 模式、用户自定义）应该有明确的优先级排序，而不是谁后写谁说了算。关键原则是：新增 agent 指令只能在默认约束之上叠加领域行为，不能把整套纪律换掉。可以理解为通用制度外加岗位说明书——岗位说明可以补充职责，但不能冲掉底层制度，否则系统很快就会各自为政。没有结构的可定制，最后往往会退化成另一种随意。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Prompt 还要连接记忆系统。&lt;/strong&gt; 成熟的 prompt 不只规定&amp;quot;这一轮怎么执行&amp;quot;，还要规定&amp;quot;长期记忆如何形成&amp;quot;——什么该保存、什么不该保存、索引和正文如何分离、plan 和 task 不该被误用成 memory。走到这一步，prompt 就不可能再只是语气问题，而必然进入制度问题。它把 prompt 的职责从&amp;quot;约束当前行为&amp;quot;扩展到了&amp;quot;约束未来知识的沉淀方式&amp;quot;，更接近一份写给运行时参与者的知识治理协议。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E4%B8%89%E3%80%81query-loop%EF%BC%9A%E4%BB%A3%E7%90%86%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%BF%83%E8%B7%B3&quot; tabindex=&quot;-1&quot;&gt;三、Query Loop：代理系统的心跳&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;代理依赖有状态的执行循环，不是一问一答。&lt;/strong&gt; 判断一个代理是否成熟，先看它有没有维护跨轮的执行状态：消息历史、恢复计数、压缩追踪、工具上下文、轮次计数等。一旦这样设计，就等于正式承认上一轮留下的问题会进入下一轮，系统必须有能力继续处理。一个系统是否能被称为 agent，往往不取决于它会不会说，而取决于它能不能在几轮之后仍然知道自己在做什么。脚本只关心这一步有没有跑完，代理系统还要关心：这一步失败之后下一步能不能继续承接前面留下的状态。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;上下文治理先于模型推理。&lt;/strong&gt; 在调用模型之前，运行时应先完成一串整理工作：截取有效消息、裁剪工具结果、压缩历史、折叠上下文。很多系统恰恰相反：先把大量上下文塞进去，再寄希望于模型自己判断什么重要什么不重要，那种做法看似省事，实际上是在把运行时应承担的责任转嫁给概率分布。不要把从混乱中整理秩序的责任交给模型，而是由运行时完成治理后，再把更干净的输入交给模型。先整理现场，再开始执行，这种做法不追求潇洒，但通常更稳妥。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;中断和恢复必须有一等语义。&lt;/strong&gt; 只要系统向外承诺了一段执行，就要在中断时把账补平——不能因为用户打断了就假装前面的动作从未发生。已经发出但尚未完成的工具调用必须生成补偿结果，确保执行轨迹可被解释。恢复不是简单重试，而是按成本和破坏性从低到高逐层尝试。停止条件也要细化区分：streaming 完成、用户中断、prompt 过长、输出截断、hook 阻塞，每种情况走不同路径——把&amp;quot;失败了就重试&amp;quot;和&amp;quot;知道什么时候不该再试&amp;quot;区分开来，是成熟系统的关键特征。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E5%9B%9B%E3%80%81%E5%B7%A5%E5%85%B7%E3%80%81%E6%9D%83%E9%99%90%E4%B8%8E%E4%B8%AD%E6%96%AD&quot; tabindex=&quot;-1&quot;&gt;四、工具、权限与中断&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;工具是受管执行接口，不是模型能力的延长线。&lt;/strong&gt; 工具不是意见，工具是动作，动作会留下结果，结果会接触真实世界。模型提出动作建议，是否放行由运行时、规则和用户决定。权限判定结果至少分三种：允许、拒绝、需要询问。&amp;quot;需要询问&amp;quot;这个第三态很关键——它承认系统自己也不该替用户做所有决定。理解意图不等于拥有授权，更不等于拥有持续授权，系统必须把&amp;quot;会做&amp;quot;和&amp;quot;可以做&amp;quot;分开。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工具调度必须保持因果秩序。&lt;/strong&gt; 工具系统一旦允许并发，就必须回答一个老问题：上下文变化由谁决定、按什么顺序生效。正确做法是即便执行是并发的，语义上的上下文演化仍然保持确定顺序——先缓存修改，再按原始顺序回放。并发可以提高吞吐，但不能破坏因果秩序。没有调度纪律的工具系统，只会把模型的不稳定性放大到外部世界，并发如果不受约束就会扩大事故半径。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;高风险工具必须区别对待。&lt;/strong&gt; 像 Bash 这种几乎不受领域边界约束的接口，必须被当成特例——它可以直接接触文件、进程、网络和 Git 仓库，还会带上重定向、管道等复杂 shell 语义。正确的做法是针对它建立专门的权限审查、命令前缀解析、子命令数量上限和详尽的操作规约。高风险能力不应该享受通用能力的待遇，能力越通用越要特殊看管。把 Bash 当成普通工具，往往只是设计上的偷懒。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工具系统保护的不只是用户，还有系统自身。&lt;/strong&gt; 不完整的执行结果、失序的上下文修改、无边界的并发副作用、说不清楚的中断语义——这些问题最先崩掉的往往是系统一致性。约束工具的目的，是让&amp;quot;执行过什么、没执行完什么、为什么停了&amp;quot;始终有一条可追溯的因果链。很多约束表面上是在防止误操作，更深一层是在防止系统自己变成一堆无法解释的状态残片。不能解释的执行轨迹，迟早会变成运维问题、审计问题，或者变成团队里谁也说不清楚的长期隐患。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E4%BA%94%E3%80%81%E4%B8%8A%E4%B8%8B%E6%96%87%E6%B2%BB%E7%90%86%EF%BC%9Amemory-%E4%B8%8E-compact&quot; tabindex=&quot;-1&quot;&gt;五、上下文治理：Memory 与 Compact&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;上下文是预算，不是仓库。&lt;/strong&gt; 信息越多系统越聪明是一种常见迷信。上下文首先是一笔昂贵、易膨胀、还会自我污染的资源，代理系统不是图书馆，模型也不是藏书管理员。长期规则、持久记忆、会话连续性和临时对话应该分层治理，不该混成一锅粥。稳定的团队规范和仓库约束寿命远长于某一轮用户消息，如果全都塞进聊天记录里，要么每轮重复注入浪费上下文，要么靠模型自己回忆迟早失手。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;记忆入口必须短小。&lt;/strong&gt; 索引文件天然会被频繁加载，频繁加载的东西一旦变胖，整套上下文就会被它慢慢拖垮。长期记忆应该分成&amp;quot;入口&amp;quot;和&amp;quot;正文&amp;quot;：入口负责低成本寻址，正文负责高密度承载。入口文件应该设硬上限——超过了就截断并警告，把细节移到独立文件。入口一旦既当目录又当正文，最后就既不是目录也不是正文，只是一个谁都不愿再读第二遍的烂尾摘要。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;会话连续性要靠结构化摘要，不靠聊天记录。&lt;/strong&gt; 会话记忆应该萃取成一种可继续工作的操作说明书：当前状态、踩过的坑、改过的文件、后面该接什么。它不求完整复刻对话，而求压缩出继续干活所必需的骨架。会话摘要的预算同样要受控，优先保留&amp;quot;当前状态&amp;quot;和&amp;quot;错误修正&amp;quot;这些对下一步执行最有用的部分。真正成熟的系统会把&amp;quot;为继续工作保留最有用的部分&amp;quot;当成美德，因为上下文预算是工作内存，工作内存的第一职责是可操作。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Compact 的目标是重建工作语义，不是写一段好看的总结。&lt;/strong&gt; 压缩后的上下文必须恢复计划状态、文件状态、技能约束、工具附件等运行时环境——摘要只是中间产物，真正的目标是铺平&amp;quot;继续干活所需的工作底座&amp;quot;。所以 compact 更像一次受控重启，而不是一次聊天总结，旧上下文会被转译成新的工作底座。只做前半截的系统，compact 之后虽然&amp;quot;还记得大概&amp;quot;，却已经失去了工具和计划状态，接下来还得再花几轮找回自己。上下文系统应该优先保留能维持行动语义的东西，而不是优先保留看起来信息量最大的东西。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E5%85%AD%E3%80%81%E9%94%99%E8%AF%AF%E4%B8%8E%E6%81%A2%E5%A4%8D&quot; tabindex=&quot;-1&quot;&gt;六、错误与恢复&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;错误恢复要分层，不要所有问题都打一把重锤。&lt;/strong&gt; 判断一个代理系统成熟不成熟，不能只看它回答顺畅的时候有多像个人，而要看它出故障的时候像不像系统。例如 prompt 过长时，先尝试排空已知积压，再做更重的全文压缩，不要一上来就重建世界。好的恢复系统会先试图保住最细粒度的上下文，再在必要时接受更粗糙的摘要替代。有些错误要先交给恢复系统试着处理，再决定是否展示给用户——用户真正关心的通常是系统还能不能继续干活。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;恢复逻辑必须防止自我回环。&lt;/strong&gt; 如果 compact 之后还是不行，继续 compact 大概率只是把同一种失败换个姿势再演一次。系统里最危险的错误，是失败分支和恢复分支彼此咬住开始无限自我复制。任何自动恢复机制都必须可计数、可限次、可熔断——不会收手的恢复系统，和不会刹车的汽车差不多，理论上都叫系统，实际上都不该上路。连&amp;quot;修复动作&amp;quot;本身也需要修复策略，因为现实中压缩请求自己也可能因为上下文太长而失败，这时候系统优先级是先恢复呼吸再讨论信息保真度。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;截断后的最佳恢复是续写，不是总结。&lt;/strong&gt; 输出被截断时，应该让系统直接从断点继续，而不是先道歉、先 recap、先写一段漂亮的空话。先尝试提升 token 上限直接重跑，如果还不够再追加一条指令让模型从截断处接着写，明确要求不要道歉、不要回顾。每一次截断后的 recap 都会进一步消耗预算并增加语义漂移，最终系统做的就不再是任务本身，而是一轮轮地回顾自己做任务。工程系统真正的礼貌，在于别把用户困在失败态里。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;中断也是需要语义收尾的失败态。&lt;/strong&gt; 用户打断不只是&amp;quot;不想看了&amp;quot;，而是一次需要正确收尾的状态转移。已经发出但尚未完成的工具调用必须生成补偿结果，确保前面承诺过的动作不会变成悬空债务。错误恢复真正修补的，不只是错误本身，还有系统对自己行为的解释能力——系统能不能说清楚&amp;quot;我刚才试图做什么、为什么没做成、现在是继续还是停止&amp;quot;。解释能力一断，系统就会从工程对象退化成玄学对象。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E4%B8%83%E3%80%81%E5%A4%9A%E4%BB%A3%E7%90%86%E4%B8%8E%E9%AA%8C%E8%AF%81&quot; tabindex=&quot;-1&quot;&gt;七、多代理与验证&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Fork 首先是运行时经济学问题。&lt;/strong&gt; 子代理必须和父代理共享缓存关键参数（system prompt、上下文、工具配置等），否则每次都重新烧一遍 token，看上去像在并行提效，实际只是把浪费并行化。状态隔离是默认伦理——所有可变状态先隔离，可共享必须显式声明，防止子代理的局部混乱污染主线程。子代理最宝贵的地方，恰恰在于它可以避免把自己的局部混乱污染主线程：研究中的误判、临时读到的文件状态、一次性的推理枝杈，如果全都直接写回主上下文，你得到的只会是更快的脏化。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;研究可以委派，综合理解不能委派。&lt;/strong&gt; 多代理系统里真正稀缺的是 synthesis——把各个 worker 带回来的局部知识重新压成清晰、可执行、可验证的下一步。协调者必须读懂研究结果再写具体指令，后续 prompt 里必须出现具体文件、具体位置、具体变更，而不是抽象地&amp;quot;根据前面的结论&amp;quot;。缺少这一层，多代理很快就会退化成一种带着礼貌措辞的任务转发机——每个 agent 都在忙，系统整体却并没有更懂。这是非常正统的工程分工：研究可以分布式，但理解必须重新收束。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;验证必须独立成阶段。&lt;/strong&gt; &amp;quot;我改了代码&amp;quot;和&amp;quot;代码因此正确&amp;quot;之间隔着一条很宽的河，模型尤其擅长在这条河上搭纸桥。实现者天然倾向于相信自己的改动差不多行了，模型更是如此——它会给你改动、解释、甚至给你一段像样的测试输出，但这些都不等于功能真的站住了。验证要成为独立角色：实现的人专注于改，验证的人专门怀疑这些改动配不配活着。验证的目标是证明代码有效，而不只是确认代码存在——否则&amp;quot;完成&amp;quot;很快就会退化成&amp;quot;已经写完并且我觉得没问题&amp;quot;。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;子代理需要完整的生命周期管理。&lt;/strong&gt; 启动时可以观测，停止前可以介入，转录路径可追踪，父任务中止时子任务必须跟着中止。输出文件是否该保留、清理回调有没有泄漏、agent 结束后的状态残留怎么处理——这些都要显式处理。多代理 demo 只做到&amp;quot;能再起一个 agent&amp;quot;远远不够，必须把 agent 当作会泄漏资源、会残留状态、会在父进程结束后变成孤儿的运行实体来看待。多代理真正有价值的地方，在于把不同种类的不确定性关进不同容器里，再用协调者组织回来。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E5%85%AB%E3%80%81%E5%9B%A2%E9%98%9F%E8%90%BD%E5%9C%B0&quot; tabindex=&quot;-1&quot;&gt;八、团队落地&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;先画最低可控边界。&lt;/strong&gt; 团队起步不必上 hooks 和复杂 skill 目录，先把四件事讲清楚：哪些任务允许 agent 参与、哪些改动必须经过人工 review、改完至少跑什么验证、哪些资源一律不能碰。这四件事比任何宏大口号都重要——允许范围不定义，大家会拿 agent 做不该自动化的事；review 责任不定义，出问题时没人知道最后一层把关是谁；禁区不定义，效率提升只是扩大事故半径。很多团队最后失败，往往不是因为 agent 不够强，而是因为起步时跳过了这一步。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;先统一验证定义，再扩 skill 数量。&lt;/strong&gt; 落地 AI 编码代理最常见的失败不在 prompt、不在 model，而在团队对&amp;quot;完成&amp;quot;没有统一定义。有人觉得能跑就行，有人觉得测试过一半就行，有人觉得模型解释得挺像样也行，这样一来再聪明的系统也只能学会迎合最低标准。Skill 可以复制流程，但只有验证定义才能复制质量——先定义哪些任务必须有独立验证、验证至少包含哪些动作、验证失败时怎么标记，这三件事统一了，即使 skill 很少，质量底线也能稳住。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a href=&quot;http://claude.md/&quot;&gt;CLAUDE.md&lt;/a&gt; 更像地基，不是公告栏。&lt;/strong&gt; 团队级指令文件适合承载稳定规则：代码库硬约束、统一验证口径、协作纪律、输出风格。不适合堆频繁波动的临时流程、只有少量任务才用到的操作细节、本来更适合沉淀成脚本或 skill 的步骤。一旦被写成百科全书就会丧失稳定性和可信度，团队成员不再确定它写的到底是现行规则还是半年前遗留的讨论。系统也会学会一种很糟糕的模式：把过期规范当现行法律。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Approval 按风险分层，hook 放在最后引入。&lt;/strong&gt; 权限审批应该按不可逆性和环境敏感度分层（读操作 &amp;lt; 写操作 &amp;lt; 推代码/访问敏感环境），而不是按工具名字一刀切，因为团队真正要控制的是后果而不是按钮名称。Hook 是高级自动化接口，适合在基础治理已经稳定之后再引入——否则它很容易引入新的复杂度：脚本没人维护、触发时机没人说清、调试成本比人工操作更高。更成熟的判断是先用 review、CI 和最少说明文件把底线稳住，再考虑更复杂的编排。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&quot;%E4%B9%9D%E3%80%81%E5%8D%81%E6%9D%A1%E5%8E%9F%E5%88%99&quot; tabindex=&quot;-1&quot;&gt;九、十条原则&lt;/h2&gt;
+&lt;p&gt;原书最后将全部内容收束为十条原则：&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;&lt;strong&gt;把模型当不稳定部件，不要当同事。&lt;/strong&gt; 模型也许能像同事一样说话，但它不会自动获得稳定性、责任感和持续判断力。越早承认这一点，系统就越早开始补上权限、恢复、验证和回滚。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Prompt 是控制平面的一部分。&lt;/strong&gt; 它和 runtime、工具 schema、memory、hook 一起组成控制平面。把 prompt 当人格设定，最后你会得到一个很会表演但不受约束的系统。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Query loop 才是代理系统的心跳。&lt;/strong&gt; 输入治理、流式消费、工具调度、恢复分支、停止条件，都是心跳的一部分。没有执行循环的系统也许能做 demo，但还谈不上运行时。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;工具是受管执行接口。&lt;/strong&gt; 一旦模型开始碰 shell 和文件系统，问题就从&amp;quot;它会不会说&amp;quot;变成&amp;quot;它会不会留下后果&amp;quot;。越危险的工具，越不能按普通能力对待。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;上下文是工作内存。&lt;/strong&gt; 能塞进上下文不等于应该塞进去。Compact 的目标是保住继续工作的语义底座，标准不是&amp;quot;够多&amp;quot;而是&amp;quot;可治理&amp;quot;。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;错误路径就是主路径。&lt;/strong&gt; Prompt 过长、输出截断、中断、hook 回环、compact 自身失败，都是长会话代理的日常天气。恢复和熔断必须在设计时就存在。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;恢复的目标是继续工作。&lt;/strong&gt; 截断之后最好的动作通常是续写；压缩失败时最重要的是先让系统恢复呼吸。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;多代理的意义是把不确定性分区。&lt;/strong&gt; 研究、实现、验证、综合放进不同容器，由协调者收束理解。并行真正带来的价值不是更快，而是让职责边界更清楚。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;验证必须独立，不能让系统自己给自己打分。&lt;/strong&gt; 凡是重要任务，验证都应该成为独立阶段，最好还有独立角色。&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;团队制度比个人技巧重要。&lt;/strong&gt; 一个高手可以靠经验把代理驯服，一个团队不行。只有把个人经验制度化，代理系统才可能成为组织能力，而不是个人把戏。&lt;/li&gt;
+&lt;/ol&gt;
+</content>
+  </entry>
   
   <entry>
     <title>响应式设计的布局基础</title>
