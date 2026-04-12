@@ -2,13 +2,11 @@
 layout: page
 ---
 
-Hi, this is El. Currently based in Singapore, working around AI and mobile apps as a TL/EM at a vertical AI company.
+Hi, I'm El (widely known as **2BAB** online). Currently based in Singapore, I'm a TL/EM at a vertical AI company, focusing on AI and mobile application development.
 
-I’ve previously been at Alibaba and VISA focusing on mobile infrastructure. Along the way, I wrote two books (like [*Extending Android Builds*](/en/book)) that got featured from the Gradle team. Outside of work, I run a podcast [Binary Radio](https://binary.2bab.me/) and a [Youtube channel](https://www.youtube.com/@El-s-Space), and ccasionally dive into open source, talks, or writing.
+Previously, I spent years at Alibaba and VISA working on mobile infrastructure. I'm the author of two books featured by the Gradle team, including [*Extending Android Builds*](/en/book). Beyond my professional role, I host the [Binary Radio](https://binary.2bab.me/) podcast and manage the [El's Space](https://www.youtube.com/@El-s-Space) channel. I also actively contribute to open source, give technical talks, and share my thoughts through writing.
 
-I’m also an [Android GDE](https://developers.google.com/community/experts/directory?text=El%20Zhang), collaborating with Google on AI and Android evangelism. Always happy to chat, exchange ideas, and learn from others.
-
-*2BAB* is my ID used at all platforms.
+As an [Android GDE](https://developers.google.com/community/experts/directory?text=El%20Zhang) (Google Developer Expert), I have a long-term collaboration with Google on AI and Android evangelism. I'm always eager to exchange ideas and explore new perspectives.
 
 ### Links
 
@@ -19,6 +17,3 @@ I’m also an [Android GDE](https://developers.google.com/community/experts/dire
 ### Direct Contact
 
 - [E-mail](mailto:xx2bab@gmail.com)
-- [Telegram](https://t.me/xx2bab)
-
-
