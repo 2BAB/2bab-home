@@ -2,6 +2,10 @@
 layout: page
 ---
 
+### Gemma 4 for Edge Computing
+
+Build with AI Wenzhou / GDG 温州 / 2026-04 / [活动介绍](https://gdg.community.dev/events/details/google-gdg-wenzhou-presents-gemma-and-gemini-31nanno-showcase/) / [Slides](https://talk-slides.2bab.com/2026-04-26-Gemma4-and-Edge-Compute/1) / 无回放
+
 ### Open AIDoc - 使用 Gemini 维护 4000+ 文档翻译
 
 Kotlin Online Conf 2025 / JetBrains / 2025-12 / [活动介绍](https://blog.jetbrains.com/zh-hans/kotlin/2025/11/kotlin-online-conference-2025/) / [Slides](https://docs.google.com/presentation/d/1Gk_m8Y6AVV6JYqsH9sKD30jO0ha4OQH0S8DB0DfvWHk/edit?usp=sharing) / 无回放
