@@ -202,3 +202,5 @@ _site
 # AI and Project Rules
 .claude/
 GEMINI.md
+AGENTS.md
+CLAUDE.md
