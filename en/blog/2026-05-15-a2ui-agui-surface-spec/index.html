@@ -1,0 +1,96 @@
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="A2UI, AG-UI, and GenUI Beyond the Chat Box" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/en/blog/2026-05-15-a2ui-agui-surface-spec/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>A2UI, AG-UI, and GenUI Beyond the Chat Box | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/">2BAB&#39;s Blog</a>
+    </div>
+    <h1>A2UI, AG-UI, and GenUI Beyond the Chat Box</h1>
+    <div class="italic text-gray-500">
+      2026/05/15
+    </div>
+    <div>
+      <p>I recently took another look at Google's A2UI and AG-UI. Compared with my first pass last year, my view is clearer now: both are valuable, and they complement each other, but they should not be simplified into &quot;dynamic UI protocols are finally standardized.&quot;</p>
+<p>More precisely, A2UI and AG-UI are still clearly centered around a <strong>chat-like style</strong> today: agent conversations, copilots, search/chat, and assistant panels inside productivity tools. This is a large market, of course, and it explains why tools and protocols in this direction are moving so fast. But AI application forms cannot be fixed inside the chat box. The many existing apps, especially in content, media, education, consumer products, and communities, still leave a lot of space worth watching.</p>
+<p><img src="https://storage.googleapis.com/gweb-developer-goog-blog-assets/images/a2ui-blog-1-component-gallery_2.original.png" alt="A2UI component gallery example"></p>
+<p><em>Image source: Google Developers Blog, component gallery example from <a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Introducing A2UI: An open project for agent-driven interfaces</a></em></p>
+<h2 id="spec-and-protocol" tabindex="-1">Spec and Protocol</h2>
+<p><a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Google introduced A2UI in December 2025</a>. The core idea is to let an agent return not just text, but a safe, declarative UI description, which the host application then renders with its own components. By the <a href="https://developers.googleblog.com/a2ui-v0-9-generative-ui/">A2UI v0.9 update in April 2026</a>, the direction became clearer: use the existing component catalog from a design system, let the agent &quot;speak UI,&quot; and avoid having the agent directly emit HTML/JS or arbitrary code.</p>
+<p>AG-UI sits on another layer. It is not a GenUI spec, but an interaction protocol between an agent backend and a user-facing frontend. The official docs state this directly: <a href="https://docs.ag-ui.com/concepts/generative-ui-specs">A2UI is a generative UI specification, while AG-UI is an Agent-User Interaction protocol</a>. This is also why AG-UI naturally feels chat-oriented: it deals with long-lived connections, streaming, tool calls, state sync, human-in-the-loop flows, cancel/resume, and the runtime reality of &quot;an agent and a user are working through something together.&quot;</p>
+<p>If we only look at these two protocols:</p>
+<ul>
+<li>A2UI describes what UI the agent wants to show, which components to use, what data is bound, and what actions exist.</li>
+<li>AG-UI describes how the agent and frontend keep talking, passing text, state, tool calls, UI intent, and user interactions.</li>
+</ul>
+<h2 id="who-is-using-this-now" tabindex="-1">Who Is Using This Now</h2>
+<p>A2UI's official landing zone is still mostly agentic apps: Google Opal, Gemini Enterprise, Flutter GenUI SDK, ADK examples, AG2's A2UIAgent, and CopilotKit/AG-UI integration. The Flutter GenUI SDK is worth paying attention to because it shows Google has at least seriously considered mobile/native rendering, instead of only building browser scenarios. On the A2UI roadmap, Lit, Angular, React, and Flutter are marked stable, while SwiftUI and Jetpack Compose are still planned.</p>
+<p>AG-UI feels more like &quot;agent app plumbing.&quot; It is closely tied to CopilotKit, and the official docs list integrations with LangGraph, CrewAI, Google ADK, Microsoft Agent Framework, Pydantic AI, Agno, and others. Its strength is turning events from different agent frameworks into typed events that a frontend can consume. In other words, if you are building a web-based copilot, agent chat, or workspace, it may be useful. Otherwise, it is probably not the first layer of the answer.</p>
+<p>This is where I think there is still a lot of space. LLMs are NOT only here to make search boxes, chat boxes, and workspaces smarter. <strong>News apps still need reading pages, podcast apps still need show notes, magazines still need features, and children's stories still need supportive reading and interaction.</strong> The question is not &quot;should these apps become chatbots?&quot; The question is whether the content surfaces inside existing products can begin to understand the content itself, <strong>and dynamically place layout, comments, sharing, ads, related reading, and action entry points where they make more sense.</strong></p>
+<h2 id="faq" tabindex="-1">FAQ</h2>
+<p>I talked with agents about this topic quite a bit. Here are a few of the questions.</p>
+<p><strong>What is the relationship between A2UI and AG-UI?</strong></p>
+<p>A2UI describes the UI payload itself. AG-UI describes the interaction process between the agent and the frontend. A2UI is closer to a payload/schema, while AG-UI is closer to a runtime pipe. They can be used together, but they are not the same thing.</p>
+<p><strong>What is A2UI's JSONL? Can it be parsed incrementally?</strong></p>
+<p>JSONL means JSON Lines: each line is a complete JSON object. It is often used with SSE streaming because the client can parse line by line, receiving <code>createSurface</code>, <code>updateComponents</code>, and <code>updateDataModel</code> while updating the local model.</p>
+<p><strong>Why does AG-UI feel so chat-like?</strong></p>
+<p>Because agent app interaction is rarely a single request/response. The agent streams text, calls tools in the middle, pauses for user confirmation, and continues updating state. AG-UI models these events, so it naturally appears in chat, copilot, and agent workspace products.</p>
+<p><strong>Do A2UI demos for marketing emails or Twitter/X cards make sense?</strong></p>
+<p>Yes, but mainly during generation and preview, not at the final delivery layer. Email ultimately becomes HTML/MJML. Twitter/X ultimately becomes an image, metadata, or a platform-native card. A2UI can help the admin side preview, approve, rewrite, and schedule through a unified renderer. If the output is only a one-off static artifact, the value of A2UI becomes much thinner.</p>
+<h2 id="references" tabindex="-1">References</h2>
+<ul>
+<li><a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Introducing A2UI: An open project for agent-driven interfaces</a></li>
+<li><a href="https://developers.googleblog.com/a2ui-v0-9-generative-ui/">A2UI v0.9: The New Standard for Portable, Framework-Agnostic Generative UI</a></li>
+<li><a href="https://developers.googleblog.com/en/developers-guide-to-ai-agent-protocols/">Developer's Guide to AI Agent Protocols</a></li>
+<li><a href="https://a2ui.org/">A2UI official docs</a></li>
+<li><a href="https://docs.ag-ui.com/">AG-UI official docs</a></li>
+<li><a href="https://docs.ag-ui.com/concepts/generative-ui-specs">AG-UI: Generative UI Specs</a></li>
+</ul>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        For comments and further discussion, mail to xx2bab@gmail.com
+      </div>
+      <hr />
+    
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>

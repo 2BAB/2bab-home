@@ -1,0 +1,101 @@
+<html lang="zh" dir="ltr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="A2UI、AG-UI，以及聊天框之外的 GenUI" />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://2bab.me/zh/blog/2026-05-15-a2ui-agui-surface-spec/" />
+  <link rel="stylesheet" href="/styles/main.css">
+  <link rel="me" href="https://2bab.me/">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.27.0/themes/prism.min.css">
+  
+  <title>A2UI、AG-UI，以及聊天框之外的 GenUI | 2BAB&#39;s Blog</title>
+  
+</head>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-NFRNXW3SHS"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-NFRNXW3SHS');
+</script>
+
+<body>
+  
+<div>
+  <div class="container mx-auto prose py-12 sm:py-24 px-12 sm:px-0">
+    <div class="mb-12">
+      <a class="no-underline font-bold" href="/zh">2BAB&#39;s Blog</a>
+    </div>
+    <h1>A2UI、AG-UI，以及聊天框之外的 GenUI</h1>
+    <div class="italic text-gray-500">
+      2026/05/15
+    </div>
+    <div>
+      <p>最近重新看了一圈 Google A2UI 和 AG-UI，感觉比去年第一次看时更明确了：这两个东西有价值，相辅相成，但不应该被简单理解成“动态 UI 协议终于标准化了”。</p>
+<p>准确点说，现在 A2UI 和 AG-UI 的重心仍然很明显地落在 <strong>chat-like style</strong> 上：agent 对话、copilot、search/chat、生产力工具里的 assistant panel。当前来说这固然是一个挺大的市场，也解释了为什么这条线上工具和协议都长得很快。但 AI 应用的形态不可能就此固定在聊天框里。曾经已经存在的千千万万 App，尤其是内容、媒体、教育、消费、社区这类应用，仍然有大量空间值得重新观察。</p>
+<p><img src="https://storage.googleapis.com/gweb-developer-goog-blog-assets/images/a2ui-blog-1-component-gallery_2.original.png" alt="A2UI component gallery 示例"></p>
+<p><em>图源：Google Developers Blog，<a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Introducing A2UI: An open project for agent-driven interfaces</a> 中的 component gallery 示例</em></p>
+<h2 id="spec-%E5%92%8C-protocol" tabindex="-1">Spec 和 Protocol</h2>
+<p><a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Google 在 2025 年 12 月公开 A2UI</a>，核心目标是让 agent 不只返回文本，而是返回一段安全的、声明式的 UI 描述，再由宿主应用用自己的组件渲染。到了 <a href="https://developers.googleblog.com/a2ui-v0-9-generative-ui/">2026 年 4 月的 A2UI v0.9 更新</a>，它的方向更清楚了：用现有设计系统里的 component catalog，让 agent “说 UI”，而不是让 agent 直接吐 HTML/JS 或任意代码。</p>
+<p>AG-UI 则站在另一层。它不是 GenUI spec，而是 agent backend 和 user-facing frontend 之间的 interaction protocol。官方文档也把这点说得很直白：<a href="https://docs.ag-ui.com/concepts/generative-ui-specs">A2UI 是 generative UI specification，AG-UI 是 Agent-User Interaction protocol</a>。这也是为什么 AG-UI 看上去天然偏 chat：它处理的是长连接、streaming、tool call、state sync、human-in-the-loop、cancel/resume 这些“agent 正在和用户共同完成一件事”的运行时问题。</p>
+<p>如果只看这两个协议，大概是这样：</p>
+<ul>
+<li>A2UI：agent 要展示什么 UI，用什么 component、什么数据绑定、什么动作。</li>
+<li>AG-UI：agent 和前端怎么持续通信，怎么传文本、状态、工具调用、UI intent 和用户交互。</li>
+</ul>
+<h2 id="%E7%8E%B0%E5%9C%A8%E8%B0%81%E5%9C%A8%E7%94%A8" tabindex="-1">现在谁在用</h2>
+<p>A2UI 的官方落点主要还是 agentic app：Google Opal、Gemini Enterprise、Flutter GenUI SDK、ADK 示例、AG2 的 A2UIAgent、CopilotKit/AG-UI 集成等。值得注意的是 Flutter GenUI SDK，因为它说明 Google 至少认真考虑过 mobile/native 的渲染体验，而不是只做浏览器里的场景。A2UI 官网的 roadmap 里把 Lit、Angular、React、Flutter 标成稳定，SwiftUI 和 Jetpack Compose 还是 planned。</p>
+<p>AG-UI 的生态更像“agent app plumbing”。它和 CopilotKit 绑得很深，同时官方列了 LangGraph、CrewAI、Google ADK、Microsoft Agent Framework、Pydantic AI、Agno 等集成。它强在把各种 agent framework 的事件整理成前端可以消费的 typed events。换句话说，如果你在做一个 web-based copilot、agent chat 或 workspace，可能不错；反之，它就不是第一层答案。</p>
+<p>这也是我觉得大有空间的地方，LLM 不是只能把搜索框、聊天框、工作台做得更聪明。<strong>新闻 App 仍然需要阅读页，播客 App 仍然需要单集页介绍，杂志仍然需要专题，儿童故事仍然需要辅助性的阅读和互动</strong>。问题不是“要不要把这些 App 变成聊天机器人”，而是这些原有产品里的内容表面，能不能<strong>开始理解内容本身，并动态地把排版、评论、分享、广告、延伸阅读和行动入口放到更合适的位置</strong>。</p>
+<h2 id="faq" tabindex="-1">FAQ</h2>
+<p>我和 Agent 聊了很多这方面的问题，摘录其中的一部分放到这里。</p>
+<p><strong>A2UI 和 AG-UI 的关系？</strong></p>
+<p>A2UI 描述 UI 内容本身，AG-UI 描述 agent 和前端之间的交互过程。A2UI 更像 payload/schema，AG-UI 更像 runtime pipe。两者可搭配食用，但不是一回事。</p>
+<p><strong>A2UI 的 JSONL 是什么？它能逐步解析吗？</strong></p>
+<p>JSONL 就是 JSON Lines，每一行都是一个完整 JSON object，像 SSE streaming 时经常用 JSONL，因为客户端可以按行解析，一边收到 <code>createSurface</code>、<code>updateComponents</code>、<code>updateDataModel</code>，一边更新本地模型。</p>
+<p><strong>为什么 AG-UI 看起来很 chat-like？</strong></p>
+<p>因为 agent app 的交互天然不是一次 request/response。它会流式输出文本，中途调用工具，暂停等用户确认，继续更新状态。AG-UI 正是为这些事件建模，所以它很容易出现在 chat、copilot、agent workspace 里。</p>
+<p><strong>A2UI 官方 Demo 里做 email 营销页、Twitter/X 卡片有意义吗？</strong></p>
+<p>有，但意义主要在“生成和预览阶段”，不是最终投放阶段。Email 最后还是 HTML/MJML，Twitter/X 最后还是图片、metadata 或平台原生卡片。A2UI 可以帮助 admin 侧用统一的 renderer 做 preview、approve、rewrite、schedule；如果只是一次性生成静态结果，A2UI 的价值就会变薄。</p>
+<h2 id="%E5%8F%82%E8%80%83" tabindex="-1">参考</h2>
+<ul>
+<li><a href="https://developers.googleblog.com/introducing-a2ui-an-open-project-for-agent-driven-interfaces/">Introducing A2UI: An open project for agent-driven interfaces</a></li>
+<li><a href="https://developers.googleblog.com/a2ui-v0-9-generative-ui/">A2UI v0.9: The New Standard for Portable, Framework-Agnostic Generative UI</a></li>
+<li><a href="https://developers.googleblog.com/en/developers-guide-to-ai-agent-protocols/">Developer's Guide to AI Agent Protocols</a></li>
+<li><a href="https://a2ui.org/">A2UI 官方文档</a></li>
+<li><a href="https://docs.ag-ui.com/">AG-UI 官方文档</a></li>
+<li><a href="https://docs.ag-ui.com/concepts/generative-ui-specs">AG-UI: Generative UI Specs</a></li>
+</ul>
+
+    </div>
+    <hr />
+      <div class="text-sm text-center">
+        评论和交流请发送邮件到 xx2bab@gmail.com
+      </div>
+      <hr />
+     <div class="text-center">
+  <img class="w-64 inline-block" src="https://s2.loli.net/2023/05/13/FKYi5STEtmNZd8W.jpg" alt="Wechat Donate QACode" />
+  <div class="text-sm">
+    通过微信扫描赞赏码赞助此文
+  </div>
+</div> 
+    <footer class="text-sm py-12 text-gray-500 text-center">
+  
+  <p><a href="/">ENG</a> / <a href="/zh">中文</a></p>
+  
+  2BAB's Blog since 2014
+</footer>
+  </div>
+
+</div>
+
+
+
+</body>
+</html>
