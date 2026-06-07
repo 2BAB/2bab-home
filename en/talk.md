@@ -64,6 +64,11 @@ In Mandarin / CTalk (GDG Community Talk) / Android Gradle Plugin special event /
 In Mandarin / Kotlin Chinese Developer Conf / JetBrains / Nov 2022 / [Event Intro](https://blog.jetbrains.com/zh-hans/2022/11/08/2022-kotlin-online-event-for-chinese-developers/) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2022-11-ksp-application-and-tricks)
 
 
+### DroidCon SG x Google - Community Roundtable
+
+In English / DroidCon SG x Google / Oct 2022 / No replay provided
+
+
 ### [International Android App Design in Practice](https://www.bilibili.com/video/BV1ZP411L7QM/?t=7173)
 
 In Mandarin / CTalk(GDG Community Talk) Export series / Google China / Aug 2022 / [Event Intro](https://ctalks.gdgcn.net/?page_id=576) / [Slides](https://github.com/2BAB/Talk-Slides/tree/main/2022-08-export-day-google-china)
