@@ -16,7 +16,7 @@ In Mandarin / Google Devfest Taipei&Shenzhen / GDG Taipei&Shenzhen / Nov 2025 / 
 
 ### [Google's On-device AI Roadmap: From Ecosystem to Personal Assistant](https://www.bilibili.com/video/BV12yWuz2Exw)
 
-Google I/O Connect - Creator Studio / Google / Aug 2025
+In Mandarin / Google I/O Connect - Creator Studio / Google / Aug 2025
 
 
 ### [Multi-language Translation for Tech Documents with Gemini 2.5](https://www.bilibili.com/video/BV1WZ7QzjEA3/)
@@ -25,7 +25,7 @@ In Mandarin / CTalk (GDG Community Talk) / Gemini Special Event / May 2025 / [Ev
 
 ### Expanding Android Development Perspectives - Agents on Android
 
-Singapore Institute of Technology / Apr 2025 / [Slides](https://docs.google.com/presentation/d/1N2kP9wHu8pq95jBQQV8fDs3AkotwvzKTjoNSxCI_Ez4/edit?slide=id.g34679ed1cf9_0_32#slide=id.g34679ed1cf9_0_32)
+In English / Singapore Institute of Technology / Apr 2025 / [Slides](https://docs.google.com/presentation/d/1N2kP9wHu8pq95jBQQV8fDs3AkotwvzKTjoNSxCI_Ez4/edit?slide=id.g34679ed1cf9_0_32#slide=id.g34679ed1cf9_0_32)
 
 ### Agents on Android: On-device LLMs and Intelligent Agents
 
