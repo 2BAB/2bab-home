@@ -2,7 +2,7 @@
 layout: page
 ---
 
-Hi, I'm El, widely known online as **2BAB**. Based in Singapore, I work as a TL/EM at a vertical AI company, focusing on AI and mobile application development.
+Hi, I'm El, better known online as **2BAB**. I'm based in Singapore and work as a TL/EM at a vertical AI company, where my focus spans AI and mobile application development.
 
 Before that, I spent several years at Alibaba and VISA building mobile infrastructure. I wrote two books featured by the Gradle team, including [*Extending Android Builds*](/en/book), and also host [Binary Radio](https://binary.2bab.me/), run [El's Space](https://www.youtube.com/@El-s-Space), contribute to open source, give technical talks, and write about engineering ideas.
 
